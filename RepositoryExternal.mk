@@ -3376,7 +3376,7 @@ $(call gb_LinkTarget_add_libs,$(1),\
 )
 else
 $(call gb_LinkTarget_add_libs,$(1),\
-	$(call gb_UnpackedTarball_get_dir,breakpad)/src/.libs/breakpad-0.0$(gb_StaticLibrary_PLAINEXT) \
+	$(call gb_UnpackedTarball_get_dir,breakpad)/src/client/linux/libbreakpad_client.a \
 )
 endif
 
