@@ -116,7 +116,7 @@ $(eval $(call gb_Library_add_libs,sofficeapp,\
 endif
 endif
 
-ifeq ($(OS), $(filter LINUX, $(OS)))
+ifeq ($(ENABLE_BREAKPAD),TRUE)
 $(eval $(call gb_Library_use_external,sofficeapp,breakpad))
 endif
 
