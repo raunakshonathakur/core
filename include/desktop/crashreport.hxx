@@ -1,0 +1,42 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/*
+ * This file is part of the LibreOffice project.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+#ifndef INCLUDED_DESKTOP_CRASHREPORT_HXX
+#define INCLUDED_DESKTOP_CRASHREPORT_HXX
+
+#include <desktop/dllapi.h>
+
+#include <rtl/ustring.hxx>
+#include <osl/mutex.hxx>
+
+#include <map>
+
+/**
+ * Provides access to the crash reporter service.
+ *
+ * Valid keys are:
+ *      * AdapterVendorId
+ *      * AdapterDeviceId
+ *
+ */
+class DESKTOP_DLLPUBLIC CrashReporter
+{
+public:
+    static void AddKeyValue(const OUString& rKey, const OUString& rValue);
+
+private:
+
+    static std::map<OUString, OUString> maValueMap;
+
+    static osl::Mutex maMutex;
+};
+
+#endif
+
+/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
