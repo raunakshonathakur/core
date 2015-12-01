@@ -75,6 +75,7 @@ $(eval $(call gb_Library_use_externals,vcl,\
 ))
 
 $(eval $(call gb_Library_use_libraries,vcl,\
+	crashreport \
     svl \
     tl \
     utl \
@@ -88,7 +89,6 @@ $(eval $(call gb_Library_use_libraries,vcl,\
     cppu \
     sal \
     salhelper \
-    sofficeapp \
     xmlreader \
 	$(gb_UWINAPI) \
 ))

@@ -25,7 +25,7 @@
  *      * AdapterDeviceId
  *
  */
-class DESKTOP_DLLPUBLIC CrashReporter
+class CRASHREPORT_DLLPUBLIC CrashReporter
 {
 public:
     static void AddKeyValue(const OUString& rKey, const OUString& rValue);
