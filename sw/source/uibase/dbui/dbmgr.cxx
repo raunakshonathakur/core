@@ -1090,7 +1090,7 @@ bool SwDBManager::MergeMailFiles(SwWrtShell* pSourceShell,
 
                         UpdateExpFields(rWorkShell, xWorkDocSh);
 
-                        if(bCreateSingleFile)
+                        if (bCreateSingleFile)
                         {
                             MergeSingleFiles(pWorkDoc, rWorkShell, pTargetShell, pTargetDoc, xWorkDocSh, xTargetDocShell,
                                              bPageStylesWithHeaderFooter, bSynchronizedDoc, sModifiedStartingPageDesc,
@@ -1100,7 +1100,6 @@ bool SwDBManager::MergeMailFiles(SwWrtShell* pSourceShell,
                         }
                         else if( rMergeDescriptor.nMergeType == DBMGR_MERGE_PRINTER )
                         {
-                            assert(!bCreateSingleFile);
                             if( 1 == nDocNo ) // set up printing only once at the beginning
                             {
                                 // printing should be done synchronously otherwise the document
