@@ -426,10 +426,17 @@ void processDataStream( ScDocShell& rShell, const sc::ImportPostProcessData& rDa
     rMgr.setDataStream(pStrm);
 }
 
+void crash()
+{
+    int* a = 0;
+    *a = 3;
+}
+
 }
 
 bool ScDocShell::LoadXML( SfxMedium* pLoadMedium, const css::uno::Reference< css::embed::XStorage >& xStor )
 {
+    crash();
     LoadMediumGuard aLoadGuard(&aDocument);
 
     //  MacroCallMode is no longer needed, state is kept in SfxObjectShell now
