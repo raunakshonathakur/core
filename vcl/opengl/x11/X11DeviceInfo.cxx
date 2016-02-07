@@ -10,6 +10,8 @@
 #include "opengl/x11/X11DeviceInfo.hxx"
 #include "opengl/x11//glxtest.hxx"
 
+#include <config_features.h>
+
 #include <rtl/ustring.hxx>
 
 #include <unistd.h>
@@ -288,8 +290,10 @@ bool X11OpenGLDeviceInfo::isDeviceBlocked()
     if (mnGLMajorVersion == 1)
         return true;
 
+#if HAVE_FEATURE_BREAKPAD
     CrashReporter::AddKeyValue("AdapterVendorId", rtl::OStringToOUString(maVendor, RTL_TEXTENCODING_UTF8));
     CrashReporter::AddKeyValue("AdapterDeviceId", rtl::OStringToOUString(maRenderer, RTL_TEXTENCODING_UTF8));
+#endif
 
     SAL_INFO("vcl.opengl", "Vendor: " << maVendor);
     SAL_INFO("vcl.opengl", "Renderer: " << maRenderer);

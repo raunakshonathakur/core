@@ -46,7 +46,8 @@ $(eval $(call gb_Library_use_libraries,svx,\
     comphelper \
     cppuhelper \
     cppu \
-    crashreport \
+    $(if $(filter TRUE,$(ENABLE_BREAKPAD)), \
+		crashreport) \
     $(call gb_Helper_optional,DBCONNECTIVITY, \
         dbtools) \
     drawinglayer \
@@ -109,7 +110,8 @@ $(eval $(call gb_Library_add_exception_objects,svx,\
     svx/source/dialog/_contdlg \
     svx/source/dialog/contwnd \
     svx/source/dialog/compressgraphicdialog \
-    svx/source/dialog/crashreportdlg \
+    $(if $(filter TRUE,$(ENABLE_BREAKPAD)), \
+		svx/source/dialog/crashreportdlg) \
     svx/source/dialog/crashreportui \
     svx/source/dialog/ctredlin \
     svx/source/dialog/databaseregistrationui \

@@ -11,6 +11,8 @@
 #include <com/sun/star/frame/XSynchronousDispatch.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 
+#include <config_features.h>
+
 #include <comphelper/processfactory.hxx>
 #include <cppuhelper/supportsservice.hxx>
 
@@ -82,8 +84,10 @@ css::uno::Any SAL_CALL CrashReportUI::dispatchWithReturnValue(const css::util::U
 {
     SolarMutexGuard aGuard;
     css::uno::Any aRet;
+#if HAVE_FEATURE_BREAKPAD
     ScopedVclPtrInstance<CrashReportDialog> xDialog(new CrashReportDialog(nullptr));
     xDialog->Execute();
+#endif
     return aRet;
 }
 

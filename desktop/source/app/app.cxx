@@ -2344,7 +2344,9 @@ void Desktop::OpenClients()
         }
     }
 
+#if HAVE_FEATURE_BREAKPAD
     CrashReporter::writeCommonInfo();
+#endif
     OfficeIPCThread::EnableRequests();
 
     ProcessDocumentsRequest aRequest(rArgs.getCwdUrl());

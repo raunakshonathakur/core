@@ -75,7 +75,8 @@ $(eval $(call gb_Library_use_externals,vcl,\
 ))
 
 $(eval $(call gb_Library_use_libraries,vcl,\
-	crashreport \
+    $(if $(filter TRUE,$(ENABLE_BREAKPAD)), \
+		crashreport) \
     svl \
     tl \
     utl \
