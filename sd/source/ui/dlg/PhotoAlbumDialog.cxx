@@ -9,6 +9,7 @@
 // This is a test comment.
 // I am a student
 //Libre Office is so cool and I have the coolest partner ever. "Beza"
+/* I thought this was C++ but apparetly I need to use C comment syntax :( */
 
 #include <comphelper/namedvaluecollection.hxx>
 #include <comphelper/processfactory.hxx>
