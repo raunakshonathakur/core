@@ -945,14 +945,16 @@ void XclExpCFImpl::SaveXml( XclExpXmlStream& rStrm )
     if(!IsTextRule(eOperation) && !IsTopBottomRule(eOperation))
     {
         rWorksheet->startElement( XML_formula, FSEND );
+        std::unique_ptr<ScTokenArray> pTokenArray(mrFormatEntry.CreateTokenArry(0));
         rWorksheet->writeEscaped(XclXmlUtils::ToOUString( GetCompileFormulaContext(), mrFormatEntry.GetValidSrcPos(),
-                    mrFormatEntry.CreateTokenArry(0)));
+                    pTokenArray.get()));
         rWorksheet->endElement( XML_formula );
         if (bFmla2)
         {
             rWorksheet->startElement( XML_formula, FSEND );
+            std::unique_ptr<ScTokenArray> pTokenArray2(mrFormatEntry.CreateTokenArry(1));
             rWorksheet->writeEscaped(XclXmlUtils::ToOUString( GetCompileFormulaContext(), mrFormatEntry.GetValidSrcPos(),
-                        mrFormatEntry.CreateTokenArry(1)));
+                        pTokenArray2.get()));
             rWorksheet->endElement( XML_formula );
         }
     }
@@ -1091,7 +1093,7 @@ void XclExpCfvo::SaveXml( XclExpXmlStream& rStrm )
     if(mrEntry.GetType() == COLORSCALE_FORMULA)
     {
         OUString aFormula = XclXmlUtils::ToOUString( GetCompileFormulaContext(), maSrcPos,
-                mrEntry.GetFormula()->Clone());
+                mrEntry.GetFormula());
         aValue = OUStringToOString(aFormula, RTL_TEXTENCODING_UTF8 );
     }
     else
@@ -1226,7 +1228,7 @@ XclExpCondfmt::XclExpCondfmt( const XclExpRoot& rRoot, const ScConditionalFormat
                 else if(pFormatEntry->GetType() == condformat::DATE)
                     maCFList.AppendNewRecord( new XclExpDateFormat( GetRoot(), static_cast<const ScCondDateFormatEntry&>(*pFormatEntry), ++rIndex ) );
             }
-        aScRanges.Format( msSeqRef, SCA_VALID, nullptr, formula::FormulaGrammar::CONV_XL_A1 );
+        aScRanges.Format( msSeqRef, ScRefFlags::VALID, nullptr, formula::FormulaGrammar::CONV_XL_A1 );
 
         if(!aExtEntries.empty() && xExtLst.get())
         {
@@ -1851,7 +1853,7 @@ XclExpWebQuery::XclExpWebQuery(
     maDestRange( rRangeName ),
     maUrl( rUrl ),
     // refresh delay time: seconds -> minutes
-    mnRefresh( ulimit_cast< sal_Int16 >( (nRefrSecs + 59L) / 60L ) ),
+    mnRefresh( ulimit_cast< sal_Int16 >( (nRefrSecs + 59) / 60 ) ),
     mbEntireDoc( false )
 {
     // comma separated list of HTML table names or indexes

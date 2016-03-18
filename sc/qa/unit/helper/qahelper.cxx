@@ -281,15 +281,15 @@ void testFormats(ScBootstrapFixture* pTest, ScDocument* pDoc, sal_Int32 nFormat)
 
     ScConditionalFormat* pCondFormat = pDoc->GetCondFormat(0,0,2);
     const ScRangeList& rRange = pCondFormat->GetRange();
-    CPPUNIT_ASSERT(rRange == ScRange(0,0,2,3,0,2));
+    CPPUNIT_ASSERT_EQUAL(ScRangeList(ScRange(0,0,2,3,0,2)), rRange);
 
     pCondFormat = pDoc->GetCondFormat(0,1,2);
     const ScRangeList& rRange2 = pCondFormat->GetRange();
-    CPPUNIT_ASSERT(rRange2 == ScRange(0,1,2,0,1,2));
+    CPPUNIT_ASSERT_EQUAL(ScRangeList(ScRange(0,1,2,0,1,2)), rRange2);
 
     pCondFormat = pDoc->GetCondFormat(1,1,2);
     const ScRangeList& rRange3 = pCondFormat->GetRange();
-    CPPUNIT_ASSERT(rRange3 == ScRange(1,1,2,3,1,2));
+    CPPUNIT_ASSERT_EQUAL(ScRangeList(ScRange(1,1,2,3,1,2)), rRange3);
 }
 
 const SdrOle2Obj* getSingleChartObject(ScDocument& rDoc, sal_uInt16 nPage)
@@ -392,8 +392,8 @@ ScRangeList getChartRanges(ScDocument& rDoc, const SdrOle2Obj& rChartObj)
     for (size_t i = 0, n = aRangeReps.size(); i < n; ++i)
     {
         ScRange aRange;
-        sal_uInt16 nRes = aRange.Parse(aRangeReps[i], &rDoc, rDoc.GetAddressConvention());
-        if (nRes & SCA_VALID)
+        ScRefFlags nRes = aRange.Parse(aRangeReps[i], &rDoc, rDoc.GetAddressConvention());
+        if (nRes & ScRefFlags::VALID)
             // This is a range address.
             aRanges.Append(aRange);
         else
@@ -401,7 +401,7 @@ ScRangeList getChartRanges(ScDocument& rDoc, const SdrOle2Obj& rChartObj)
             // Parse it as a single cell address.
             ScAddress aAddr;
             nRes = aAddr.Parse(aRangeReps[i], &rDoc, rDoc.GetAddressConvention());
-            CPPUNIT_ASSERT_MESSAGE("Failed to parse a range representation.", (nRes & SCA_VALID));
+            CPPUNIT_ASSERT_MESSAGE("Failed to parse a range representation.", (nRes & ScRefFlags::VALID));
             aRanges.Append(aAddr);
         }
     }
@@ -416,7 +416,7 @@ ScTokenArray* getTokens(ScDocument& rDoc, const ScAddress& rPos)
     ScFormulaCell* pCell = rDoc.GetFormulaCell(rPos);
     if (!pCell)
     {
-        OUString aStr = rPos.Format(SCA_VALID);
+        OUString aStr = rPos.Format(ScRefFlags::VALID);
         cerr << aStr << " is not a formula cell." << endl;
         return nullptr;
     }
@@ -447,7 +447,7 @@ bool checkFormula(ScDocument& rDoc, const ScAddress& rPos, const char* pExpected
 
 bool checkFormulaPosition(ScDocument& rDoc, const ScAddress& rPos)
 {
-    OUString aStr(rPos.Format(SCA_VALID));
+    OUString aStr(rPos.Format(ScRefFlags::VALID));
     const ScFormulaCell* pFC = rDoc.GetFormulaCell(rPos);
     if (!pFC)
     {
@@ -457,7 +457,7 @@ bool checkFormulaPosition(ScDocument& rDoc, const ScAddress& rPos)
 
     if (pFC->aPos != rPos)
     {
-        OUString aStr2(pFC->aPos.Format(SCA_VALID));
+        OUString aStr2(pFC->aPos.Format(ScRefFlags::VALID));
         cerr << "Formula cell at " << aStr << " has incorrect position of " << aStr2 << endl;
         return false;
     }
@@ -476,7 +476,7 @@ bool checkFormulaPositions(
 
         if (!checkFormulaPosition(rDoc, aPos))
         {
-            OUString aStr(aPos.Format(SCA_VALID));
+            OUString aStr(aPos.Format(ScRefFlags::VALID));
             cerr << "Formula cell position failed at " << aStr << "." << endl;
             return false;
         }
@@ -539,11 +539,11 @@ ScDocShellRef ScBootstrapFixture::load( bool bReadWrite,
     const OUString& rTypeName, SfxFilterFlags nFilterFlags, SotClipboardFormatId nClipboardID,
     sal_uIntPtr nFilterVersion, const OUString* pPassword )
 {
-    SfxFilter* pFilter = new SfxFilter(
+    std::shared_ptr<const SfxFilter> pFilter(new SfxFilter(
         rFilter,
         OUString(), nFilterFlags, nClipboardID, rTypeName, 0, OUString(),
-        rUserData, OUString("private:factory/scalc*"));
-    pFilter->SetVersion(nFilterVersion);
+        rUserData, OUString("private:factory/scalc*")));
+    const_cast<SfxFilter*>(pFilter.get())->SetVersion(nFilterVersion);
 
     ScDocShellRef xDocShRef = new ScDocShell;
     xDocShRef->GetDocument().EnableUserInteraction(false);
@@ -606,7 +606,7 @@ OUString EnsureSeparator(const OUStringBuffer& rFilePath)
 void ScBootstrapFixture::createFileURL(
     const OUString& aFileBase, const OUString& aFileExtension, OUString& rFilePath)
 {
-    OUStringBuffer aBuffer( getSrcRootURL() );
+    OUStringBuffer aBuffer( m_directories.getSrcRootURL() );
     aBuffer.append(EnsureSeparator(aBuffer)).append(m_aBaseString);
     aBuffer.append(EnsureSeparator(aBuffer)).append(aFileExtension);
     aBuffer.append(EnsureSeparator(aBuffer)).append(aFileBase).append(aFileExtension);
@@ -615,7 +615,7 @@ void ScBootstrapFixture::createFileURL(
 
 void ScBootstrapFixture::createCSVPath(const OUString& aFileBase, OUString& rCSVPath)
 {
-    OUStringBuffer aBuffer( getSrcRootPath());
+    OUStringBuffer aBuffer( m_directories.getSrcRootPath());
     aBuffer.append(EnsureSeparator(aBuffer)).append(m_aBaseString);
     aBuffer.append(EnsureSeparator(aBuffer)).append("contentCSV/").append(aFileBase).append("csv");
     rCSVPath = aBuffer.makeStringAndClear();
@@ -631,11 +631,11 @@ ScDocShellRef ScBootstrapFixture::saveAndReload(
     SotClipboardFormatId nExportFormat = SotClipboardFormatId::NONE;
     if (nFormatType == ODS_FORMAT_TYPE)
         nExportFormat = SotClipboardFormatId::STARCHART_8;
-    SfxFilter* pExportFilter = new SfxFilter(
+    std::shared_ptr<const SfxFilter> pExportFilter(new SfxFilter(
         rFilter,
         OUString(), nFormatType, nExportFormat, rTypeName, 0, OUString(),
-        rUserData, OUString("private:factory/scalc*") );
-    pExportFilter->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
+        rUserData, OUString("private:factory/scalc*") ));
+    const_cast<SfxFilter*>(pExportFilter.get())->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
     aStoreMedium.SetFilter(pExportFilter);
     pShell->DoSaveAs( aStoreMedium );
     pShell->DoClose();
@@ -677,11 +677,11 @@ std::shared_ptr<utl::TempFile> ScBootstrapFixture::exportTo( ScDocShell* pShell,
     SfxFilterFlags nFormatType = aFileFormats[nFormat].nFormatType;
     if (nFormatType == ODS_FORMAT_TYPE)
         nExportFormat = SotClipboardFormatId::STARCHART_8;
-    SfxFilter* pExportFilter = new SfxFilter(
+    std::shared_ptr<SfxFilter> pExportFilter(new SfxFilter(
         aFilterName,
         OUString(), nFormatType, nExportFormat, aFilterType, 0, OUString(),
-        OUString(), OUString("private:factory/scalc*") );
-    pExportFilter->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
+        OUString(), OUString("private:factory/scalc*") ));
+    pExportFilter.get()->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
     aStoreMedium.SetFilter(pExportFilter);
     pShell->DoSaveAs( aStoreMedium );
     pShell->DoClose();

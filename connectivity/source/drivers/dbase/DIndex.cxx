@@ -172,11 +172,10 @@ bool ODbaseIndex::openIndexFile()
     return m_pFileStream != nullptr;
 }
 
-OIndexIterator* ODbaseIndex::createIterator(OBoolOperator* pOp,
-                                            const OOperand* pOperand)
+OIndexIterator* ODbaseIndex::createIterator()
 {
     openIndexFile();
-    return new OIndexIterator(this, pOp, pOperand);
+    return new OIndexIterator(this, nullptr, nullptr);
 }
 
 bool ODbaseIndex::ConvertToKey(ONDXKey* rKey, sal_uInt32 nRec, const ORowSetValue& rValue)

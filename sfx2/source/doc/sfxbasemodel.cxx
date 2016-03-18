@@ -448,27 +448,18 @@ class SfxSaveGuard
 
     public:
         SfxSaveGuard(const Reference< frame::XModel >&             xModel                      ,
-                           IMPL_SfxBaseModel_DataContainer* pData                       ,
-                           bool                             bRejectConcurrentSaveRequest);
+                           IMPL_SfxBaseModel_DataContainer* pData);
         ~SfxSaveGuard();
 };
 
 SfxSaveGuard::SfxSaveGuard(const Reference< frame::XModel >&             xModel                      ,
-                                 IMPL_SfxBaseModel_DataContainer* pData                       ,
-                                 bool                             bRejectConcurrentSaveRequest)
+                                 IMPL_SfxBaseModel_DataContainer* pData)
     : m_xModel     (xModel)
     , m_pData      (pData )
     , m_pFramesLock(nullptr     )
 {
     if ( m_pData->m_bClosed )
         throw lang::DisposedException("Object already disposed.");
-
-    if (
-        bRejectConcurrentSaveRequest &&
-        m_pData->m_bSaving
-       )
-        throw io::IOException(
-                "Concurrent save requests on the same document are not possible.");
 
     m_pData->m_bSaving = true;
     m_pFramesLock = new SfxOwnFramesLocker(m_pData->m_pObjectShell);
@@ -1522,7 +1513,7 @@ void SAL_CALL SfxBaseModel::storeSelf( const    Sequence< beans::PropertyValue >
     if ( m_pData->m_pObjectShell.Is() )
     {
         m_pData->m_pObjectShell->AddLog( OSL_LOG_PREFIX "storeSelf" );
-        SfxSaveGuard aSaveGuard(this, m_pData, false);
+        SfxSaveGuard aSaveGuard(this, m_pData);
 
         bool bCheckIn = false;
         for ( sal_Int32 nInd = 0; nInd < aSeqArgs.getLength(); nInd++ )
@@ -1651,7 +1642,7 @@ void SAL_CALL SfxBaseModel::storeAsURL( const   OUString&                   rURL
     if ( m_pData->m_pObjectShell.Is() )
     {
         m_pData->m_pObjectShell->AddLog( OSL_LOG_PREFIX "storeAsURL" );
-        SfxSaveGuard aSaveGuard(this, m_pData, false);
+        SfxSaveGuard aSaveGuard(this, m_pData);
 
         impl_store( rURL, rArgs, false );
 
@@ -1692,7 +1683,7 @@ void SAL_CALL SfxBaseModel::storeToURL( const   OUString&                   rURL
     if ( m_pData->m_pObjectShell.Is() )
     {
         m_pData->m_pObjectShell->AddLog( OSL_LOG_PREFIX "storeToURL" );
-        SfxSaveGuard aSaveGuard(this, m_pData, false);
+        SfxSaveGuard aSaveGuard(this, m_pData);
         try {
             impl_store(rURL, rArgs, true);
         }
@@ -1717,7 +1708,7 @@ void SAL_CALL SfxBaseModel::storeToRecoveryFile( const OUString& i_TargetLocatio
     SfxModelGuard aGuard( *this );
 
     // delegate
-    SfxSaveGuard aSaveGuard( this, m_pData, false );
+    SfxSaveGuard aSaveGuard( this, m_pData );
     impl_store( i_TargetLocation, i_MediaDescriptor, true );
 
     // no need for subsequent calls to storeToRecoveryFile, unless we're modified, again
@@ -1788,7 +1779,7 @@ namespace {
 
 OUString getFilterProvider( SfxMedium& rMedium )
 {
-    const SfxFilter* pFilter = rMedium.GetFilter();
+    std::shared_ptr<const SfxFilter> pFilter = rMedium.GetFilter();
     if (!pFilter)
         return OUString();
 
@@ -1911,7 +1902,7 @@ void SAL_CALL SfxBaseModel::load(   const Sequence< beans::PropertyValue >& seqA
         // file recovery: restore original filter
         const SfxStringItem* pFilterItem = SfxItemSet::GetItem<SfxStringItem>(pMedium->GetItemSet(), SID_FILTER_NAME, false);
         SfxFilterMatcher& rMatcher = SfxGetpApp()->GetFilterMatcher();
-        const SfxFilter* pSetFilter = rMatcher.GetFilter4FilterName( pFilterItem->GetValue() );
+        std::shared_ptr<const SfxFilter> pSetFilter = rMatcher.GetFilter4FilterName( pFilterItem->GetValue() );
         pMedium->SetFilter( pSetFilter );
         m_pData->m_pObjectShell->SetModified();
     }
@@ -2350,7 +2341,7 @@ sal_Bool SAL_CALL SfxBaseModel::getAllowMacroExecution() throw (RuntimeException
     SfxModelGuard aGuard( *this );
 
     if ( m_pData->m_pObjectShell )
-        return m_pData->m_pObjectShell->AdjustMacroMode( OUString() );
+        return m_pData->m_pObjectShell->AdjustMacroMode();
     return sal_False;
 }
 
@@ -2913,7 +2904,7 @@ bool SfxBaseModel::impl_isDisposed() const
 
 OUString SfxBaseModel::GetMediumFilterName_Impl()
 {
-    const SfxFilter* pFilter = nullptr;
+    std::shared_ptr<const SfxFilter> pFilter;
     SfxMedium* pMedium = m_pData->m_pObjectShell->GetMedium();
     if ( pMedium )
         pFilter = pMedium->GetFilter();
@@ -2946,7 +2937,7 @@ void SfxBaseModel::impl_store(  const   OUString&                   sURL        
             SfxMedium* pMedium = m_pData->m_pObjectShell->GetMedium();
             if ( pMedium )
             {
-                const SfxFilter* pFilter = pMedium->GetFilter();
+                std::shared_ptr<const SfxFilter> pFilter = pMedium->GetFilter();
                 if ( pFilter && aFilterName.equals( pFilter->GetFilterName() ) )
                 {
                     // #i119366# - If the former file saving with password, do not trying in StoreSelf anyway...
@@ -3772,7 +3763,7 @@ void SAL_CALL SfxBaseModel::storeToStorage( const Reference< embed::XStorage >& 
     if( pItem )
     {
         OUString aFilterName = pItem->GetValue();
-        const SfxFilter* pFilter = SfxGetpApp()->GetFilterMatcher().GetFilter4FilterName( aFilterName );
+        std::shared_ptr<const SfxFilter> pFilter = SfxGetpApp()->GetFilterMatcher().GetFilter4FilterName( aFilterName );
         if ( pFilter && pFilter->UsesStorage() )
             nVersion = pFilter->GetVersion();
     }
@@ -4304,7 +4295,7 @@ Reference< frame::XController2 > SAL_CALL SfxBaseModel::createViewController(
     const sal_Int16 nPluginMode = aDocumentLoadArgs.getOrDefault( "PluginMode", sal_Int16( 0 ) );
     if ( nPluginMode == 1 )
     {
-        pViewFrame->ForceOuterResize_Impl( false );
+        pViewFrame->ForceOuterResize_Impl();
         pViewFrame->GetBindings().HidePopups();
 
         SfxFrame& rFrame = pViewFrame->GetFrame();

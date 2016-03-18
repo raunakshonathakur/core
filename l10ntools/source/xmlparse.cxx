@@ -94,13 +94,13 @@ XMLParentNode::XMLParentNode( const XMLParentNode& rObj)
             {
                 switch(pNode->GetNodeType())
                 {
-                    case XML_NODE_TYPE_ELEMENT:
+                    case XMLNodeType::ELEMENT:
                         AddChild( new XMLElement( *static_cast<XMLElement* >(pNode) ) ); break;
-                    case XML_NODE_TYPE_DATA:
+                    case XMLNodeType::DATA:
                         AddChild( new XMLData   ( *static_cast<XMLData* >   (pNode) ) ); break;
-                    case XML_NODE_TYPE_COMMENT:
+                    case XMLNodeType::COMMENT:
                         AddChild( new XMLComment( *static_cast<XMLComment* >(pNode) ) ); break;
-                    case XML_NODE_TYPE_DEFAULT:
+                    case XMLNodeType::DEFAULT:
                         AddChild( new XMLDefault( *static_cast<XMLDefault* >(pNode) ) ); break;
                     default:    fprintf(stdout,"XMLParentNode::XMLParentNode( const XMLParentNode& rObj) strange obj");
                 }
@@ -173,14 +173,14 @@ bool XMLFile::Write( ofstream &rStream , XMLNode *pCur )
     else {
         switch( pCur->GetNodeType())
         {
-            case XML_NODE_TYPE_FILE:
+            case XMLNodeType::XFILE:
             {
                 if( GetChildList())
                     for ( size_t i = 0; i < GetChildList()->size(); i++ )
                         Write( rStream, (*GetChildList())[ i ] );
             }
             break;
-            case XML_NODE_TYPE_ELEMENT:
+            case XMLNodeType::ELEMENT:
             {
                 XMLElement *pElement = static_cast<XMLElement*>(pCur);
                 rStream  << "<";
@@ -209,13 +209,13 @@ bool XMLFile::Write( ofstream &rStream , XMLNode *pCur )
                 }
             }
             break;
-            case XML_NODE_TYPE_DATA:
+            case XMLNodeType::DATA:
             {
                 OString sData( static_cast<const XMLData*>(pCur)->GetData());
                 rStream << XMLUtil::QuotHTML( sData ).getStr();
             }
             break;
-            case XML_NODE_TYPE_COMMENT:
+            case XMLNodeType::COMMENT:
             {
                 const XMLComment *pComment = static_cast<const XMLComment*>(pCur);
                 rStream << "<!--";
@@ -223,7 +223,7 @@ bool XMLFile::Write( ofstream &rStream , XMLNode *pCur )
                 rStream << "-->";
             }
             break;
-            case XML_NODE_TYPE_DEFAULT:
+            case XMLNodeType::DEFAULT:
             {
                 const XMLDefault *pDefault = static_cast<const XMLDefault*>(pCur);
                 rStream <<  pDefault->GetDefault().getStr();
@@ -242,14 +242,14 @@ void XMLFile::Print( XMLNode *pCur, sal_uInt16 nLevel )
     {
         switch( pCur->GetNodeType())
         {
-            case XML_NODE_TYPE_FILE:
+            case XMLNodeType::XFILE:
             {
                 if( GetChildList())
                     for ( size_t i = 0; i < GetChildList()->size(); i++ )
                         Print( (*GetChildList())[ i ] );
             }
             break;
-            case XML_NODE_TYPE_ELEMENT:
+            case XMLNodeType::ELEMENT:
             {
                 XMLElement *pElement = static_cast<XMLElement*>(pCur);
 
@@ -278,19 +278,19 @@ void XMLFile::Print( XMLNode *pCur, sal_uInt16 nLevel )
                 }
             }
             break;
-            case XML_NODE_TYPE_DATA:
+            case XMLNodeType::DATA:
             {
                 const XMLData *pData = static_cast<const XMLData*>(pCur);
                 fprintf( stdout, "%s", pData->GetData().getStr());
             }
             break;
-            case XML_NODE_TYPE_COMMENT:
+            case XMLNodeType::COMMENT:
             {
                 const XMLComment *pComment = static_cast<const XMLComment*>(pCur);
                 fprintf( stdout, "<!--%s-->", pComment->GetComment().getStr());
             }
             break;
-            case XML_NODE_TYPE_DEFAULT:
+            case XMLNodeType::DEFAULT:
             {
                 const XMLDefault *pDefault = static_cast<const XMLDefault*>(pCur);
                 fprintf( stdout, "%s", pDefault->GetDefault().getStr());
@@ -324,18 +324,10 @@ XMLFile::XMLFile( const OString &rFileName ) // the file name, empty if created 
     m_aNodes_localize.insert( TagMap::value_type(OString("link") , sal_True) );
 }
 
-void XMLFile::Extract( XMLFile *pCur )
+void XMLFile::Extract()
 {
     m_pXMLStrings.reset( new XMLHashMap() );
-    if ( !pCur )
-        SearchL10NElements( this );
-    else
-    {
-        if( pCur->GetNodeType() == XML_NODE_TYPE_FILE )
-        {
-            SearchL10NElements(pCur);
-        }
-    }
+    SearchL10NElements( this );
 }
 
 void XMLFile::InsertL10NElement( XMLElement* pElement )
@@ -437,20 +429,20 @@ void XMLFile::SearchL10NElements( XMLChildNode *pCur, int nPos )
     {
         switch( pCur->GetNodeType())
         {
-            case XML_NODE_TYPE_FILE:
+            case XMLNodeType::XFILE:
             {
                 if( GetChildList())
                 {
                     for ( size_t i = 0; i < GetChildList()->size(); i++ )
                     {
                         XMLChildNode* pElement = (*GetChildList())[ i ];
-                        if( pElement->GetNodeType() ==  XML_NODE_TYPE_ELEMENT )
+                        if( pElement->GetNodeType() ==  XMLNodeType::ELEMENT )
                             SearchL10NElements( pElement , i);
                     }
                 }
             }
             break;
-            case XML_NODE_TYPE_ELEMENT:
+            case XMLNodeType::ELEMENT:
             {
                 bool bInsert = true;
                 XMLElement *pElement = static_cast<XMLElement*>(pCur);
@@ -493,11 +485,7 @@ void XMLFile::SearchL10NElements( XMLChildNode *pCur, int nPos )
                 }
             }
             break;
-            case XML_NODE_TYPE_DATA:
-            break;
-            case XML_NODE_TYPE_COMMENT:
-            break;
-            case XML_NODE_TYPE_DEFAULT:
+            default:
             break;
         }
     }
@@ -512,19 +500,19 @@ bool XMLFile::CheckExportStatus( XMLParentNode *pCur )
     else {
         switch( pCur->GetNodeType())
         {
-            case XML_NODE_TYPE_FILE:
+            case XMLNodeType::XFILE:
             {
                 if( GetChildList())
                 {
                     for ( size_t i = 0; i < GetChildList()->size(); i++ )
                     {
                         XMLParentNode* pElement = static_cast<XMLParentNode*>((*GetChildList())[ i ]);
-                        if( pElement->GetNodeType() ==  XML_NODE_TYPE_ELEMENT ) CheckExportStatus( pElement );//, i);
+                        if( pElement->GetNodeType() ==  XMLNodeType::ELEMENT ) CheckExportStatus( pElement );//, i);
                     }
                 }
             }
             break;
-            case XML_NODE_TYPE_ELEMENT:
+            case XMLNodeType::ELEMENT:
             {
                 XMLElement *pElement = static_cast<XMLElement*>(pCur);
                 if (pElement->GetName().equalsIgnoreAsciiCase("TOPIC"))
@@ -553,6 +541,8 @@ bool XMLFile::CheckExportStatus( XMLParentNode *pCur )
                         CheckExportStatus( static_cast<XMLParentNode*>((*pElement->GetChildList())[k]) );
                 }
             }
+            break;
+            default:
             break;
         }
     }
@@ -649,7 +639,7 @@ void XMLElement::ChangeLanguageTag( const OString &rValue )
         for ( size_t i = 0; i < pCList->size(); i++ )
         {
             XMLChildNode* pNode = (*pCList)[ i ];
-            if( pNode && pNode->GetNodeType() == XML_NODE_TYPE_ELEMENT )
+            if( pNode && pNode->GetNodeType() == XMLNodeType::ELEMENT )
             {
                 XMLElement* pElem = static_cast< XMLElement* >(pNode);
                 pElem->ChangeLanguageTag( rValue );
@@ -701,7 +691,7 @@ void XMLElement::Print(XMLNode *pCur, OStringBuffer& rBuffer, bool bRootelement 
         {
             switch( pCur->GetNodeType())
             {
-                case XML_NODE_TYPE_ELEMENT:
+                case XMLNodeType::ELEMENT:
                 {
                     XMLElement *pElement = static_cast<XMLElement*>(pCur);
 
@@ -737,23 +727,25 @@ void XMLElement::Print(XMLNode *pCur, OStringBuffer& rBuffer, bool bRootelement 
                     }
                 }
                 break;
-                case XML_NODE_TYPE_DATA:
+                case XMLNodeType::DATA:
                 {
                     const XMLData *pData = static_cast<const XMLData*>(pCur);
                     rBuffer.append( pData->GetData() );
                 }
                 break;
-                case XML_NODE_TYPE_COMMENT:
+                case XMLNodeType::COMMENT:
                 {
                     const XMLComment *pComment = static_cast<const XMLComment*>(pCur);
                     rBuffer.append( "<!--" + pComment->GetComment() + "-->" );
                 }
                 break;
-                case XML_NODE_TYPE_DEFAULT:
+                case XMLNodeType::DEFAULT:
                 {
                     const XMLDefault *pDefault = static_cast<const XMLDefault*>(pCur);
                     rBuffer.append( pDefault->GetDefault() );
                 }
+                break;
+                default:
                 break;
             }
         }

@@ -19,7 +19,7 @@
 
 #include <memory>
 
-#include <com/sun/star/util/SearchOptions.hpp>
+#include <com/sun/star/util/SearchOptions2.hpp>
 #include <com/sun/star/util/SearchFlags.hpp>
 #include <comphelper/string.hxx>
 #include <vcl/svapp.hxx>
@@ -220,7 +220,7 @@ size_t GetPostIt(sal_Int32 aCount,const SwpHints *pHts)
     return aIndex;
 }
 
-bool SwPaM::Find( const SearchOptions& rSearchOpt, bool bSearchInNotes , utl::TextSearch& rSText,
+bool SwPaM::Find( const SearchOptions2& rSearchOpt, bool bSearchInNotes , utl::TextSearch& rSText,
                   SwMoveFn fnMove, const SwPaM * pRegion,
                   bool bInReadOnly )
 {
@@ -238,11 +238,15 @@ bool SwPaM::Find( const SearchOptions& rSearchOpt, bool bSearchInNotes , utl::Te
     bool bFirst = true;
     SwContentNode * pNode;
 
-    const bool bRegSearch = SearchAlgorithms_REGEXP == rSearchOpt.algorithmType;
+    const bool bRegSearch = SearchAlgorithms2::REGEXP == rSearchOpt.AlgorithmType2;
     const bool bChkEmptyPara = bRegSearch && 2 == rSearchOpt.searchString.getLength() &&
                         ( rSearchOpt.searchString == "^$" ||
                           rSearchOpt.searchString == "$^" );
     const bool bChkParaEnd = bRegSearch && rSearchOpt.searchString == "$";
+
+    SvxSearchItem aSearchItem(SID_SEARCH_ITEM); // this is a very expensive operation (calling configmgr etc.)
+    aSearchItem.SetSearchOptions(rSearchOpt);
+    aSearchItem.SetBackward(!bSrchForward);
 
     // LanguageType eLastLang = 0;
     while( nullptr != ( pNode = ::GetNode( *pPam, bFirst, fnMove, bInReadOnly ) ))
@@ -300,10 +304,6 @@ bool SwPaM::Find( const SearchOptions& rSearchOpt, bool bSearchInNotes , utl::Te
             SwDocShell *const pDocShell = pNode->GetDoc()->GetDocShell();
             SwWrtShell *const pWrtShell = (pDocShell) ? pDocShell->GetWrtShell() : nullptr;
             SwPostItMgr *const pPostItMgr = (pWrtShell) ? pWrtShell->GetPostItMgr() : nullptr;
-
-            SvxSearchItem aSearchItem(SID_SEARCH_ITEM);
-            aSearchItem.SetSearchOptions(rSearchOpt);
-            aSearchItem.SetBackward(!bSrchForward);
 
             // If there is an active text edit, then search there.
             bool bEndedTextEdit = false;
@@ -465,7 +465,7 @@ bool SwPaM::Find( const SearchOptions& rSearchOpt, bool bSearchInNotes , utl::Te
     return bFound;
 }
 
-bool SwPaM::DoSearch( const SearchOptions& rSearchOpt, utl::TextSearch& rSText,
+bool SwPaM::DoSearch( const SearchOptions2& rSearchOpt, utl::TextSearch& rSText,
                       SwMoveFn fnMove, bool bSrchForward, bool bRegSearch,
                       bool bChkEmptyPara, bool bChkParaEnd,
                       sal_Int32 &nStart, sal_Int32 &nEnd, sal_Int32 nTextLen,
@@ -510,7 +510,7 @@ bool SwPaM::DoSearch( const SearchOptions& rSearchOpt, utl::TextSearch& rSText,
     sal_uInt16 nSearchScript = 0;
     sal_uInt16 nCurrScript = 0;
 
-    if ( SearchAlgorithms_APPROXIMATE == rSearchOpt.algorithmType &&
+    if ( SearchAlgorithms2::APPROXIMATE == rSearchOpt.AlgorithmType2 &&
          g_pBreakIt->GetBreakIter().is() )
     {
         pScriptIter = new SwScriptIterator( sCleanStr, nStart, bSrchForward );
@@ -628,13 +628,13 @@ bool SwPaM::DoSearch( const SearchOptions& rSearchOpt, utl::TextSearch& rSText,
 /// parameters for search and replace in text
 struct SwFindParaText : public SwFindParas
 {
-    const SearchOptions& m_rSearchOpt;
+    const SearchOptions2& m_rSearchOpt;
     SwCursor& m_rCursor;
     utl::TextSearch m_aSText;
     bool m_bReplace;
     bool m_bSearchInNotes;
 
-    SwFindParaText( const SearchOptions& rOpt, bool bSearchInNotes, bool bRepl, SwCursor& rCursor )
+    SwFindParaText( const SearchOptions2& rOpt, bool bSearchInNotes, bool bRepl, SwCursor& rCursor )
         : m_rSearchOpt( rOpt ), m_rCursor( rCursor ), m_aSText( utl::TextSearch::UpgradeToSearchOptions2( rOpt) ),
         m_bReplace( bRepl ), m_bSearchInNotes( bSearchInNotes )
     {}
@@ -658,7 +658,7 @@ int SwFindParaText::Find( SwPaM* pCursor, SwMoveFn fnMove,
     if( bFnd && m_bReplace ) // replace string
     {
         // use replace method in SwDoc
-        const bool bRegExp(SearchAlgorithms_REGEXP == m_rSearchOpt.algorithmType);
+        const bool bRegExp(SearchAlgorithms2::REGEXP == m_rSearchOpt.AlgorithmType2);
         SwIndex& rSttCntIdx = pCursor->Start()->nContent;
         const sal_Int32 nSttCnt = rSttCntIdx.GetIndex();
         // add to shell-cursor-ring so that the regions will be moved eventually
@@ -708,7 +708,7 @@ bool SwFindParaText::IsReplaceMode() const
     return m_bReplace;
 }
 
-sal_uLong SwCursor::Find( const SearchOptions& rSearchOpt, bool bSearchInNotes,
+sal_uLong SwCursor::Find( const SearchOptions2& rSearchOpt, bool bSearchInNotes,
                           SwDocPositions nStart, SwDocPositions nEnd,
                           bool& bCancel, FindRanges eFndRngs, bool bReplace )
 {
@@ -741,11 +741,11 @@ sal_uLong SwCursor::Find( const SearchOptions& rSearchOpt, bool bSearchInNotes,
     return nRet;
 }
 
-OUString *ReplaceBackReferences( const SearchOptions& rSearchOpt, SwPaM* pPam )
+OUString *ReplaceBackReferences( const SearchOptions2& rSearchOpt, SwPaM* pPam )
 {
     OUString *pRet = nullptr;
     if( pPam && pPam->HasMark() &&
-        SearchAlgorithms_REGEXP == rSearchOpt.algorithmType )
+        SearchAlgorithms2::REGEXP == rSearchOpt.AlgorithmType2 )
     {
         const SwContentNode* pTextNode = pPam->GetContentNode();
         if( pTextNode && pTextNode->IsTextNode() && pTextNode == pPam->GetContentNode( false ) )

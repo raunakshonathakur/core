@@ -977,20 +977,14 @@ JavaInfo * CNodeJavaInfo::makeJavaInfo() const
 {
     if (bNil || m_bEmptyNode)
         return nullptr;
-    JavaInfo * pInfo = static_cast<JavaInfo*>(rtl_allocateMemory(sizeof(JavaInfo)));
-    if (pInfo == nullptr)
-        return nullptr;
+    JavaInfo * pInfo = new JavaInfo;
     memset(pInfo, 0, sizeof(JavaInfo));
-    pInfo->sVendor = sVendor.pData;
-    rtl_uString_acquire(pInfo->sVendor);
-    pInfo->sLocation = sLocation.pData;
-    rtl_uString_acquire(pInfo->sLocation);
-    pInfo->sVersion = sVersion.pData;
-    rtl_uString_acquire(pInfo->sVersion);
+    pInfo->sVendor = sVendor;
+    pInfo->sLocation = sLocation;
+    pInfo->sVersion = sVersion;
     pInfo->nFeatures = nFeatures;
     pInfo->nRequirements = nRequirements;
-    pInfo->arVendorData = arVendorData.getHandle();
-    rtl_byte_sequence_acquire(pInfo->arVendorData);
+    pInfo->arVendorData = arVendorData;
     return pInfo;
 }
 

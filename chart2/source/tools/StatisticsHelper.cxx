@@ -167,11 +167,10 @@ namespace chart
 {
 
 double StatisticsHelper::getVariance(
-    const Sequence< double > & rData,
-    bool bUnbiasedEstimator /* = false */ )
+    const Sequence< double > & rData )
 {
     sal_Int32 nValCount;
-    return lcl_getVariance( rData, nValCount, bUnbiasedEstimator );
+    return lcl_getVariance( rData, nValCount, false/*bUnbiasedEstimator*/ );
 }
 
 double StatisticsHelper::getStandardDeviation( const Sequence< double > & rData )
@@ -346,11 +345,11 @@ bool StatisticsHelper::hasErrorBars(
     bool bYError /* = true */ )
 {
     Reference< beans::XPropertySet > xErrorBar( getErrorBars( xDataSeries, bYError ));
-    sal_Int32 nStyle = ::com::sun::star::chart::ErrorBarStyle::NONE;
+    sal_Int32 nStyle = css::chart::ErrorBarStyle::NONE;
 
     return ( xErrorBar.is() &&
              ( xErrorBar->getPropertyValue( "ErrorBarStyle") >>= nStyle ) &&
-             nStyle != ::com::sun::star::chart::ErrorBarStyle::NONE );
+             nStyle != css::chart::ErrorBarStyle::NONE );
 }
 
 void StatisticsHelper::removeErrorBars(
@@ -360,7 +359,7 @@ void StatisticsHelper::removeErrorBars(
     Reference< beans::XPropertySet > xErrorBar( getErrorBars( xDataSeries, bYError ));
     if ( xErrorBar.is())
         xErrorBar->setPropertyValue( "ErrorBarStyle", uno::makeAny(
-                                         ::com::sun::star::chart::ErrorBarStyle::NONE ));
+                                         css::chart::ErrorBarStyle::NONE ));
 }
 
 bool StatisticsHelper::usesErrorBarRanges(
@@ -368,11 +367,11 @@ bool StatisticsHelper::usesErrorBarRanges(
     bool bYError /* = true */ )
 {
     Reference< beans::XPropertySet > xErrorBar( getErrorBars( xDataSeries, bYError ));
-    sal_Int32 nStyle = ::com::sun::star::chart::ErrorBarStyle::NONE;
+    sal_Int32 nStyle = css::chart::ErrorBarStyle::NONE;
 
     return ( xErrorBar.is() &&
              ( xErrorBar->getPropertyValue( "ErrorBarStyle") >>= nStyle ) &&
-             nStyle == ::com::sun::star::chart::ErrorBarStyle::FROM_DATA );
+             nStyle == css::chart::ErrorBarStyle::FROM_DATA );
 }
 
 } //  namespace chart

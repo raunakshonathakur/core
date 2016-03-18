@@ -110,12 +110,11 @@ typedef std::vector<SwTextAttr*> SwpHts;
 #endif
 
 SwTextNode *SwNodes::MakeTextNode( const SwNodeIndex & rWhere,
-                                 SwTextFormatColl *pColl,
-                                 SwAttrSet* pAutoAttr )
+                                 SwTextFormatColl *pColl )
 {
     OSL_ENSURE( pColl, "Collection pointer is 0." );
 
-    SwTextNode *pNode = new SwTextNode( rWhere, pColl, pAutoAttr );
+    SwTextNode *pNode = new SwTextNode( rWhere, pColl, nullptr );
 
     SwNodeIndex aIdx( *pNode );
 
@@ -1340,11 +1339,10 @@ lcl_GetTextAttrs(
 }
 
 ::std::vector<SwTextAttr *>
-SwTextNode::GetTextAttrsAt(sal_Int32 const nIndex, RES_TXTATR const nWhich,
-                        enum GetTextAttrMode const eMode) const
+SwTextNode::GetTextAttrsAt(sal_Int32 const nIndex, RES_TXTATR const nWhich) const
 {
     ::std::vector<SwTextAttr *> ret;
-    lcl_GetTextAttrs(& ret, nullptr, m_pSwpHints, nIndex, nWhich, eMode);
+    lcl_GetTextAttrs(& ret, nullptr, m_pSwpHints, nIndex, nWhich, DEFAULT);
     return ret;
 }
 
@@ -2918,8 +2916,7 @@ static void Replace0xFF(
     OUStringBuffer & rText,
     sal_Int32 & rTextStt,
     sal_Int32 nEndPos,
-    bool const bExpandFields,
-    bool const bExpandFootnote = true )
+    bool const bExpandFields )
 {
     if (rNode.GetpSwpHints())
     {
@@ -2952,7 +2949,7 @@ static void Replace0xFF(
 
                     case RES_TXTATR_FTN:
                         rText.remove(nPos, 1);
-                        if( bExpandFields && bExpandFootnote )
+                        if( bExpandFields )
                         {
                             const SwFormatFootnote& rFootnote = pAttr->GetFootnote();
                             OUString sExpand;
@@ -3214,8 +3211,7 @@ bool SwTextNode::GetExpandText( SwTextNode& rDestNd, const SwIndex* pDestIdx,
     return true;
 }
 
-OUString SwTextNode::GetRedlineText( sal_Int32 nIdx, sal_Int32 nLen,
-                                   bool bExpandFields, bool bWithNum ) const
+OUString SwTextNode::GetRedlineText() const
 {
     std::vector<sal_Int32> aRedlArr;
     const SwDoc* pDoc = GetDoc();
@@ -3260,33 +3256,29 @@ OUString SwTextNode::GetRedlineText( sal_Int32 nIdx, sal_Int32 nLen,
         }
     }
 
-    OUStringBuffer aText((nLen > GetText().getLength())
-                ? GetText().copy(nIdx)
-                : GetText().copy(nIdx, nLen));
+    OUStringBuffer aText(GetText());
 
-    sal_Int32 nTextStt = nIdx;
-    sal_Int32 nIdxEnd = nIdx + aText.getLength();
+    sal_Int32 nTextStt = 0;
+    sal_Int32 nIdxEnd = aText.getLength();
     for( size_t n = 0; n < aRedlArr.size(); n += 2 )
     {
         sal_Int32 nStt = aRedlArr[ n ];
         sal_Int32 nEnd = aRedlArr[ n+1 ];
-        if( ( nIdx <= nStt && nStt <= nIdxEnd ) ||
-            ( nIdx <= nEnd && nEnd <= nIdxEnd ))
+        if( ( 0 <= nStt && nStt <= nIdxEnd ) ||
+            ( 0 <= nEnd && nEnd <= nIdxEnd ))
         {
-            if( nStt < nIdx ) nStt = nIdx;
+            if( nStt < 0 ) nStt = 0;
             if( nIdxEnd < nEnd ) nEnd = nIdxEnd;
             const sal_Int32 nDelCnt = nEnd - nStt;
             aText.remove(nStt - nTextStt, nDelCnt);
-            Replace0xFF(*this, aText, nTextStt, nStt - nTextStt, bExpandFields);
+            Replace0xFF(*this, aText, nTextStt, nStt - nTextStt, false/*bExpandFields*/);
             nTextStt += nDelCnt;
         }
         else if( nStt >= nIdxEnd )
             break;
     }
-    Replace0xFF(*this, aText, nTextStt, aText.getLength(), bExpandFields);
+    Replace0xFF(*this, aText, nTextStt, aText.getLength(), false/*bExpandFields*/);
 
-    if( bWithNum )
-        aText.insert(0, GetNumString());
     return aText.makeStringAndClear();
 }
 
@@ -4896,12 +4888,10 @@ bool SwTextNode::CompareParRsid( const SwTextNode &rTextNode ) const
     return nThisRsid == nRsid;
 }
 
-bool SwTextNode::CompareRsid( const SwTextNode &rTextNode, sal_Int32 nStt1, sal_Int32 nStt2,
-                            sal_Int32 nEnd1, sal_Int32 nEnd2 ) const
-
+bool SwTextNode::CompareRsid( const SwTextNode &rTextNode, sal_Int32 nStt1, sal_Int32 nStt2 ) const
 {
-    sal_uInt32 nThisRsid = GetRsid( nStt1, nEnd1 ? nEnd1 : nStt1 );
-    sal_uInt32 nRsid = rTextNode.GetRsid( nStt2, nEnd2 ? nEnd2 : nStt2 );
+    sal_uInt32 nThisRsid = GetRsid( nStt1, nStt1 );
+    sal_uInt32 nRsid = rTextNode.GetRsid( nStt2, nStt2 );
 
     return nThisRsid == nRsid;
 }

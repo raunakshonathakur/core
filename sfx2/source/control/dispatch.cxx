@@ -43,7 +43,6 @@
 #include <sfx2/docfile.hxx>
 #include <sfx2/hintpost.hxx>
 #include <sfx2/ipclient.hxx>
-#include <sfx2/mnumgr.hxx>
 #include <sfx2/module.hxx>
 #include <sfx2/msg.hxx>
 #include <sfx2/msgpool.hxx>
@@ -180,13 +179,13 @@ void SfxDispatcher::Push(SfxShell& rShell)
 /** This method checks whether a particular <SfxShell> instance is
     on the SfxDispatcher.
 
-    @returns sal_True   The SfxShell instance is on the SfxDispatcher.
-             sal_False  The SfxShell instance is not on the SfxDispatcher.
+    @returns true   The SfxShell instance is on the SfxDispatcher.
+             false  The SfxShell instance is not on the SfxDispatcher.
 */
 bool SfxDispatcher::IsActive(const SfxShell& rShell)
 
 {
-    return CheckVirtualStack(rShell, true);
+    return CheckVirtualStack(rShell);
 }
 
 /** With this method it can be determined whether the SfxDispatcher is
@@ -516,7 +515,7 @@ IMPL_LINK_NOARG_TYPED( SfxDispatcher, EventHdl_Impl, Idle *, void )
     This method is intended among other things to make assertions possible
     without the side effect of having to flush the SfxDispathcer.
 */
-bool SfxDispatcher::CheckVirtualStack(const SfxShell& rShell, bool bDeep)
+bool SfxDispatcher::CheckVirtualStack(const SfxShell& rShell)
 {
     SFX_STACK(SfxDispatcher::CheckVirtualStack);
 
@@ -539,11 +538,7 @@ bool SfxDispatcher::CheckVirtualStack(const SfxShell& rShell, bool bDeep)
         }
     }
 
-    bool bReturn;
-    if ( bDeep )
-        bReturn = std::find(aStack.begin(), aStack.end(), &rShell) != aStack.end();
-    else
-        bReturn = aStack.back() == &rShell;
+    bool bReturn = std::find(aStack.begin(), aStack.end(), &rShell) != aStack.end();
     return bReturn;
 }
 
@@ -991,12 +986,6 @@ const SfxPoolItem* SfxDispatcher::Execute(sal_uInt16 nSlot, SfxCallMode eCall,
 const SfxPoolItem* SfxDispatcher::Execute(sal_uInt16 nSlot, SfxCallMode eCall,
         const SfxItemSet &rArgs)
 {
-    return Execute( nSlot, eCall, 0, rArgs );
-}
-
-const SfxPoolItem* SfxDispatcher::Execute(sal_uInt16 nSlot, SfxCallMode eCall,
-        sal_uInt16 nModi, const SfxItemSet &rArgs)
-{
     if ( IsLocked(nSlot) )
         return nullptr;
 
@@ -1012,7 +1001,7 @@ const SfxPoolItem* SfxDispatcher::Execute(sal_uInt16 nSlot, SfxCallMode eCall,
               pArg = aIter.NextItem() )
             MappedPut_Impl( aSet, *pArg );
         SfxRequest aReq( nSlot, eCall, aSet );
-        aReq.SetModifier( nModi );
+        aReq.SetModifier( 0 );
         _Execute( *pShell, *pSlot, aReq, eCall );
         return aReq.GetReturnValue();
     }
@@ -1369,7 +1358,7 @@ void SfxDispatcher::_Update_Impl( bool bUIActive, bool bIsMDIApp, bool bIsIPOwne
 
         if ( bIsMDIApp || bIsIPOwner )
         {
-            sal_uInt32 nId = pIFace->GetStatusBarResId().GetId();
+            sal_uInt32 nId = pIFace ? pIFace->GetStatusBarId() : 0;
             if ( nId )
             {
                 nStatBarId = nId;
@@ -1860,25 +1849,13 @@ void SfxDispatcher::ExecutePopup( vcl::Window *pWin, const Point *pPos )
 
     for ( pSh = rDisp.GetShell(nShLevel); pSh; ++nShLevel, pSh = rDisp.GetShell(nShLevel) )
     {
-        const ResId& rResId = pSh->GetInterface()->GetPopupMenuResId();
         const OUString& rResName = pSh->GetInterface()->GetPopupMenuName();
-        if ( rResId.GetId() )
-        {
-            rDisp.ExecutePopup( rResId, pWin, pPos );
-            return;
-        }
-        else if ( !rResName.isEmpty() )
+        if ( !rResName.isEmpty() )
         {
             rDisp.ExecutePopup( rResName, pWin, pPos );
             return;
         }
     }
-}
-
-void SfxDispatcher::ExecutePopup( const ResId &rId, vcl::Window *pWin, const Point *pPos )
-{
-    vcl::Window *pWindow = pWin ? pWin : xImp->pFrame->GetFrame().GetWorkWindow_Impl()->GetWindow();
-    SfxPopupMenuManager::ExecutePopup( rId, GetFrame(), pPos ? *pPos : pWindow->GetPointerPosPixel(), pWindow );
 }
 
 void SfxDispatcher::ExecutePopup( const OUString& rResName, vcl::Window *pWin, const Point* pPos )
@@ -1910,8 +1887,13 @@ void SfxDispatcher::ExecutePopup( const OUString& rResName, vcl::Window *pWin, c
     xPopupController->setPopupMenu( xPopupMenu );
     VCLXMenu* pAwtMenu = VCLXMenu::GetImplementation( xPopupMenu );
     PopupMenu* pVCLMenu = static_cast< PopupMenu* >( pAwtMenu->GetMenu() );
-    if ( pVCLMenu && GetFrame()->GetViewShell()->TryContextMenuInterception( *pVCLMenu, rResName, aEvent ) )
+    OUString aMenuURL = "private:resource/popupmenu/" + rResName;
+    if ( pVCLMenu && GetFrame()->GetViewShell()->TryContextMenuInterception( *pVCLMenu, aMenuURL, aEvent ) )
         pVCLMenu->Execute( pWindow, aPos );
+
+    css::uno::Reference< css::lang::XComponent > xComponent( xPopupController, css::uno::UNO_QUERY );
+    if ( xComponent.is() )
+        xComponent->dispose();
 }
 
 /** With this method the SfxDispatcher can be locked and released. A locked

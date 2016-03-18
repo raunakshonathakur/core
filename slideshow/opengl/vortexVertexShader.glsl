@@ -16,7 +16,6 @@ in vec3 a_normal;
 in vec2 a_texCoord;
 in float tileInfo;
 
-uniform mat4 u_projectionMatrix;
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_sceneTransformMatrix;
 uniform mat4 u_primitiveTransformMatrix;
@@ -26,15 +25,13 @@ uniform float time;
 uniform ivec2 numTiles;
 uniform sampler2D permTexture;
 uniform float slide;
-uniform float shadow;
-uniform mat4 orthoProjectionMatrix;
-uniform mat4 orthoViewMatrix;
+
+// Workaround for Intel's Windows driver, to prevent optimisation breakage.
+uniform float zero;
 
 out vec2 g_texturePosition;
 out vec3 g_normal;
-out mat4 projectionMatrix;
 out mat4 modelViewMatrix;
-out mat4 shadowMatrix;
 out mat4 transform;
 out float nTime;
 out float startTime;
@@ -42,7 +39,7 @@ out float endTime;
 
 float snoise(vec2 p)
 {
-    return texture2D(permTexture, p).r;
+    return texture(permTexture, p).r;
 }
 
 mat4 identityMatrix(void)
@@ -136,18 +133,14 @@ void main( void )
         vec3 translationVector = vec3(rotationFuzz, 0.0, 0.0);
 
         // Compute the actual rotation matrix.
-        transform = translationMatrix(translationVector)
-                  * rotationMatrix(vec3(0.0, 1.0, 0.0), clamp(rotation, -1.0, 1.0) * M_PI)
-                  * translationMatrix(-translationVector)
-                  * transform;
-    }
 
-    if (shadow < 0.5) {
-        projectionMatrix = u_projectionMatrix;
-        shadowMatrix = orthoProjectionMatrix * orthoViewMatrix;
-    } else {
-        projectionMatrix = orthoProjectionMatrix * orthoViewMatrix;
-        shadowMatrix = mat4(0.0);
+        // Intel's Windows driver gives a wrong matrix when all operations are done at once.
+        if (zero < 1.0)
+            transform = translationMatrix(translationVector) * transform;
+        if (zero < 2.0)
+            transform = rotationMatrix(vec3(0.0, 1.0, 0.0), clamp(rotation, -1.0, 1.0) * M_PI) * transform;
+        if (zero < 3.0)
+            transform = translationMatrix(-translationVector) * transform;
     }
 
     modelViewMatrix = u_modelViewMatrix * u_operationsTransformMatrix * u_sceneTransformMatrix * u_primitiveTransformMatrix;

@@ -101,6 +101,7 @@ public:
     void testMiscRowHeightExport();
     void testNamedRangeBugfdo62729();
     void testRichTextExportODS();
+    void testRichTextCellFormat();
     void testFormulaRefSheetNameODS();
 
     void testCellValuesExportODS();
@@ -177,6 +178,7 @@ public:
     CPPUNIT_TEST(testMiscRowHeightExport);
     CPPUNIT_TEST(testNamedRangeBugfdo62729);
     CPPUNIT_TEST(testRichTextExportODS);
+    CPPUNIT_TEST(testRichTextCellFormat);
     CPPUNIT_TEST(testFormulaRefSheetNameODS);
     CPPUNIT_TEST(testCellValuesExportODS);
     CPPUNIT_TEST(testCellNoteExportODS);
@@ -277,11 +279,11 @@ ScDocShellRef ScExportTest::saveAndReloadPassword(ScDocShell* pShell, const OUSt
     SotClipboardFormatId nExportFormat = SotClipboardFormatId::NONE;
     if (nFormatType == ODS_FORMAT_TYPE)
         nExportFormat = SotClipboardFormatId::STARCHART_8;
-    SfxFilter* pExportFilter = new SfxFilter(
+    std::shared_ptr<const SfxFilter> pExportFilter(new SfxFilter(
         rFilter,
         OUString(), nFormatType, nExportFormat, rTypeName, 0, OUString(),
-        rUserData, OUString("private:factory/scalc*") );
-    pExportFilter->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
+        rUserData, OUString("private:factory/scalc*") ));
+    const_cast<SfxFilter*>(pExportFilter.get())->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
     aStoreMedium.SetFilter(pExportFilter);
     SfxItemSet* pExportSet = aStoreMedium.GetItemSet();
     uno::Sequence< beans::NamedValue > aEncryptionData = comphelper::OStorageHelper::CreatePackageEncryptionData( "test" );
@@ -599,10 +601,10 @@ void ScExportTest::testNamedRangeBugfdo62729()
 
     ScRangeName* pNames = rDoc.GetRangeName();
     //should be just a single named range
-    CPPUNIT_ASSERT(pNames->size() == 1 );
+    CPPUNIT_ASSERT_EQUAL(size_t(1), pNames->size());
     rDoc.DeleteTab(0);
     //should be still a single named range
-    CPPUNIT_ASSERT(pNames->size() == 1 );
+    CPPUNIT_ASSERT_EQUAL(size_t(1), pNames->size());
     ScDocShellRef xDocSh = saveAndReload(xShell, FORMAT_ODS);
     xShell->DoClose();
 
@@ -611,7 +613,7 @@ void ScExportTest::testNamedRangeBugfdo62729()
 
     pNames = rDoc2.GetRangeName();
     //after reload should still have a named range
-    CPPUNIT_ASSERT(pNames->size() == 1 );
+    CPPUNIT_ASSERT_EQUAL(size_t(1), pNames->size());
 
     xDocSh->DoClose();
 }
@@ -1093,6 +1095,39 @@ void ScExportTest::testRichTextExportODS()
     xNewDocSh3->DoClose();
 }
 
+void ScExportTest::testRichTextCellFormat()
+{
+    ScDocShellRef xDocSh = loadDoc("cellformat.", FORMAT_XLS);
+    CPPUNIT_ASSERT(xDocSh.Is());
+
+    std::shared_ptr<utl::TempFile> pXPathFile = ScBootstrapFixture::exportTo(&(*xDocSh), FORMAT_XLSX);
+    xmlDocPtr pSheet = XPathHelper::parseExport(pXPathFile, m_xSFactory, "xl/worksheets/sheet1.xml");
+    CPPUNIT_ASSERT(pSheet);
+
+    // make sure the only cell in this doc is assigned some formatting record
+    OUString aCellFormat = getXPath(pSheet, "/x:worksheet/x:sheetData/x:row/x:c", "s");
+    CPPUNIT_ASSERT_MESSAGE("Cell format is missing", !aCellFormat.isEmpty());
+
+    xmlDocPtr pStyles = XPathHelper::parseExport(pXPathFile, m_xSFactory, "xl/styles.xml");
+    CPPUNIT_ASSERT(pStyles);
+
+    OString nFormatIdx = OString::number( aCellFormat.toInt32() + 1 );
+    const OString xPath1( "/x:styleSheet/x:cellXfs/x:xf[" + nFormatIdx + "]/x:alignment" );
+    // formatting record is set to wrap text
+    assertXPath(pStyles, xPath1, "wrapText", "true");
+
+    // see what font it references
+    const OString xPath2( "/x:styleSheet/x:cellXfs/x:xf[" + nFormatIdx +"]" );
+    OUString aFontId = getXPath(pStyles, xPath2, "fontId");
+    OString nFontIdx = OString::number( aFontId.toInt32() + 1 );
+
+    // that font should be bold
+    const OString xPath3("/x:styleSheet/x:fonts/x:font[" + nFontIdx + "]/x:b");
+    assertXPath(pStyles, xPath3, "val", "true");
+
+    xDocSh->DoClose();
+}
+
 void ScExportTest::testFormulaRefSheetNameODS()
 {
     ScDocShellRef xDocSh = loadDoc("formula-quote-in-sheet-name.", FORMAT_ODS, true);
@@ -1227,7 +1262,7 @@ void ScExportTest::testCellNoteExportXLS()
     ScDocShellRef xOrigDocSh = loadDoc("notes-on-3-sheets.", FORMAT_ODS);
     {
         ScDocument& rDoc = xOrigDocSh->GetDocument();
-        CPPUNIT_ASSERT_MESSAGE("This document should have 3 sheets.", rDoc.GetTableCount() == 3);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("This document should have 3 sheets.", SCTAB(3), rDoc.GetTableCount());
 
         // Check note's presence.
         CPPUNIT_ASSERT( rDoc.HasNote(ScAddress(0,0,0)));
@@ -1248,7 +1283,7 @@ void ScExportTest::testCellNoteExportXLS()
         xOrigDocSh->DoClose();
         CPPUNIT_ASSERT(xNewDocSh.Is());
         ScDocument& rDoc = xNewDocSh->GetDocument();
-        CPPUNIT_ASSERT_MESSAGE("This document should have 3 sheets.", rDoc.GetTableCount() == 3);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("This document should have 3 sheets.", SCTAB(3), rDoc.GetTableCount());
 
         // Check note's presence again.
         CPPUNIT_ASSERT( rDoc.HasNote(ScAddress(0,0,0)));
@@ -1280,13 +1315,13 @@ void checkMatrixRange(ScDocument& rDoc, const ScRange& rRange)
             ScAddress aPos(nCol, nRow, rRange.aStart.Tab());
             bool bIsMatrix = rDoc.GetMatrixFormulaRange(aPos, aMatRange);
             CPPUNIT_ASSERT_MESSAGE("Matrix expected, but not found.", bIsMatrix);
-            CPPUNIT_ASSERT_MESSAGE("Wrong matrix range.", rRange == aMatRange);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("Wrong matrix range.", rRange, aMatRange);
             const ScFormulaCell* pCell = rDoc.GetFormulaCell(aPos);
             CPPUNIT_ASSERT_MESSAGE("This must be a formula cell.", pCell);
 
             bIsMatrix = pCell->GetMatrixOrigin(aMatOrigin);
             CPPUNIT_ASSERT_MESSAGE("Not a part of matrix formula.", bIsMatrix);
-            CPPUNIT_ASSERT_MESSAGE("Wrong matrix origin.", aMatOrigin == aMatRange.aStart);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("Wrong matrix origin.", aMatRange.aStart, aMatOrigin);
         }
     }
 }
@@ -1398,8 +1433,8 @@ void ScExportTest::testSheetProtectionXLSX()
         // check has
         if (aHash.getLength() >= 2)
         {
-            CPPUNIT_ASSERT( (sal_uInt8)aHash[0] == 204 );
-            CPPUNIT_ASSERT( (sal_uInt8)aHash[1] == 61 );
+            CPPUNIT_ASSERT_EQUAL(sal_uInt8(204), (sal_uInt8)aHash[0]);
+            CPPUNIT_ASSERT_EQUAL(sal_uInt8(61), (sal_uInt8)aHash[1]);
         }
         // we could flesh out this check I guess
         CPPUNIT_ASSERT ( !pTabProtect->isOptionEnabled( ScTableProtection::OBJECTS ) );
@@ -2122,7 +2157,7 @@ void ScExportTest::testRelativePaths()
     ScDocShellRef xDocSh = loadDoc("fdo79305.", FORMAT_ODS);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "content.xml", FORMAT_ODS);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "content.xml", FORMAT_ODS);
     CPPUNIT_ASSERT(pDoc);
     OUString aURL = getXPath(pDoc,
             "/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[2]/table:table-cell[2]/text:p/text:a", "href");
@@ -2680,7 +2715,7 @@ void ScExportTest::testSheetTextBoxHyperlink()
     ScDocShellRef xDocSh = saveAndReload(&(*xShell), FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
 
     assertXPath(pDoc, "/xdr:wsDr[1]/xdr:twoCellAnchor[1]/xdr:sp[1]/xdr:nvSpPr[1]/xdr:cNvPr[1]/a:hlinkClick[1]", 1);
@@ -2693,7 +2728,7 @@ void ScExportTest::testFontSize()
     ScDocShellRef xDocSh = loadDoc("fontSize.", FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
     OUString fontSize = getXPath(pDoc,
                 "/xdr:wsDr/xdr:twoCellAnchor/xdr:sp[1]/xdr:txBody/a:p[1]/a:r[1]/a:rPr", "sz");
@@ -2709,7 +2744,7 @@ void ScExportTest::testSheetCharacterKerningSpace()
     ScDocShellRef xDocSh = saveAndReload(&(*xShell), FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
 
     OUString CharKerningSpace = getXPath(pDoc,
@@ -2729,7 +2764,7 @@ void ScExportTest::testSheetCondensedCharacterSpace()
     ScDocShellRef xDocSh = saveAndReload(&(*xShell), FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
 
     OUString CondensedCharSpace = getXPath(pDoc,
@@ -2747,7 +2782,7 @@ void ScExportTest::testTextUnderlineColor()
     ScDocShellRef xDocSh = loadDoc("underlineColor.", FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
     OUString color = getXPath(pDoc,
             "/xdr:wsDr/xdr:twoCellAnchor/xdr:sp[1]/xdr:txBody/a:p[1]/a:r[1]/a:rPr/a:uFill/a:solidFill/a:srgbClr", "val");
@@ -2763,7 +2798,7 @@ void ScExportTest::testSheetRunParagraphProperty()
     ScDocShellRef xDocSh = saveAndReload(&(*xShell), FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/sharedStrings.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/sharedStrings.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
 
     OUString aColor = getXPath(pDoc, "/x:sst/x:si/x:r[1]/x:rPr[1]/x:color", "rgb");
@@ -2778,7 +2813,7 @@ void ScExportTest::testPreserveTextWhitespaceXLSX()
     ScDocShellRef xDocSh = saveAndReload(&(*xShell), FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/sharedStrings.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/sharedStrings.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
     assertXPath(pDoc, "/x:sst/x:si/x:t", "space", "preserve");
     xDocSh->DoClose();
@@ -2790,7 +2825,7 @@ void ScExportTest::testPreserveTextWhitespace2XLSX()
     ScDocShellRef xDocSh = saveAndReload(&(*xShell), FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/sharedStrings.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/sharedStrings.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
     assertXPath(pDoc, "/x:sst/x:si[1]/x:t", "space", "preserve");
     assertXPath(pDoc, "/x:sst/x:si[2]/x:r[1]/x:t", "space", "preserve");
@@ -2803,7 +2838,7 @@ void ScExportTest::testHiddenShape()
     ScDocShellRef xDocSh = loadDoc("hiddenShape.", FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/drawings/drawing1.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
     assertXPath(pDoc, "/xdr:wsDr/xdr:twoCellAnchor/xdr:sp[1]/xdr:nvSpPr/xdr:cNvPr", "hidden", "1");
 }
@@ -2812,7 +2847,7 @@ void ScExportTest::testHyperlinkXLSX()
     ScDocShellRef xDocSh = loadDoc("hyperlink.", FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/drawings/_rels/drawing1.xml.rels", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/drawings/_rels/drawing1.xml.rels", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
     assertXPath(pDoc, "/r:Relationships/r:Relationship", "Target", "#Sheet2!A1");
 }
@@ -2988,7 +3023,7 @@ void ScExportTest::testMatrixMultiplication()
     ScDocShellRef xDocSh = saveAndReload(&(*xShell), FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/worksheets/sheet1.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/worksheets/sheet1.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
 
     OUString CellFormulaRange = getXPath(pDoc,
@@ -3035,6 +3070,8 @@ void ScExportTest::testRefStringConfigXLSX()
     ScCalcConfig aConfig = rDoc.GetCalcConfig();
     CPPUNIT_ASSERT_EQUAL_MESSAGE("String ref syntax doesn't match", formula::FormulaGrammar::CONV_OOO,
                             aConfig.meStringRefAddressSyntax);
+
+    xDocSh->DoClose();
 
     // this doc has no entry for ref syntax
     xDocSh = loadDoc("empty-noconf.", FORMAT_XLSX);
@@ -3103,6 +3140,8 @@ void ScExportTest::testHeaderImage()
     OUString aURL;
     xStyle->getPropertyValue("HeaderBackGraphicURL") >>= aURL;
     CPPUNIT_ASSERT(aURL.startsWith("vnd.sun.star.GraphicObject:"));
+
+    xDocSh->DoClose();
 }
 
 void ScExportTest::testTextDirection()
@@ -3110,7 +3149,7 @@ void ScExportTest::testTextDirection()
     ScDocShellRef xDocSh = loadDoc("writingMode.", FORMAT_XLSX);
     CPPUNIT_ASSERT(xDocSh.Is());
 
-    xmlDocPtr pDoc = XPathHelper::parseExport(&(*xDocSh), m_xSFactory, "xl/styles.xml", FORMAT_XLSX);
+    xmlDocPtr pDoc = XPathHelper::parseExport(*xDocSh, m_xSFactory, "xl/styles.xml", FORMAT_XLSX);
     CPPUNIT_ASSERT(pDoc);
 
     assertXPath(pDoc, "/x:styleSheet/x:cellXfs/x:xf[2]/x:alignment", "readingOrder", "1");//LTR

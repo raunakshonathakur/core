@@ -108,7 +108,7 @@ public:
 
     // Means to create all Extrudes in a certain depth order.
     static void DoDepthArrange(E3dScene* pScene, double fDepth);
-    void ConvertMarkedToPolyObj(bool bLineToArea);
+    void ConvertMarkedToPolyObj();
     E3dScene* SetCurrent3DObj(E3dObject* p3DObj);
     void Start3DCreation();
 
@@ -126,8 +126,8 @@ public:
     bool IsBreak3DObjPossible() const;
     void Break3DObj();
 
-    SfxItemSet Get3DAttributes(E3dScene* pInScene = nullptr, bool bOnly3DAttr=false) const;
-    void Set3DAttributes(const SfxItemSet& rAttr, E3dScene* pInScene = nullptr, bool bOnly3DAttr=false);
+    SfxItemSet Get3DAttributes() const;
+    void Set3DAttributes(const SfxItemSet& rAttr);
 };
 
 #endif // INCLUDED_SVX_VIEW3D_HXX

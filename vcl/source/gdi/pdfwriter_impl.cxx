@@ -838,30 +838,21 @@ void PDFWriterImpl::createWidgetFieldName( sal_Int32 i_nWidgetIndex, const PDFWr
     m_aWidgets[i_nWidgetIndex].m_aName = aPartialName;
 }
 
-static void appendFixedInt( sal_Int32 nValue, OStringBuffer& rBuffer, sal_Int32 nPrecision = nLog10Divisor )
+static void appendFixedInt( sal_Int32 nValue, OStringBuffer& rBuffer )
 {
     if( nValue < 0 )
     {
         rBuffer.append( '-' );
         nValue = -nValue;
     }
-    sal_Int32 nFactor = 1, nDiv = nPrecision;
-    while( nDiv-- )
-        nFactor *= 10;
-
-    sal_Int32 nInt      = nValue / nFactor;
+    const sal_Int32 nFactor = 10;
+    const sal_Int32 nInt = nValue / nFactor;
     rBuffer.append( nInt );
-    if( nFactor > 1 )
+    sal_Int32 nDecimal  = nValue % nFactor;
+    if (nDecimal)
     {
-        sal_Int32 nDecimal  = nValue % nFactor;
-        if( nDecimal )
-        {
-            rBuffer.append( '.' );
-            // omit trailing zeros
-            while( (nDecimal % 10) == 0 )
-                nDecimal /= 10;
-            rBuffer.append( nDecimal );
-        }
+        rBuffer.append('.');
+        rBuffer.append(nDecimal);
     }
 }
 
@@ -972,7 +963,7 @@ public:
     void translate( double tx, double ty );
     void invert();
 
-    void append( PDFWriterImpl::PDFPage& rPage, OStringBuffer& rBuffer, Point* pBack = nullptr );
+    void append( PDFWriterImpl::PDFPage& rPage, OStringBuffer& rBuffer );
 
     Point transform( const Point& rPoint ) const;
 };
@@ -1076,7 +1067,7 @@ void Matrix3::invert()
     set( fn );
 }
 
-void Matrix3::append( PDFWriterImpl::PDFPage& rPage, OStringBuffer& rBuffer, Point* pBack )
+void Matrix3::append( PDFWriterImpl::PDFPage& rPage, OStringBuffer& rBuffer )
 {
     appendDouble( f[0], rBuffer );
     rBuffer.append( ' ' );
@@ -1086,7 +1077,7 @@ void Matrix3::append( PDFWriterImpl::PDFPage& rPage, OStringBuffer& rBuffer, Poi
     rBuffer.append( ' ' );
     appendDouble( f[3], rBuffer );
     rBuffer.append( ' ' );
-    rPage.appendPoint( Point( (long)f[4], (long)f[5] ), rBuffer, false, pBack );
+    rPage.appendPoint( Point( (long)f[4], (long)f[5] ), rBuffer );
 }
 
 static void appendResourceMap( OStringBuffer& rBuf, const char* pPrefix, const PDFWriterImpl::ResourceMap& rList )
@@ -1391,33 +1382,20 @@ GEOMETRY lcl_convert( const MapMode& _rSource, const MapMode& _rDest, OutputDevi
 }
 }
 
-void PDFWriterImpl::PDFPage::appendPoint( const Point& rPoint, OStringBuffer& rBuffer, bool bNeg, Point* pOutPoint ) const
+void PDFWriterImpl::PDFPage::appendPoint( const Point& rPoint, OStringBuffer& rBuffer ) const
 {
-    if( pOutPoint )
-    {
-        Point aPoint( lcl_convert( m_pWriter->m_aGraphicsStack.front().m_aMapMode,
-                                   m_pWriter->m_aMapMode,
-                                   m_pWriter->getReferenceDevice(),
-                                   rPoint ) );
-        *pOutPoint = aPoint;
-    }
-
     Point aPoint( lcl_convert( m_pWriter->m_aGraphicsStack.front().m_aMapMode,
                                m_pWriter->m_aMapMode,
                                m_pWriter->getReferenceDevice(),
                                rPoint ) );
 
     sal_Int32 nValue    = aPoint.X();
-    if( bNeg )
-        nValue = -nValue;
 
     appendFixedInt( nValue, rBuffer );
 
     rBuffer.append( ' ' );
 
     nValue      = pointToPixel(getHeight()) - aPoint.Y();
-    if( bNeg )
-        nValue = -nValue;
 
     appendFixedInt( nValue, rBuffer );
 }
@@ -1504,7 +1482,7 @@ void PDFWriterImpl::PDFPage::appendPolygon( const tools::Polygon& rPoly, OString
     }
 }
 
-void PDFWriterImpl::PDFPage::appendPolygon( const basegfx::B2DPolygon& rPoly, OStringBuffer& rBuffer, bool bClose ) const
+void PDFWriterImpl::PDFPage::appendPolygon( const basegfx::B2DPolygon& rPoly, OStringBuffer& rBuffer ) const
 {
     basegfx::B2DPolygon aPoly( lcl_convert( m_pWriter->m_aGraphicsStack.front().m_aMapMode,
                                             m_pWriter->m_aMapMode,
@@ -1575,23 +1553,22 @@ void PDFWriterImpl::PDFPage::appendPolygon( const basegfx::B2DPolygon& rPoly, OS
                     rBuffer.append( " " );
             }
         }
-        if( bClose )
-            rBuffer.append( "h\n" );
+        rBuffer.append( "h\n" );
     }
 }
 
-void PDFWriterImpl::PDFPage::appendPolyPolygon( const tools::PolyPolygon& rPolyPoly, OStringBuffer& rBuffer, bool bClose ) const
+void PDFWriterImpl::PDFPage::appendPolyPolygon( const tools::PolyPolygon& rPolyPoly, OStringBuffer& rBuffer ) const
 {
     sal_uInt16 nPolygons = rPolyPoly.Count();
     for( sal_uInt16 n = 0; n < nPolygons; n++ )
-        appendPolygon( rPolyPoly[n], rBuffer, bClose );
+        appendPolygon( rPolyPoly[n], rBuffer );
 }
 
-void PDFWriterImpl::PDFPage::appendPolyPolygon( const basegfx::B2DPolyPolygon& rPolyPoly, OStringBuffer& rBuffer, bool bClose ) const
+void PDFWriterImpl::PDFPage::appendPolyPolygon( const basegfx::B2DPolyPolygon& rPolyPoly, OStringBuffer& rBuffer ) const
 {
     sal_uInt32 nPolygons = rPolyPoly.count();
     for( sal_uInt32 n = 0; n < nPolygons; n++ )
-        appendPolygon( rPolyPoly.getB2DPolygon( n ), rBuffer, bClose );
+        appendPolygon( rPolyPoly.getB2DPolygon( n ), rBuffer );
 }
 
 void PDFWriterImpl::PDFPage::appendMappedLength( sal_Int32 nLength, OStringBuffer& rBuffer, bool bVertical, sal_Int32* pOutLength ) const
@@ -2234,7 +2211,7 @@ OutputDevice* PDFWriterImpl::getReferenceDevice()
         pVDev->SetMapMode( MAP_MM );
 
         m_pReferenceDevice->mpPDFWriter = this;
-        m_pReferenceDevice->ImplUpdateFontData( true );
+        m_pReferenceDevice->ImplUpdateFontData();
     }
     return m_pReferenceDevice;
 }
@@ -6415,7 +6392,7 @@ OUString PKIStatusInfoToString(const PKIStatusInfo& rStatusInfo)
 // not exported from libsmime, so copy them here. Sigh.
 
 SECStatus
-my_SEC_StringToOID(PLArenaPool *pool, SECItem *to, const char *from, PRUint32 len)
+my_SEC_StringToOID(SECItem *to, const char *from, PRUint32 len)
 {
     PRUint32 decimal_numbers = 0;
     PRUint32 result_bytes = 0;
@@ -6501,7 +6478,7 @@ bad_data:
         SECItem result_item = {siBuffer, nullptr, 0 };
     result_item.data = result;
     result_item.len  = result_bytes;
-    rv = SECITEM_CopyItem(pool, to, &result_item);
+    rv = SECITEM_CopyItem(nullptr, to, &result_item);
     }
     return rv;
 }
@@ -7114,7 +7091,7 @@ bool PDFWriterImpl::finalizeSignature()
         // id-aa-timeStampToken OBJECT IDENTIFIER ::= { iso(1)
         // member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs-9(9)
         // smime(16) aa(2) 14 }
-        if (my_SEC_StringToOID(nullptr, &typetag.oid, "1.2.840.113549.1.9.16.2.14", 0) != SECSuccess)
+        if (my_SEC_StringToOID(&typetag.oid, "1.2.840.113549.1.9.16.2.14", 0) != SECSuccess)
         {
             SAL_WARN("vcl.pdfwriter", "SEC_StringToOID failed");
             free(pass);
@@ -9263,7 +9240,7 @@ void PDFWriterImpl::drawText( const Point& rPos, const OUString& rText, sal_Int3
     }
 }
 
-void PDFWriterImpl::drawTextArray( const Point& rPos, const OUString& rText, const long* pDXArray, sal_Int32 nIndex, sal_Int32 nLen, bool bTextLines )
+void PDFWriterImpl::drawTextArray( const Point& rPos, const OUString& rText, const long* pDXArray, sal_Int32 nIndex, sal_Int32 nLen )
 {
     MARK( "drawText with array" );
 
@@ -9274,12 +9251,12 @@ void PDFWriterImpl::drawTextArray( const Point& rPos, const OUString& rText, con
     SalLayout* pLayout = m_pReferenceDevice->ImplLayout( rText, nIndex, nLen, rPos, 0, pDXArray );
     if( pLayout )
     {
-        drawLayout( *pLayout, rText, bTextLines );
+        drawLayout( *pLayout, rText, true );
         pLayout->Release();
     }
 }
 
-void PDFWriterImpl::drawStretchText( const Point& rPos, sal_uLong nWidth, const OUString& rText, sal_Int32 nIndex, sal_Int32 nLen, bool bTextLines )
+void PDFWriterImpl::drawStretchText( const Point& rPos, sal_uLong nWidth, const OUString& rText, sal_Int32 nIndex, sal_Int32 nLen )
 {
     MARK( "drawStretchText" );
 
@@ -9290,12 +9267,12 @@ void PDFWriterImpl::drawStretchText( const Point& rPos, sal_uLong nWidth, const 
     SalLayout* pLayout = m_pReferenceDevice->ImplLayout( rText, nIndex, nLen, rPos, nWidth );
     if( pLayout )
     {
-        drawLayout( *pLayout, rText, bTextLines );
+        drawLayout( *pLayout, rText, true );
         pLayout->Release();
     }
 }
 
-void PDFWriterImpl::drawText( const Rectangle& rRect, const OUString& rOrigStr, DrawTextFlags nStyle, bool bTextLines )
+void PDFWriterImpl::drawText( const Rectangle& rRect, const OUString& rOrigStr, DrawTextFlags nStyle )
 {
     long        nWidth          = rRect.GetWidth();
     long        nHeight         = rRect.GetHeight();
@@ -9376,7 +9353,7 @@ void PDFWriterImpl::drawText( const Rectangle& rRect, const OUString& rOrigStr, 
                     aPos.X() += (nWidth-pLineInfo->GetWidth())/2;
                 sal_Int32 nIndex = pLineInfo->GetIndex();
                 sal_Int32 nLineLen = pLineInfo->GetLen();
-                drawText( aPos, aStr, nIndex, nLineLen, bTextLines );
+                drawText( aPos, aStr, nIndex, nLineLen );
                 // mnemonics should not appear in documents,
                 // if the need arises, put them in here
                 aPos.Y() += nTextHeight;
@@ -9385,7 +9362,7 @@ void PDFWriterImpl::drawText( const Rectangle& rRect, const OUString& rOrigStr, 
 
             // output last line left adjusted since it was shortened
             if (!aLastLine.isEmpty())
-                drawText( aPos, aLastLine, 0, aLastLine.getLength(), bTextLines );
+                drawText( aPos, aLastLine, 0, aLastLine.getLength() );
         }
     }
     else
@@ -9418,7 +9395,7 @@ void PDFWriterImpl::drawText( const Rectangle& rRect, const OUString& rOrigStr, 
         // mnemonics should be inserted here if the need arises
 
         // draw the actual text
-        drawText( aPos, aStr, 0, aStr.getLength(), bTextLines );
+        drawText( aPos, aStr, 0, aStr.getLength() );
     }
 
     // reset clip region to original value
@@ -11563,7 +11540,7 @@ void PDFWriterImpl::drawBitmap( const Point& rDestPoint, const Size& rDestSize, 
     writeBuffer( aLine.getStr(), aLine.getLength() );
 }
 
-const PDFWriterImpl::BitmapEmit& PDFWriterImpl::createBitmapEmit( const BitmapEx& i_rBitmap, bool bDrawMask )
+const PDFWriterImpl::BitmapEmit& PDFWriterImpl::createBitmapEmit( const BitmapEx& i_rBitmap )
 {
     BitmapEx aBitmap( i_rBitmap );
     if( m_aContext.ColorMode == PDFWriter::DrawGreyscale )
@@ -11600,7 +11577,7 @@ const PDFWriterImpl::BitmapEmit& PDFWriterImpl::createBitmapEmit( const BitmapEx
         m_aBitmaps.front().m_aID        = aID;
         m_aBitmaps.front().m_aBitmap    = aBitmap;
         m_aBitmaps.front().m_nObject    = createObject();
-        m_aBitmaps.front().m_bDrawMask  = bDrawMask;
+        m_aBitmaps.front().m_bDrawMask  = false;
         it = m_aBitmaps.begin();
     }
 

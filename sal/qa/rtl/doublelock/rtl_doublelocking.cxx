@@ -17,7 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-// include files
+#include <sal/config.h>
+
+#include <iostream>
 
 #include <sal/types.h>
 
@@ -190,31 +192,23 @@ namespace rtl_DoubleLocking
                 sal_Int32 nValueOK2 = 0;
                 nValueOK2 = p2Thread->getOK();
 
-#if OSL_DEBUG_LEVEL > 2
-                printf("Value in Thread #1 is %" SAL_PRIdINT32 "\n", nValueOK);
-                printf("Value in Thread #2 is %" SAL_PRIdINT32 "\n", nValueOK2);
-#else
-                (void)nValueOK2;
-#endif
-
+                std::cout << "Value in Thread #1 is " << nValueOK << "\n";
+                std::cout << "Value in Thread #2 is " << nValueOK2 << "\n";
                 sal_Int32 nValueFails = 0;
                 nValueFails = pThread->getFails();
 
                 sal_Int32 nValueFails2 = 0;
                 nValueFails2 = p2Thread->getFails();
 
-#if OSL_DEBUG_LEVEL > 2
-                printf("Fails in Thread #1 is %" SAL_PRIdINT32 "\n", nValueFails);
-                printf("Fails in Thread #2 is %" SAL_PRIdINT32 "\n", nValueFails2);
-#endif
-
                 delete pThread;
                 delete p2Thread;
 
                 CPPUNIT_ASSERT_MESSAGE(
                     "getValue() failed, wrong value expected.",
-                    nValueOK != 0 && nValueFails == 0 && nValueFails2 == 0
+                    nValueOK != 0
                     );
+                CPPUNIT_ASSERT_EQUAL(sal_Int32(0), nValueFails);
+                CPPUNIT_ASSERT_EQUAL(sal_Int32(0), nValueFails2);
             }
 
         CPPUNIT_TEST_SUITE(getValue);

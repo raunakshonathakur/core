@@ -82,7 +82,7 @@ class SFX2_DLLPUBLIC SfxDispatcher
 
 private:
     // Search for temporary evaluated Todos
-    SAL_DLLPRIVATE bool CheckVirtualStack( const SfxShell& rShell, bool bDeep );
+    SAL_DLLPRIVATE bool CheckVirtualStack( const SfxShell& rShell );
 
 friend class SfxApplication;
 friend class SfxViewFrame;
@@ -137,11 +137,6 @@ public:
                                  SfxCallMode nCall,
                                  const SfxItemSet &rArgs );
 
-    const SfxPoolItem*  Execute( sal_uInt16 nSlot,
-                                 SfxCallMode nCall,
-                                 sal_uInt16 nModi,
-                                 const SfxItemSet &rArgs );
-
     const SfxSlot*      GetSlot( const OUString& rCommand );
 
     bool                IsActive( const SfxShell& rShell );
@@ -155,7 +150,6 @@ public:
     SfxViewFrame*       GetFrame() const;
     SfxModule*          GetModule() const;
 
-    void                ExecutePopup( const ResId &rId, vcl::Window *pWin = nullptr, const Point *pPos = nullptr );
     void                ExecutePopup( const OUString &rResName, vcl::Window *pWin = nullptr, const Point *pPos = nullptr );
     static void         ExecutePopup( vcl::Window *pWin = nullptr, const Point *pPosPixel = nullptr );
 

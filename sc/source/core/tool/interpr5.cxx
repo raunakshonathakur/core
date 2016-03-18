@@ -21,7 +21,7 @@
 #include <string.h>
 #include <math.h>
 
-#if OSL_DEBUG_LEVEL > 1
+#ifdef DEBUG_SC_LUP_DECOMPOSITION
 #include <stdio.h>
 #endif
 
@@ -331,7 +331,7 @@ ScMatrixRef ScInterpreter::GetNewMat(SCSIZE nC, SCSIZE nR, bool bEmpty)
     pMat->GetDimensions( nCols, nRows);
     if ( nCols != nC || nRows != nR )
     {   // arbitray limit of elements exceeded
-        SetError( errStackOverflow);
+        SetError( errMatrixSize);
         pMat.reset();
     }
     return pMat;
@@ -351,9 +351,9 @@ ScMatrixRef ScInterpreter::CreateMatrixFromDoubleRef( const FormulaToken* pToken
     SCSIZE nMatCols = static_cast<SCSIZE>(nCol2 - nCol1 + 1);
     SCSIZE nMatRows = static_cast<SCSIZE>(nRow2 - nRow1 + 1);
 
-    if (nMatRows * nMatCols > ScMatrix::GetElementsMax())
+    if (!ScMatrix::IsSizeAllocatable( nMatCols, nMatRows))
     {
-        SetError(errStackOverflow);
+        SetError(errMatrixSize);
         return nullptr;
     }
 
@@ -601,8 +601,10 @@ void ScInterpreter::ScEMat()
     if ( MustHaveParamCount( GetByte(), 1 ) )
     {
         SCSIZE nDim = static_cast<SCSIZE>(::rtl::math::approxFloor(GetDouble()));
-        if ( nDim * nDim > ScMatrix::GetElementsMax() || nDim == 0)
+        if (nDim == 0)
             PushIllegalArgument();
+        else if (!ScMatrix::IsSizeAllocatable( nDim, nDim))
+            PushError( errMatrixSize);
         else
         {
             ScMatrixRef pRMat = GetNewMat(nDim, nDim);
@@ -716,7 +718,7 @@ static int lcl_LUP_decompose( ScMatrix* mA, const SCSIZE n,
                             fNum * mA->GetDouble( j, k) ) / fDen, j, i);
         }
     }
-#if OSL_DEBUG_LEVEL > 1
+#ifdef DEBUG_SC_LUP_DECOMPOSITION
     fprintf( stderr, "\n%s\n", "lcl_LUP_decompose(): LU");
     for (SCSIZE i=0; i < n; ++i)
     {
@@ -800,8 +802,10 @@ void ScInterpreter::ScMatDet()
         }
         SCSIZE nC, nR;
         pMat->GetDimensions(nC, nR);
-        if ( nC != nR || nC == 0 || (sal_uLong) nC * nC > ScMatrix::GetElementsMax() )
+        if ( nC != nR || nC == 0 )
             PushIllegalArgument();
+        else if (!ScMatrix::IsSizeAllocatable( nC, nR))
+            PushError( errMatrixSize);
         else
         {
             // LUP decomposition is done inplace, use copy.
@@ -923,8 +927,10 @@ void ScInterpreter::ScMatInv()
             }
         }
 
-        if ( nC != nR || nC == 0 || (sal_uLong) nC * nC > ScMatrix::GetElementsMax() )
+        if ( nC != nR || nC == 0 )
             PushIllegalArgument();
+        else if (!ScMatrix::IsSizeAllocatable( nC, nR))
+            PushError( errMatrixSize);
         else
         {
             // LUP decomposition is done inplace, use copy.
@@ -953,7 +959,7 @@ void ScInterpreter::ScMatInv()
                         for (SCSIZE i=0; i < nR; ++i)
                             xY->PutDouble( X[i], j, i);
                     }
-#if OSL_DEBUG_LEVEL > 1
+#ifdef DEBUG_SC_LUP_DECOMPOSITION
                     /* Possible checks for ill-condition:
                      * 1. Scale matrix, invert scaled matrix. If there are
                      *    elements of the inverted matrix that are several
@@ -2988,7 +2994,7 @@ void ScInterpreter::CalculateTrendGrowth(bool _bGrowth)
         ScMatrixRef pCopyY = pMatY->CloneIfConst();
         if (!pCopyX || !pCopyY)
         {
-            PushError(errStackOverflow);
+            PushError(errMatrixSize);
             return;
         }
         pMatX = pCopyX;

@@ -1186,6 +1186,8 @@ void SmShowSymbolSetWindow::MouseButtonDown(const MouseEvent& rMEvt)
     GrabFocus();
 
     Size aOutputSize(nColumns * nLen, nRows * nLen);
+    aOutputSize.Width() += nXOffset;
+    aOutputSize.Height() += nYOffset;
     Point aPoint(rMEvt.GetPosPixel());
     aPoint.X() -= nXOffset;
     aPoint.Y() -= nYOffset;
@@ -1287,8 +1289,6 @@ void SmShowSymbolSetWindow::calccols()
     Size aOutputSize = GetOutputSizePixel();
 
     nColumns = aOutputSize.Width() / nLen;
-    if (nColumns > 2  && nColumns % 2 != 0)
-        --nColumns;
     nRows = aOutputSize.Height() / nLen;
     nColumns = std::max<long>(1, nColumns);
     nRows = std::max<long>(1, nRows);
@@ -1437,13 +1437,12 @@ void SmShowSymbol::SetSymbol(const SmSym *pSymbol)
 }
 
 
-void SmSymbolDialog::FillSymbolSets(bool bDeleteText)
+void SmSymbolDialog::FillSymbolSets()
     // populate the entries of possible SymbolsSets in the dialog with
     // current values of the SymbolSet manager but selects none of those
 {
     m_pSymbolSets->Clear();
-    if (bDeleteText)
-        m_pSymbolSets->SetNoSelection();
+    m_pSymbolSets->SetNoSelection();
 
     std::set< OUString >  aSybolSetNames( rSymbolMgr.GetSymbolSetNames() );
     std::set< OUString >::const_iterator aIt( aSybolSetNames.begin() );
@@ -1529,7 +1528,7 @@ IMPL_LINK_NOARG_TYPED( SmSymbolDialog, GetClickHdl, Button*, void )
 
         rViewSh.GetViewFrame()->GetDispatcher()->Execute(
                 SID_INSERTSYMBOL, SfxCallMode::RECORD,
-                new SfxStringItem(SID_INSERTSYMBOL, aText.makeStringAndClear()), 0L);
+                new SfxStringItem(SID_INSERTSYMBOL, aText.makeStringAndClear()), 0);
     }
 }
 
@@ -1743,11 +1742,10 @@ void SmSymDefineDialog::FillSymbolSets(ComboBox &rComboBox, bool bDeleteText)
 }
 
 
-void SmSymDefineDialog::FillFonts(bool bDelete)
+void SmSymDefineDialog::FillFonts()
 {
     pFonts->Clear();
-    if (bDelete)
-        pFonts->SetNoSelection();
+    pFonts->SetNoSelection();
 
     // Include all fonts of FontList into the font list.
     // If there are duplicates, only include one entry of each font since the style will be
@@ -1761,11 +1759,10 @@ void SmSymDefineDialog::FillFonts(bool bDelete)
 }
 
 
-void SmSymDefineDialog::FillStyles(bool bDeleteText)
+void SmSymDefineDialog::FillStyles()
 {
     pStyles->Clear();
-    if (bDeleteText)
-        pStyles->SetText(OUString());
+    pStyles->SetText(OUString());
 
     OUString aText (pFonts->GetSelectEntry());
     if (!aText.isEmpty())

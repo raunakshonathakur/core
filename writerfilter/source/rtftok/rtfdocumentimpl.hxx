@@ -185,14 +185,14 @@ class RTFFrame
 {
 private:
     RTFParserState* m_pParserState;
-    sal_Int32 nX, nY, nW, nH;
-    sal_Int32 nHoriPadding, nVertPadding;
-    sal_Int32 nHoriAlign, nHoriAnchor, nVertAlign, nVertAnchor;
-    Id nHRule;
-    boost::optional<Id> oWrap;
+    sal_Int32 m_nX, m_nY, m_nW, m_nH;
+    sal_Int32 m_nHoriPadding, m_nVertPadding;
+    sal_Int32 m_nHoriAlign, m_nHoriAnchor, m_nVertAlign, m_nVertAnchor;
+    Id m_nHRule;
+    boost::optional<Id> m_oWrap;
 public:
     RTFFrame(RTFParserState* pParserState);
-    sal_Int16 nAnchorType;
+    sal_Int16 m_nAnchorType;
 
     /// Convert the stored properties to Sprms
     RTFSprms getSprms();
@@ -210,8 +210,6 @@ class RTFParserState
 {
 public:
     RTFParserState(RTFDocumentImpl* pDocumentImpl);
-    /// Resets aFrame.
-    void resetFrame();
 
     RTFDocumentImpl* m_pDocumentImpl;
     RTFInternalState nInternalState;
@@ -299,6 +297,11 @@ public:
     bool bInShape; ///< If we're inside a \shp group.
     bool bCreatedShapeGroup; ///< A GroupShape was created and pushed to the parent stack.
     bool bStartedTrackchange; ///< Track change is started, need to end it before popping.
+
+    /// User-defined property: key name.
+    OUString aPropName;
+    /// User-defined property: value type.
+    css::uno::Type aPropType;
 };
 
 /// An RTF stack is similar to std::stack, except that it has an operator[].
@@ -397,6 +400,8 @@ public:
     oox::GraphicHelper& getGraphicHelper();
     /// Are we inside the stylesheet table?
     bool isStyleSheetImport();
+    /// Resets m_aStates.top().aFrame.
+    void resetFrame();
 
 private:
     SvStream& Strm();
@@ -439,7 +444,7 @@ private:
     /// If we have some unicode or hex characters to send.
     void checkUnicode(bool bUnicode, bool bHex);
     /// If we need a final section break at the end of the document.
-    void setNeedSect(bool bNeedSect = true);
+    void setNeedSect(bool bNeedSect);
     void resetTableRowProperties();
     void backupTableRowProperties();
     void restoreTableRowProperties();

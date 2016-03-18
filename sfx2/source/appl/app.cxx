@@ -19,15 +19,6 @@
 
 #include <config_features.h>
 
-#if defined UNX
-#include <limits.h>
-#else // UNX
-#include <stdlib.h>
-#ifndef PATH_MAX
-#define PATH_MAX _MAX_PATH
-#endif
-#endif // UNX
-
 #include <sfx2/app.hxx>
 #include <sfx2/frame.hxx>
 #include <basic/basrdll.hxx>
@@ -81,7 +72,6 @@
 #include "appdata.hxx"
 #include "openflag.hxx"
 #include "app.hrc"
-#include "virtmenu.hxx"
 #include <sfx2/module.hxx>
 #include <sfx2/event.hxx>
 #include "imestatuswindow.hxx"
@@ -93,10 +83,6 @@
 #include "eventsupplier.hxx"
 #include <sfx2/dockwin.hxx>
 #include "shellimpl.hxx"
-
-#ifdef DBG_UTIL
-#include <sfx2/mnuitem.hxx>
-#endif
 
 #include <unotools/saveopt.hxx>
 #include <svtools/helpopt.hxx>
@@ -432,11 +418,6 @@ SfxStbCtrlFactArr_Impl&     SfxApplication::GetStbCtrlFactories_Impl() const
     return *pAppData_Impl->pStbCtrlFac;
 }
 
-SfxMenuCtrlFactArr_Impl&    SfxApplication::GetMenuCtrlFactories_Impl() const
-{
-    return *pAppData_Impl->pMenuCtrlFac;
-}
-
 SfxViewFrameArr_Impl&       SfxApplication::GetViewFrames_Impl() const
 {
     return *pAppData_Impl->pViewFrames;
@@ -554,7 +535,7 @@ SfxApplication::ChooseScript()
         uno::Reference< frame::XFrame > xFrame( pFrame ? pFrame->GetFrameInterface() : uno::Reference< frame::XFrame >() );
 
         std::unique_ptr<AbstractScriptSelectorDialog> pDlg(
-            pFact->CreateScriptSelectorDialog( nullptr, false, xFrame ));
+            pFact->CreateScriptSelectorDialog( nullptr, xFrame ));
 
         SAL_INFO( "sfx.appl", "done, now exec it");
 

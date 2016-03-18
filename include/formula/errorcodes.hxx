@@ -51,7 +51,6 @@ const sal_uInt16 errNoConvergence        = 523;
 const sal_uInt16 errNoRef                = 524; // #REF!
 const sal_uInt16 errNoName               = 525; // #NAME?
 const sal_uInt16 errDoubleRef            = 526;
-const sal_uInt16 errInterpOverflow       = 527;
 // Not displayed, temporary for TrackFormulas,
 // Cell depends on another cell that has errCircularReference
 const sal_uInt16 errTrackFromCircRef     = 528;
@@ -81,6 +80,8 @@ const sal_uInt16 errElementNaN           = 536;
 // ScInterpreter/ScFormulaCell internal:  keep dirty, retry interpreting next
 // round.
 const sal_uInt16 errRetryCircular        = 537;
+// If matrix could not be allocated.
+const sal_uInt16 errMatrixSize           = 538;
 
 // Interpreter: NA() not available condition, not a real error
 const sal_uInt16 NOTAVAILABLE            = 0x7fff;

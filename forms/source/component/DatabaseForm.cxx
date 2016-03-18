@@ -1332,48 +1332,54 @@ void ODatabaseForm::describeFixedAndAggregateProperties(
         Sequence< Property >& _rProps,
         Sequence< Property >& _rAggregateProps ) const
 {
-    BEGIN_DESCRIBE_AGGREGATION_PROPERTIES(22, m_xAggregateSet)
-        // we want to "override" the privileges, since we have additional "AllowInsert" etc. properties
-        RemoveProperty( _rAggregateProps, PROPERTY_PRIVILEGES );
+    _rProps.realloc( 22 );
+    css::beans::Property* pProperties = _rProps.getArray();
 
-        // InsertOnly is also to be overridden, since we sometimes change it ourself
-        RemoveProperty( _rAggregateProps, PROPERTY_INSERTONLY );
+    if (m_xAggregateSet.is())
+        _rAggregateProps = m_xAggregateSet->getPropertySetInfo()->getProperties();
 
-        // we remove and re-declare the DataSourceName property, 'cause we want it to be constrained, and the
-        // original property of our aggregate isn't
-        RemoveProperty( _rAggregateProps, PROPERTY_DATASOURCE );
 
-        // for connection sharing, we need to override the ActiveConnection property, too
-        RemoveProperty( _rAggregateProps, PROPERTY_ACTIVE_CONNECTION );
+    // we want to "override" the privileges, since we have additional "AllowInsert" etc. properties
+    RemoveProperty( _rAggregateProps, PROPERTY_PRIVILEGES );
 
-        // the Filter property is also overwritten, since we have some implicit filters
-        // (e.g. the ones which result from linking master fields to detail fields
-        // via column names instead of parameters)
-        RemoveProperty( _rAggregateProps, PROPERTY_FILTER );
-        RemoveProperty( _rAggregateProps, PROPERTY_APPLYFILTER );
+    // InsertOnly is also to be overridden, since we sometimes change it ourself
+    RemoveProperty( _rAggregateProps, PROPERTY_INSERTONLY );
 
-        DECL_IFACE_PROP4(ACTIVE_CONNECTION, XConnection,                    BOUND, TRANSIENT, MAYBEVOID, CONSTRAINED);
-        DECL_BOOL_PROP2 ( APPLYFILTER,                                      BOUND, MAYBEDEFAULT            );
-        DECL_PROP1      ( NAME,             OUString,                BOUND                          );
-        DECL_PROP1      ( MASTERFIELDS,     Sequence< OUString >,    BOUND                          );
-        DECL_PROP1      ( DETAILFIELDS,     Sequence< OUString >,    BOUND                          );
-        DECL_PROP2      ( DATASOURCE,       OUString,                BOUND, CONSTRAINED             );
-        DECL_PROP3      ( CYCLE,            TabulatorCycle,                 BOUND, MAYBEVOID, MAYBEDEFAULT );
-        DECL_PROP2      ( FILTER,           OUString,                BOUND, MAYBEDEFAULT            );
-        DECL_BOOL_PROP2 ( INSERTONLY,                                       BOUND, MAYBEDEFAULT            );
-        DECL_PROP1      ( NAVIGATION,       NavigationBarMode,              BOUND                          );
-        DECL_BOOL_PROP1 ( ALLOWADDITIONS,                                   BOUND                          );
-        DECL_BOOL_PROP1 ( ALLOWEDITS,                                       BOUND                          );
-        DECL_BOOL_PROP1 ( ALLOWDELETIONS,                                   BOUND                          );
-        DECL_PROP2      ( PRIVILEGES,       sal_Int32,                      TRANSIENT, READONLY            );
-        DECL_PROP1      ( TARGET_URL,       OUString,                BOUND                          );
-        DECL_PROP1      ( TARGET_FRAME,     OUString,                BOUND                          );
-        DECL_PROP1      ( SUBMIT_METHOD,    FormSubmitMethod,               BOUND                          );
-        DECL_PROP1      ( SUBMIT_ENCODING,  FormSubmitEncoding,             BOUND                          );
-        DECL_BOOL_PROP3 ( DYNAMIC_CONTROL_BORDER,                           BOUND, MAYBEVOID, MAYBEDEFAULT );
-        DECL_PROP3      ( CONTROL_BORDER_COLOR_FOCUS,   sal_Int32,          BOUND, MAYBEVOID, MAYBEDEFAULT );
-        DECL_PROP3      ( CONTROL_BORDER_COLOR_MOUSE,   sal_Int32,          BOUND, MAYBEVOID, MAYBEDEFAULT );
-        DECL_PROP3      ( CONTROL_BORDER_COLOR_INVALID, sal_Int32,          BOUND, MAYBEVOID, MAYBEDEFAULT );
+    // we remove and re-declare the DataSourceName property, 'cause we want it to be constrained, and the
+    // original property of our aggregate isn't
+    RemoveProperty( _rAggregateProps, PROPERTY_DATASOURCE );
+
+    // for connection sharing, we need to override the ActiveConnection property, too
+    RemoveProperty( _rAggregateProps, PROPERTY_ACTIVE_CONNECTION );
+
+    // the Filter property is also overwritten, since we have some implicit filters
+    // (e.g. the ones which result from linking master fields to detail fields
+    // via column names instead of parameters)
+    RemoveProperty( _rAggregateProps, PROPERTY_FILTER );
+    RemoveProperty( _rAggregateProps, PROPERTY_APPLYFILTER );
+
+    DECL_IFACE_PROP4( ACTIVE_CONNECTION,XConnection,             BOUND, TRANSIENT, MAYBEVOID, CONSTRAINED);
+    DECL_BOOL_PROP2 ( APPLYFILTER,                               BOUND, MAYBEDEFAULT            );
+    DECL_PROP1      ( NAME,             OUString,                BOUND                          );
+    DECL_PROP1      ( MASTERFIELDS,     Sequence< OUString >,    BOUND                          );
+    DECL_PROP1      ( DETAILFIELDS,     Sequence< OUString >,    BOUND                          );
+    DECL_PROP2      ( DATASOURCE,       OUString,                BOUND, CONSTRAINED             );
+    DECL_PROP3      ( CYCLE,            TabulatorCycle,          BOUND, MAYBEVOID, MAYBEDEFAULT );
+    DECL_PROP2      ( FILTER,           OUString,                BOUND, MAYBEDEFAULT            );
+    DECL_BOOL_PROP2 ( INSERTONLY,                                BOUND, MAYBEDEFAULT            );
+    DECL_PROP1      ( NAVIGATION,       NavigationBarMode,       BOUND                          );
+    DECL_BOOL_PROP1 ( ALLOWADDITIONS,                            BOUND                          );
+    DECL_BOOL_PROP1 ( ALLOWEDITS,                                BOUND                          );
+    DECL_BOOL_PROP1 ( ALLOWDELETIONS,                            BOUND                          );
+    DECL_PROP2      ( PRIVILEGES,       sal_Int32,               TRANSIENT, READONLY            );
+    DECL_PROP1      ( TARGET_URL,       OUString,                BOUND                          );
+    DECL_PROP1      ( TARGET_FRAME,     OUString,                BOUND                          );
+    DECL_PROP1      ( SUBMIT_METHOD,    FormSubmitMethod,        BOUND                          );
+    DECL_PROP1      ( SUBMIT_ENCODING,  FormSubmitEncoding,      BOUND                          );
+    DECL_BOOL_PROP3 ( DYNAMIC_CONTROL_BORDER,                    BOUND, MAYBEVOID, MAYBEDEFAULT );
+    DECL_PROP3      ( CONTROL_BORDER_COLOR_FOCUS,   sal_Int32,   BOUND, MAYBEVOID, MAYBEDEFAULT );
+    DECL_PROP3      ( CONTROL_BORDER_COLOR_MOUSE,   sal_Int32,   BOUND, MAYBEVOID, MAYBEDEFAULT );
+    DECL_PROP3      ( CONTROL_BORDER_COLOR_INVALID, sal_Int32,   BOUND, MAYBEVOID, MAYBEDEFAULT );
     END_DESCRIBE_PROPERTIES();
 }
 
@@ -1500,7 +1506,7 @@ void ODatabaseForm::getFastPropertyValue( Any& rValue, sal_Int32 nHandle ) const
             break;
 
         case PROPERTY_ID_FILTER:
-            rValue <<= m_aFilterManager.getFilterComponent( FilterManager::fcPublicFilter );
+            rValue <<= m_aFilterManager.getFilterComponent( FilterManager::FilterComponent::PublicFilter );
             break;
 
         case PROPERTY_ID_APPLYFILTER:
@@ -1583,7 +1589,7 @@ sal_Bool ODatabaseForm::convertFastPropertyValue( Any& rConvertedValue, Any& rOl
             break;
 
         case PROPERTY_ID_FILTER:
-            bModified = tryPropertyValue( rConvertedValue, rOldValue, rValue, m_aFilterManager.getFilterComponent( FilterManager::fcPublicFilter ) );
+            bModified = tryPropertyValue( rConvertedValue, rOldValue, rValue, m_aFilterManager.getFilterComponent( FilterManager::FilterComponent::PublicFilter ) );
             break;
 
         case PROPERTY_ID_APPLYFILTER:
@@ -1672,7 +1678,7 @@ void ODatabaseForm::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const A
         {
             OUString sNewFilter;
             rValue >>= sNewFilter;
-            m_aFilterManager.setFilterComponent( FilterManager::fcPublicFilter, sNewFilter );
+            m_aFilterManager.setFilterComponent( FilterManager::FilterComponent::PublicFilter, sNewFilter );
         }
         break;
 
@@ -1815,7 +1821,7 @@ PropertyState ODatabaseForm::getPropertyStateByHandle(sal_Int32 nHandle)
             break;
 
         case PROPERTY_ID_FILTER:
-            if ( m_aFilterManager.getFilterComponent( FilterManager::fcPublicFilter ).isEmpty() )
+            if ( m_aFilterManager.getFilterComponent( FilterManager::FilterComponent::PublicFilter ).isEmpty() )
                 eState = PropertyState_DEFAULT_VALUE;
             else
                 eState = PropertyState_DIRECT_VALUE;

@@ -159,69 +159,33 @@ sal_Int32 HTMLOption::GetSNumber() const
     return aTmp.toInt32();
 }
 
-void HTMLOption::GetNumbers( std::vector<sal_uInt32> &rNumbers, bool bSpaceDelim ) const
+void HTMLOption::GetNumbers( std::vector<sal_uInt32> &rNumbers ) const
 {
     rNumbers.clear();
 
-    if( bSpaceDelim )
+    // This is a very simplified scanner: it only searches all
+    // numerals in the string.
+    bool bInNum = false;
+    sal_uLong nNum = 0;
+    for( sal_Int32 i=0; i<aValue.getLength(); i++ )
     {
-        // This is a very simplified scanner: it only searches all
-        // numerals in the string.
-        bool bInNum = false;
-        sal_uLong nNum = 0;
-        for( sal_Int32 i=0; i<aValue.getLength(); i++ )
+        sal_Unicode c = aValue[ i ];
+        if( c>='0' && c<='9' )
         {
-            sal_Unicode c = aValue[ i ];
-            if( c>='0' && c<='9' )
-            {
-                nNum *= 10;
-                nNum += (c - '0');
-                bInNum = true;
-            }
-            else if( bInNum )
-            {
-                rNumbers.push_back( nNum );
-                bInNum = false;
-                nNum = 0;
-            }
+            nNum *= 10;
+            nNum += (c - '0');
+            bInNum = true;
         }
-        if( bInNum )
+        else if( bInNum )
         {
             rNumbers.push_back( nNum );
+            bInNum = false;
+            nNum = 0;
         }
     }
-    else
+    if( bInNum )
     {
-        // Check whether numbers are separated by ',' and
-        // insert 0 if necessary
-        sal_Int32 nPos = 0;
-        while( nPos < aValue.getLength() )
-        {
-            sal_Unicode c;
-            while( nPos < aValue.getLength() &&
-                   ((c=aValue[nPos]) == ' ' || c == '\t' ||
-                   c == '\n' || c== '\r' ) )
-                nPos++;
-
-            if( nPos==aValue.getLength() )
-                rNumbers.push_back(0);
-            else
-            {
-                sal_Int32 nEnd = aValue.indexOf( (sal_Unicode)',', nPos );
-                if( -1 == nEnd )
-                {
-                    sal_Int32 nTmp = aValue.copy(nPos).toInt32();
-                    rNumbers.push_back( nTmp >= 0 ? (sal_uInt32)nTmp : 0 );
-                    nPos = aValue.getLength();
-                }
-                else
-                {
-                    sal_Int32 nTmp = aValue.copy(nPos,nEnd-nPos).toInt32();
-                    rNumbers.push_back( nTmp >= 0 ? (sal_uInt32)nTmp : 0 );
-                    nPos = nEnd+1;
-                }
-            }
-        }
+        rNumbers.push_back( nNum );
     }
 }
 
@@ -729,7 +693,7 @@ int HTMLParser::ScanText( const sal_Unicode cBreak )
         case '\n':
             if( '>'==cBreak )
             {
-                // cr/lf in tag is handled in _GetNextToken()
+                // cr/lf in tag is handled in GetNextToken_()
                 sTmpBuffer.appendUtf32( nNextCh );
                 break;
             }
@@ -774,7 +738,7 @@ int HTMLParser::ScanText( const sal_Unicode cBreak )
                         }
                         else
                             // Only read blanks: no text must be returned
-                            // and _GetNextToken has to read until EOF
+                            // and GetNextToken_ has to read until EOF
                             return 0;
                     }
                 } while ( ' ' == nNextCh || '\t' == nNextCh ||
@@ -823,7 +787,7 @@ int HTMLParser::ScanText( const sal_Unicode cBreak )
     return HTML_TEXTTOKEN;
 }
 
-int HTMLParser::_GetNextRawToken()
+int HTMLParser::GetNextRawToken()
 {
     OUStringBuffer sTmpBuffer( MAX_LEN );
 
@@ -925,7 +889,7 @@ int HTMLParser::_GetNextRawToken()
 
                     bContinue = false;
 
-                    // nToken==0 means, _GetNextToken continues to read
+                    // nToken==0 means, GetNextToken_ continues to read
                     if( aToken.isEmpty() && (bReadStyle || bReadScript) )
                     {
                         // Immediately close environment (or context?)
@@ -1041,7 +1005,7 @@ int HTMLParser::_GetNextRawToken()
 }
 
 // Scan next token
-int HTMLParser::_GetNextToken()
+int HTMLParser::GetNextToken_()
 {
     int nRet = 0;
     sSaveToken.clear();
@@ -1075,7 +1039,7 @@ int HTMLParser::_GetNextToken()
 
     if( bReadScript || bReadStyle || !aEndToken.isEmpty() )
     {
-        nRet = _GetNextRawToken();
+        nRet = GetNextRawToken();
         if( nRet || !IsParserWorking() )
             return nRet;
     }

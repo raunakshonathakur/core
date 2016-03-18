@@ -32,17 +32,9 @@ namespace svt
 
     //= WizardPageImplData
 
-    struct WizardPageImplData
-    {
-        WizardPageImplData()
-        {
-        }
-    };
-
     OWizardPage::OWizardPage(vcl::Window *pParent, const OString& rID,
         const OUString& rUIXMLDescription)
         : TabPage(pParent, rID, rUIXMLDescription)
-        , m_pImpl(new WizardPageImplData)
     {
     }
 
@@ -53,7 +45,6 @@ namespace svt
 
     void OWizardPage::dispose()
     {
-        delete m_pImpl;
         TabPage::dispose();
     }
 
@@ -505,28 +496,24 @@ namespace svt
     }
 
 
-    void OWizardMachine::skip(sal_Int32 _nSteps)
+    void OWizardMachine::skip()
     {
-        DBG_ASSERT(_nSteps > 0, "OWizardMachine::skip: invalid number of steps!");
         // allowed to leave the current page?
         if ( !prepareLeaveCurrentState( eTravelForward ) )
             return;
 
         WizardState nCurrentState = getCurrentState();
         WizardState nNextState = determineNextState(nCurrentState);
-        // loop _nSteps steps
-        while (_nSteps-- > 0)
-        {
-            if (WZS_INVALID_STATE == nNextState)
-                return;
 
-            // remember the skipped state in the history
-            m_pImpl->aStateHistory.push(nCurrentState);
+        if (WZS_INVALID_STATE == nNextState)
+            return;
 
-            // get the next state
-            nCurrentState = nNextState;
-            nNextState = determineNextState(nCurrentState);
-        }
+        // remember the skipped state in the history
+        m_pImpl->aStateHistory.push(nCurrentState);
+
+        // get the next state
+        nCurrentState = nNextState;
+        nNextState = determineNextState(nCurrentState);
 
         // show the (n+1)th page
         if (!ShowPage(nCurrentState))
@@ -615,9 +602,9 @@ namespace svt
     }
 
 
-    void OWizardMachine::enableAutomaticNextButtonState( bool _bEnable )
+    void OWizardMachine::enableAutomaticNextButtonState()
     {
-        m_pImpl->m_bAutoNextButtonState = _bEnable;
+        m_pImpl->m_bAutoNextButtonState = true;
     }
 
 

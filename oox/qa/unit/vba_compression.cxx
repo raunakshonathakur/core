@@ -7,17 +7,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include <unotest/bootstrapfixturebase.hxx>
-
 #include <cppunit/plugin/TestPlugIn.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/TestFixture.h>
 
 #include <oox/ole/vbaexport.hxx>
 #include <tools/stream.hxx>
+#include <unotest/directories.hxx>
 #include <algorithm>
 
-class TestVbaCompression : public test::BootstrapFixtureBase
+class TestVbaCompression : public CppUnit::TestFixture
 {
 public:
 
@@ -42,10 +41,6 @@ public:
     // section 3.2.3
     void testSpec323();
 
-    // avoid the BootstrapFixtureBase::setUp and tearDown
-    virtual void setUp() override;
-    virtual void tearDown() override;
-
     CPPUNIT_TEST_SUITE(TestVbaCompression);
     CPPUNIT_TEST(testSimple1);
     CPPUNIT_TEST(testSimple2);
@@ -57,6 +52,7 @@ public:
     CPPUNIT_TEST_SUITE_END();
 
 private:
+    test::Directories m_directories;
 };
 
 namespace {
@@ -84,8 +80,8 @@ void ReadFiles(const OUString& rTestFile, const OUString& rReference,
 
 void TestVbaCompression::testSimple1()
 {
-    OUString aTestFile = getPathFromSrc("/oox/qa/unit/data/vba/simple1.bin");
-    OUString aReference = getPathFromSrc("/oox/qa/unit/data/vba/reference/simple1.bin");
+    OUString aTestFile = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/simple1.bin");
+    OUString aReference = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/reference/simple1.bin");
 
     SvMemoryStream aOutputMemoryStream(4096, 4096);
     SvMemoryStream aReferenceMemoryStream(4096, 4096);
@@ -107,8 +103,8 @@ void TestVbaCompression::testSimple1()
 
 void TestVbaCompression::testSimple2()
 {
-    OUString aTestFile = getPathFromSrc("/oox/qa/unit/data/vba/simple2.bin");
-    OUString aReference = getPathFromSrc("/oox/qa/unit/data/vba/reference/simple2.bin");
+    OUString aTestFile = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/simple2.bin");
+    OUString aReference = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/reference/simple2.bin");
 
     SvMemoryStream aOutputMemoryStream(4096, 4096);
     SvMemoryStream aReferenceMemoryStream(4096, 4096);
@@ -129,8 +125,8 @@ void TestVbaCompression::testSimple2()
 
 void TestVbaCompression::testSimple3()
 {
-    OUString aTestFile = getPathFromSrc("/oox/qa/unit/data/vba/simple3.bin");
-    OUString aReference = getPathFromSrc("/oox/qa/unit/data/vba/reference/simple3.bin");
+    OUString aTestFile = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/simple3.bin");
+    OUString aReference = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/reference/simple3.bin");
 
     SvMemoryStream aOutputMemoryStream(4096, 4096);
     SvMemoryStream aReferenceMemoryStream(4096, 4096);
@@ -151,8 +147,8 @@ void TestVbaCompression::testSimple3()
 
 void TestVbaCompression::testComplex1()
 {
-    OUString aTestFile = getPathFromSrc("/oox/qa/unit/data/vba/complex1.bin");
-    OUString aReference = getPathFromSrc("/oox/qa/unit/data/vba/reference/complex1.bin");
+    OUString aTestFile = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/complex1.bin");
+    OUString aReference = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/reference/complex1.bin");
 
     SvMemoryStream aOutputMemoryStream(4096, 4096);
     SvMemoryStream aReferenceMemoryStream(4096, 4096);
@@ -173,8 +169,8 @@ void TestVbaCompression::testComplex1()
 
 void TestVbaCompression::testSpec321()
 {
-    OUString aTestFile = getPathFromSrc("/oox/qa/unit/data/vba/spec321.bin");
-    OUString aReference = getPathFromSrc("/oox/qa/unit/data/vba/reference/spec321.bin");
+    OUString aTestFile = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/spec321.bin");
+    OUString aReference = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/reference/spec321.bin");
 
     SvMemoryStream aOutputMemoryStream(4096, 4096);
     SvMemoryStream aReferenceMemoryStream(4096, 4096);
@@ -195,8 +191,8 @@ void TestVbaCompression::testSpec321()
 
 void TestVbaCompression::testSpec322()
 {
-    OUString aTestFile = getPathFromSrc("/oox/qa/unit/data/vba/spec322.bin");
-    OUString aReference = getPathFromSrc("/oox/qa/unit/data/vba/reference/spec322.bin");
+    OUString aTestFile = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/spec322.bin");
+    OUString aReference = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/reference/spec322.bin");
 
     SvMemoryStream aOutputMemoryStream(4096, 4096);
     SvMemoryStream aReferenceMemoryStream(4096, 4096);
@@ -217,8 +213,8 @@ void TestVbaCompression::testSpec322()
 
 void TestVbaCompression::testSpec323()
 {
-    OUString aTestFile = getPathFromSrc("/oox/qa/unit/data/vba/spec323.bin");
-    OUString aReference = getPathFromSrc("/oox/qa/unit/data/vba/reference/spec323.bin");
+    OUString aTestFile = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/spec323.bin");
+    OUString aReference = m_directories.getPathFromSrc("/oox/qa/unit/data/vba/reference/spec323.bin");
 
     SvMemoryStream aOutputMemoryStream(4096, 4096);
     SvMemoryStream aReferenceMemoryStream(4096, 4096);
@@ -235,14 +231,6 @@ void TestVbaCompression::testSpec323()
     {
         CPPUNIT_ASSERT_EQUAL((int)pReferenceData[i], (int)pData[i]);
     }
-}
-
-void TestVbaCompression::setUp()
-{
-}
-
-void TestVbaCompression::tearDown()
-{
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(TestVbaCompression);

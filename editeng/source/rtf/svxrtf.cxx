@@ -68,7 +68,6 @@ SvxRTFParser::SvxRTFParser( SfxItemPool& rPool, SvStream& rIn,
     , pAttrPool( &rPool )
     , m_xDocProps( i_xDocProps )
     , pRTFDefaults( nullptr )
-    , nVersionNo( 0 )
     , nDfltFont( 0)
     , bNewDoc( bReadNewDoc )
     , bNewGroup( false)
@@ -653,13 +652,12 @@ util::DateTime SvxRTFParser::GetDateTimeStamp( )
     return aDT;
 }
 
-void SvxRTFParser::ReadInfo( const sal_Char* pChkForVerNo )
+void SvxRTFParser::ReadInfo()
 {
     int _nOpenBrakets = 1;  // the first was already detected earlier!!
     DBG_ASSERT(m_xDocProps.is(),
         "SvxRTFParser::ReadInfo: no DocumentProperties");
     OUString sStr, sComment;
-    long nVersNo = 0;
 
     while( _nOpenBrakets && IsParserWorking() )
     {
@@ -734,7 +732,6 @@ void SvxRTFParser::ReadInfo( const sal_Char* pChkForVerNo )
             break;
 
         case RTF_VERN:
-            nVersNo = nTokenValue;
             break;
 
         case RTF_EDMINS:
@@ -745,14 +742,8 @@ void SvxRTFParser::ReadInfo( const sal_Char* pChkForVerNo )
         case RTF_NOFCHARS:
             NextToken( nToken );
             break;
-
-//      default:
         }
     }
-
-    if( pChkForVerNo &&
-        sComment == OUString::createFromAscii( pChkForVerNo ) )
-        nVersionNo = nVersNo;
 
     SkipToken();        // the closing brace is evaluated "above"
 }
@@ -813,12 +804,12 @@ const vcl::Font& SvxRTFParser::GetFont( sal_uInt16 nId )
     return *pDfltFont;
 }
 
-SvxRTFItemStackType* SvxRTFParser::_GetAttrSet( bool const bCopyAttr )
+SvxRTFItemStackType* SvxRTFParser::_GetAttrSet()
 {
     SvxRTFItemStackType* pAkt = aAttrStack.empty() ? nullptr : aAttrStack.back();
     SvxRTFItemStackType* pNew;
     if( pAkt )
-        pNew = new SvxRTFItemStackType( *pAkt, *pInsPos, bCopyAttr );
+        pNew = new SvxRTFItemStackType( *pAkt, *pInsPos, false/*bCopyAttr*/ );
     else
         pNew = new SvxRTFItemStackType( *pAttrPool, &aWhichMap[0],
                                         *pInsPos );

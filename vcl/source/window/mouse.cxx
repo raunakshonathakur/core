@@ -290,7 +290,7 @@ void Window::ImplGrabFocus( GetFocusFlags nFlags )
         // EndExtTextInput if it is not the same window
         if ( pSVData->maWinData.mpExtTextInputWin &&
              (pSVData->maWinData.mpExtTextInputWin.get() != this) )
-            pSVData->maWinData.mpExtTextInputWin->EndExtTextInput( EndExtTextInputFlags::Complete );
+            pSVData->maWinData.mpExtTextInputWin->EndExtTextInput();
 
         // mark this windows as the last FocusWindow
         vcl::Window* pOverlapWindow = ImplGetFirstOverlapWindow();
@@ -320,7 +320,7 @@ void Window::ImplGrabFocus( GetFocusFlags nFlags )
         {
             // Cursor hidden
             if ( pOldFocusWindow->mpWindowImpl->mpCursor )
-                pOldFocusWindow->mpWindowImpl->mpCursor->ImplHide( true );
+                pOldFocusWindow->mpWindowImpl->mpCursor->ImplHide();
         }
 
         // !!!!! due to old SV-Office Activate/Deactivate handling

@@ -49,15 +49,8 @@ bool EncryptionEngine::checkReady() const
  *  4. both the key element and the encryption template
  *     are bufferred.
  *
- *   INPUTS
- *  empty
- *
  *   RESULT
  *  bReady - true if all conditions are satisfied, false otherwise
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     bool rc = true;
@@ -96,16 +89,6 @@ void EncryptionEngine::tryToPerform( )
  *  3. clears up all used resources;
  *  4. notifies the result listener;
  *  5. sets the "accomplishment" flag.
- *
- *   INPUTS
- *  empty
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     if (checkReady())
@@ -145,16 +128,6 @@ void EncryptionEngine::clearUp( ) const
  *  1. releases the ElementCollector for the encryption template element;
  *  2. releases the Blocker for the encryption template element;
  *  3. releases the ElementCollector for the key element, if there is one.
- *
- *   INPUTS
- *  empty
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     Reference < cssxc::sax::XReferenceResolvedBroadcaster >
@@ -179,7 +152,7 @@ void EncryptionEngine::clearUp( ) const
 
 /* XBlockerMonitor */
 void SAL_CALL EncryptionEngine::setBlockerId( sal_Int32 id )
-    throw (com::sun::star::uno::Exception, com::sun::star::uno::RuntimeException, std::exception)
+    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     m_nIdOfBlocker = id;
     tryToPerform();

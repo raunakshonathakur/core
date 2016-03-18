@@ -38,11 +38,6 @@ namespace desktop
     there is arose a problem. If there is none the office will be shutdown to prevent a
     running office without UI.
 */
-
-class DispatchWatcherHashMap : public std::unordered_map< OUString, sal_Int32, OUStringHash, std::equal_to< OUString >  >
-{
-};
-
 class DispatchWatcher : public ::cppu::WeakImplHelper< css::frame::XDispatchResultListener >
 {
     public:
@@ -63,9 +58,6 @@ class DispatchWatcher : public ::cppu::WeakImplHelper< css::frame::XDispatchResu
 
         struct DispatchRequest
         {
-            DispatchRequest( RequestType aType, const OUString& aFile, boost::optional< OUString > const & cwdUrl, const OUString& aPrinter, const OUString& aFact ) :
-                aRequestType( aType ), aURL( aFile ), aCwdUrl( cwdUrl ), aPrinterName( aPrinter ), aPreselectedFactory( aFact ) {}
-
             RequestType     aRequestType;
             OUString   aURL;
             boost::optional< OUString > aCwdUrl;
@@ -73,7 +65,7 @@ class DispatchWatcher : public ::cppu::WeakImplHelper< css::frame::XDispatchResu
             OUString   aPreselectedFactory;
         };
 
-        typedef std::vector< DispatchRequest > DispatchList;
+        DispatchWatcher();
 
         virtual ~DispatchWatcher();
 
@@ -84,18 +76,14 @@ class DispatchWatcher : public ::cppu::WeakImplHelper< css::frame::XDispatchResu
         // XDispachResultListener
         virtual void SAL_CALL dispatchFinished( const css::frame::DispatchResultEvent& aEvent ) throw( css::uno::RuntimeException, std::exception ) override;
 
-        // Access function to get a dispatcher watcher reference. There must be a global reference holder
-        static DispatchWatcher* GetDispatchWatcher();
-
         // execute new dispatch request
-        bool executeDispatchRequests( const DispatchList& aDispatches, bool bNoTerminate = false );
+        bool executeDispatchRequests( const std::vector<DispatchRequest>& aDispatches, bool bNoTerminate = false );
 
     private:
-        DispatchWatcher();
+        osl::Mutex m_mutex;
 
-        static ::osl::Mutex&        GetMutex();
-
-        DispatchWatcherHashMap      m_aRequestContainer;
+        std::unordered_map<OUString, sal_Int32, OUStringHash>
+            m_aRequestContainer;
 
         sal_Int16                   m_nRequestCount;
 };

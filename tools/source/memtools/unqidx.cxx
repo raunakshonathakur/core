@@ -19,98 +19,82 @@
 
 #include <tools/unqidx.hxx>
 
-sal_uIntPtr UniqueIndexImpl::Insert( void* p )
+UniqueIndexImpl::Index UniqueIndexImpl::Insert( void* p )
 {
     // NULL-Pointer not allowed
     if ( !p )
-        return UNIQUEINDEX_ENTRY_NOTFOUND;
+        return IndexNotFound;
 
-   // Expend array if full
-    sal_uIntPtr nTmp = maMap.size();
-    if( nTmp == nCount )
-        nTmp++;
+    // Insert the pointer, starting from the current nUniqIndex "hint"
+    // and increasing it until a free one is found (this may happen
+    // after removals followed by multiple insertions).
+    while ( !maMap.emplace(nUniqIndex, p).second )
+        ++nUniqIndex;
 
-    // Avoid overflow of UniqIndex upon deletion
-    nUniqIndex = nUniqIndex % nTmp;
-
-    // Search next empty index
-    while ( maMap.find( nUniqIndex ) != maMap.end() )
-        nUniqIndex = (nUniqIndex+1) % nTmp;
-
-    // Insert object to array
-    maMap[ nUniqIndex ] = p;
-
-    nCount++;
-    nUniqIndex++;
-    return ( nUniqIndex + nStartIndex - 1 );
+    // Take care of updating hint key for next insertion
+    return nUniqIndex++;
 }
 
-void* UniqueIndexImpl::Remove( sal_uIntPtr nIndex )
+void* UniqueIndexImpl::Remove( Index nIndex )
 {
-    // Check for valid index
-    if ( (nIndex >= nStartIndex) &&
-         (nIndex < (size() + nStartIndex)) )
+    std::map<Index, void*>::iterator it = maMap.find( nIndex );
+    if ( it != maMap.end() )
     {
-        // insert index as empty entry, and reduce indexcount,
-        // if this entry was used
-        std::map<sal_uInt32, void*>::iterator it = maMap.find( nIndex - nStartIndex );
-        if( it != maMap.end() )
-        {
-            void* p = it->second;
-            maMap.erase( it );
-            nCount--;
-            return p;
-        }
+        // Allow to recycle freed indexes, as was done by
+        // original implementation based on a vector
+        // This is not really needed when using a map, and
+        // really unique indexes might be better/safer?
+        if ( nIndex < nUniqIndex )
+            nUniqIndex = nIndex;
+
+        void* p = it->second;
+        maMap.erase( it );
+        return p;
     }
     return nullptr;
 }
 
-void* UniqueIndexImpl::Get( sal_uIntPtr nIndex ) const
+void* UniqueIndexImpl::Get( Index nIndex ) const
 {
-    // check for valid index
-    if ( (nIndex >= nStartIndex) &&
-         (nIndex < (size() + nStartIndex)) )
-    {
-        std::map<sal_uInt32, void*>::const_iterator it = maMap.find( nIndex - nStartIndex );
-        if( it != maMap.end() )
-            return it->second;
-    }
+    std::map<Index, void*>::const_iterator it = maMap.find( nIndex );
+    if ( it != maMap.end() )
+        return it->second;
     return nullptr;
 }
 
-sal_uIntPtr UniqueIndexImpl::FirstIndex() const
+UniqueIndexImpl::Index UniqueIndexImpl::FirstIndex() const
 {
     if ( maMap.empty() )
-        return UNIQUEINDEX_ENTRY_NOTFOUND;
+        return IndexNotFound;
 
     return maMap.begin()->first;
 }
 
-sal_uIntPtr UniqueIndexImpl::LastIndex() const
+UniqueIndexImpl::Index UniqueIndexImpl::LastIndex() const
 {
     if ( maMap.empty() )
-        return UNIQUEINDEX_ENTRY_NOTFOUND;
+        return IndexNotFound;
 
     return maMap.rbegin()->first;
 }
 
-sal_uIntPtr UniqueIndexImpl::NextIndex(sal_uIntPtr aIndex) const
+UniqueIndexImpl::Index UniqueIndexImpl::NextIndex(Index aIndex) const
 {
-    std::map<sal_uInt32, void*>::const_iterator it = maMap.find( aIndex );
+    std::map<Index, void*>::const_iterator it = maMap.find( aIndex );
     if ( it == maMap.end() )
-        return UNIQUEINDEX_ENTRY_NOTFOUND;
+        return IndexNotFound;
     ++it;
     if ( it == maMap.end() )
-        return UNIQUEINDEX_ENTRY_NOTFOUND;
+        return IndexNotFound;
     return it->first;
 }
 
-sal_uIntPtr UniqueIndexImpl::GetIndexOf(void* p) const
+UniqueIndexImpl::Index UniqueIndexImpl::GetIndexOf(void* p) const
 {
-    for( std::map<sal_uInt32, void*>::const_iterator it = maMap.begin(); it != maMap.end(); ++it )
+    for( std::map<Index, void*>::const_iterator it = maMap.begin(); it != maMap.end(); ++it )
         if( it->second == p )
             return it->first;
-    return UNIQUEINDEX_ENTRY_NOTFOUND;
+    return IndexNotFound;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -295,7 +295,7 @@ ScInputHandler* ScFormulaDlg::GetNextInputHandler(ScDocShell* pDocShell, ScTabVi
 
 bool ScFormulaDlg::Close()
 {
-    DoEnter(false);
+    DoEnter();
     return true;
 }
 
@@ -351,7 +351,7 @@ bool ScFormulaDlg::calculateValue( const OUString& rStrExp, OUString& rStrResult
         }
 
         ScRange aTestRange;
-        if ( bColRowName || (aTestRange.Parse(rStrExp) & SCA_VALID) )
+        if ( bColRowName || (aTestRange.Parse(rStrExp) & ScRefFlags::VALID) )
             rStrResult += " ...";
             // area
     }
@@ -397,7 +397,7 @@ void ScFormulaDlg::SetReference( const ScRange& rRef, ScDocument* pRefDoc )
 
             OSL_ENSURE(rRef.aStart.Tab()==rRef.aEnd.Tab(), "nStartTab!=nEndTab");
 
-            OUString aTmp(rRef.Format(SCA_VALID|SCA_TAB_3D, pRefDoc));     // immer 3d
+            OUString aTmp(rRef.Format(ScRefFlags::VALID|ScRefFlags::TAB_3D, pRefDoc));     // immer 3d
 
             SfxObjectShell* pObjSh = pRefDoc->GetDocumentShell();
 
@@ -510,9 +510,9 @@ void ScFormulaDlg::ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton*
 {
     m_aHelper.ToggleCollapsed(pEdit,pButton);
 }
-void ScFormulaDlg::ReleaseFocus( formula::RefEdit* pEdit, formula::RefButton* pButton)
+void ScFormulaDlg::ReleaseFocus( formula::RefEdit* pEdit)
 {
-    m_aHelper.ReleaseFocus(pEdit,pButton);
+    m_aHelper.ReleaseFocus(pEdit);
 }
 void ScFormulaDlg::dispatch(bool _bOK, bool _bMatrixChecked)
 {
@@ -531,7 +531,7 @@ void ScFormulaDlg::dispatch(bool _bOK, bool _bMatrixChecked)
 
     GetBindings().GetDispatcher()->Execute( SID_INS_FUNCTION,
                               SfxCallMode::ASYNCHRON | SfxCallMode::RECORD,
-                              &aRetItem, &aStrItem, &aMatItem, 0L );
+                              &aRetItem, &aStrItem, &aMatItem, 0 );
 }
 void ScFormulaDlg::setDispatcherLock( bool bLock )
 {

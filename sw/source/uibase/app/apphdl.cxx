@@ -141,7 +141,7 @@ SFX_IMPL_INTERFACE(SwModule, SfxModule)
 
 void SwModule::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterStatusBar(SW_RES(CFG_STATUSBAR));
+    GetStaticInterface()->RegisterStatusBar(CFG_STATUSBAR);
 
     GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_APPLICATION | SFX_VISIBILITY_DESKTOP | SFX_VISIBILITY_STANDARD | SFX_VISIBILITY_CLIENT | SFX_VISIBILITY_VIEWER,
                                             RID_MODULE_TOOLBOX);
@@ -703,7 +703,7 @@ void SwModule::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
                     const SfxBoolItem* pTemplateItem = SfxItemSet::GetItem<SfxBoolItem>(pDocSh->GetMedium()->GetItemSet(), SID_TEMPLATE, false);
                     if (pTemplateItem && pTemplateItem->GetValue())
                     {
-                        pDocSh->GetDoc()->getIDocumentFieldsAccess().SetFixFields(false, nullptr);
+                        pDocSh->GetDoc()->getIDocumentFieldsAccess().SetFixFields(nullptr);
                     }
                 }
                 break;

@@ -576,7 +576,7 @@ void SbaTableQueryBrowser::initializePreviewMode()
     {
         getBrowserView()->getVclControl()->AlwaysEnableInput( false );
         getBrowserView()->getVclControl()->EnableInput( false );
-        getBrowserView()->getVclControl()->ForceHideScrollbars( true );
+        getBrowserView()->getVclControl()->ForceHideScrollbars();
     }
     Reference< XPropertySet >  xDataSourceSet(getRowSet(), UNO_QUERY);
     if ( xDataSourceSet.is() )
@@ -1261,7 +1261,7 @@ SvTreeListEntry* SbaTableQueryBrowser::getObjectEntry(const svx::ODataAccessDesc
     bool bEscapeProcessing = true;
     extractDescriptorProps(_rDescriptor, sDataSource, sCommand, nCommandType, bEscapeProcessing);
 
-    return getObjectEntry( sDataSource, sCommand, nCommandType, _ppDataSourceEntry, _ppContainerEntry, _bExpandAncestors, SharedConnection() );
+    return getObjectEntry( sDataSource, sCommand, nCommandType, _ppDataSourceEntry, _ppContainerEntry, _bExpandAncestors );
 }
 
 void SbaTableQueryBrowser::connectExternalDispatches()
@@ -3006,7 +3006,7 @@ void SbaTableQueryBrowser::unloadAndCleanup( bool _bDisposeConnection )
         Reference< XPropertySet > xRowSetProps(getRowSet(),UNO_QUERY);
         Reference< XConnection > xConn;
         xRowSetProps->getPropertyValue(PROPERTY_ACTIVE_CONNECTION) >>= xConn;
-#if OSL_DEBUG_LEVEL > 1
+#if OSL_DEBUG_LEVEL > 0
         {
             Reference< XComponent > xComp(
                 xRowSetProps->getPropertyValue(PROPERTY_ACTIVE_CONNECTION),
@@ -3678,7 +3678,7 @@ bool SbaTableQueryBrowser::preReloadForm()
         {
             SvTreeListEntry* pDataSource = nullptr;
             SvTreeListEntry* pCommandType = nullptr;
-            m_pCurrentlyDisplayed = getObjectEntry( sDataSource, sCommand, nCommandType, &pDataSource, &pCommandType, true, SharedConnection() );
+            m_pCurrentlyDisplayed = getObjectEntry( sDataSource, sCommand, nCommandType, &pDataSource, &pCommandType );
             bIni = true;
         }
     }

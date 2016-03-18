@@ -127,8 +127,7 @@ void SvxTextEncodingBox::FillFromTextEncodingTable(
 
 
 void SvxTextEncodingBox::FillFromDbTextEncodingMap(
-        bool bExcludeImportSubsets, sal_uInt32 nExcludeInfoFlags,
-        sal_uInt32 nButIncludeInfoFlags )
+        bool bExcludeImportSubsets, sal_uInt32 nExcludeInfoFlags )
 {
 #if !HAVE_FEATURE_DBCONNECTIVITY
     (void)bExcludeImportSubsets;
@@ -156,7 +155,7 @@ void SvxTextEncodingBox::FillFromDbTextEncodingMap(
                             nEnc == RTL_TEXTENCODING_UCS4) )
                         bInsert = false;    // InfoFlags don't work for Unicode :-(
                 }
-                else if ( (aInfo.Flags & nButIncludeInfoFlags) == 0 )
+                else
                     bInsert = false;
             }
         }
@@ -194,18 +193,18 @@ void SvxTextEncodingBox::FillWithMimeAndSelectBest()
 
 
 void SvxTextEncodingBox::InsertTextEncoding( const rtl_TextEncoding nEnc,
-            const OUString& rEntry, sal_Int32 nPos )
+            const OUString& rEntry )
 {
-    sal_Int32 nAt = InsertEntry( rEntry, nPos );
+    sal_Int32 nAt = InsertEntry( rEntry );
     SetEntryData( nAt, reinterpret_cast<void*>(nEnc) );
 }
 
 
-void SvxTextEncodingBox::InsertTextEncoding( const rtl_TextEncoding nEnc, sal_Int32 nPos )
+void SvxTextEncodingBox::InsertTextEncoding( const rtl_TextEncoding nEnc )
 {
     const OUString& rEntry = m_pEncTable->GetTextString( nEnc );
     if ( !rEntry.isEmpty() )
-        InsertTextEncoding( nEnc, rEntry, nPos );
+        InsertTextEncoding( nEnc, rEntry );
     else
         SAL_WARN( "svx.dialog", "SvxTextEncodingBox::InsertTextEncoding: no resource string for text encoding: " << static_cast<sal_Int32>( nEnc ) );
 }
@@ -222,12 +221,12 @@ rtl_TextEncoding SvxTextEncodingBox::GetSelectTextEncoding() const
 }
 
 
-void SvxTextEncodingBox::SelectTextEncoding( const rtl_TextEncoding nEnc, bool bSelect )
+void SvxTextEncodingBox::SelectTextEncoding( const rtl_TextEncoding nEnc )
 {
     sal_Int32 nAt = EncodingToPos_Impl( nEnc );
 
     if ( nAt != LISTBOX_ENTRY_NOTFOUND )
-        SelectEntryPos( nAt, bSelect );
+        SelectEntryPos( nAt );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

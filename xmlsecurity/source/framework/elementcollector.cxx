@@ -31,9 +31,7 @@ ElementCollector::ElementCollector(
     sal_Int32 nBufferId,
     cssxc::sax::ElementMarkPriority nPriority,
     bool bToModify,
-    const com::sun::star::uno::Reference<
-        com::sun::star::xml::crypto::sax::XReferenceResolvedListener >&
-        xReferenceResolvedListener)
+    const css::uno::Reference< css::xml::crypto::sax::XReferenceResolvedListener >& xReferenceResolvedListener)
     :ElementMark(nSecurityId, nBufferId),
      m_nPriority(nPriority),
      m_bToModify(bToModify),
@@ -68,13 +66,6 @@ ElementCollector::ElementCollector(
  *                  element.
  *  xReferenceResolvedListener
  *            - the listener that this ElementCollector notifies to.
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     m_type = cssxc::sax::ElementMarkType_ELEMENTCOLLECTOR;
@@ -92,16 +83,6 @@ void ElementCollector::notifyListener()
  *
  *   FUNCTION
  *  enable the ability to notify the listener and try to notify then.
- *
- *   INPUTS
- *  empty
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     m_bAbleToNotify = true;
@@ -124,13 +105,6 @@ void ElementCollector::setReferenceResolvedListener(
  *
  *   INPUTS
  *  xReferenceResolvedListener - the new listener
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     m_xReferenceResolvedListener = xReferenceResolvedListener;
@@ -152,16 +126,6 @@ void ElementCollector::doNotify()
  *  the notify right is granted;
  *  the listener has already been configured;
  *  the security id has already been configure
- *
- *   INPUTS
- *  empty
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     if (!m_bNotified &&
@@ -191,13 +155,6 @@ ElementCollector* ElementCollector::clone(
  *   INPUTS
  *  nBufferId - the buffer node's Id
  *  nPriority - the priority
- *
- *   RESULT
- *  clone -     a new ElementCollector
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     ElementCollector* pClonedOne

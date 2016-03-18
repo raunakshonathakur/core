@@ -57,7 +57,7 @@ ChartItemPool::ChartItemPool():
     ppPoolDefaults[SCHATTR_PERCENT_NUMBERFORMAT_SOURCE - SCHATTR_START] = new SfxBoolItem(SCHATTR_PERCENT_NUMBERFORMAT_SOURCE);
 
     //legend
-    ppPoolDefaults[SCHATTR_LEGEND_POS               - SCHATTR_START] = new SfxInt32Item(SCHATTR_LEGEND_POS, ::com::sun::star::chart2::LegendPosition_LINE_END );
+    ppPoolDefaults[SCHATTR_LEGEND_POS               - SCHATTR_START] = new SfxInt32Item(SCHATTR_LEGEND_POS, css::chart2::LegendPosition_LINE_END );
     ppPoolDefaults[SCHATTR_LEGEND_SHOW              - SCHATTR_START] = new SfxBoolItem(SCHATTR_LEGEND_SHOW, true);
 
     //text
@@ -168,7 +168,7 @@ ChartItemPool::ChartItemPool():
     for( sal_uInt16 i = 0; i < nMax; i++ )
     {
         pItemInfos[i]._nSID = 0;
-        pItemInfos[i]._nFlags = SfxItemPoolFlags::POOLABLE;
+        pItemInfos[i]._bPoolable = true;
     }
 
     // slot ids differing from which ids

@@ -44,6 +44,8 @@ namespace editeng { class SvxBorderLine; }
 
 #define SC_ATTRARRAY_DELTA      4
 
+#define DEBUG_SC_TESTATTRARRAY 0
+
 struct ScLineFlags
 {
     sal_uInt8   nLeft;
@@ -104,7 +106,7 @@ public:
 
     void    SetTab(SCTAB nNewTab)   { nTab = nNewTab; }
     void    SetCol(SCCOL nNewCol)   { nCol = nNewCol; }
-#if OSL_DEBUG_LEVEL > 1
+#if DEBUG_SC_TESTATTRARRAY
     void    TestData() const;
 #endif
     void    Reset( const ScPatternAttr* pPattern);
@@ -171,7 +173,7 @@ public:
     bool    IsEmpty() const;
 
     bool    GetFirstVisibleAttr( SCROW& rFirstRow ) const;
-    bool    GetLastVisibleAttr( SCROW& rLastRow, SCROW nLastData, bool bFullFormattedArea = false ) const;
+    bool    GetLastVisibleAttr( SCROW& rLastRow, SCROW nLastData ) const;
     bool    HasVisibleAttrIn( SCROW nStartRow, SCROW nEndRow ) const;
     bool    IsVisibleEqual( const ScAttrArray& rOther,
                             SCROW nStartRow, SCROW nEndRow ) const;

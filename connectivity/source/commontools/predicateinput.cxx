@@ -276,8 +276,7 @@ namespace dbtools
 
 
     OUString OPredicateInputController::getPredicateValueStr(
-        const OUString& _rPredicateValue, const Reference< XPropertySet > & _rxField,
-        OUString* _pErrorMessage ) const
+        const OUString& _rPredicateValue, const Reference< XPropertySet > & _rxField ) const
     {
         OSL_ENSURE( _rxField.is(), "OPredicateInputController::getPredicateValue: invalid params!" );
         OUString sReturn;
@@ -290,8 +289,6 @@ namespace dbtools
 
             OUString sError;
             OSQLParseNode* pParseNode = implPredicateTree( sError, sValue, _rxField );
-            if ( _pErrorMessage )
-                *_pErrorMessage = sError;
 
             implParseNode(pParseNode, true) >>= sReturn;
         }
@@ -300,7 +297,7 @@ namespace dbtools
     }
 
     OUString OPredicateInputController::getPredicateValueStr(
-        const OUString& _sField, const OUString& _rPredicateValue, OUString* _pErrorMessage ) const
+        const OUString& _sField, const OUString& _rPredicateValue ) const
     {
         OUString sReturn = _rPredicateValue;
         OUString sError;
@@ -345,8 +342,6 @@ namespace dbtools
         pColumn->setRealName(sField);
 
         OSQLParseNode* pParseNode = implPredicateTree( sError, _rPredicateValue, xColumn );
-        if ( _pErrorMessage )
-            *_pErrorMessage = sError;
         if(pParseNode)
         {
             implParseNode(pParseNode, true) >>= sReturn;
@@ -355,8 +350,7 @@ namespace dbtools
     }
 
     Any OPredicateInputController::getPredicateValue(
-        const OUString& _rPredicateValue, const Reference< XPropertySet > & _rxField,
-        OUString* _pErrorMessage ) const
+        const OUString& _rPredicateValue, const Reference< XPropertySet > & _rxField ) const
     {
         OSL_ENSURE( _rxField.is(), "OPredicateInputController::getPredicateValue: invalid params!" );
 
@@ -369,8 +363,6 @@ namespace dbtools
 
             OUString sError;
             OSQLParseNode* pParseNode = implPredicateTree( sError, sValue, _rxField );
-            if ( _pErrorMessage )
-                *_pErrorMessage = sError;
 
             return implParseNode(pParseNode, false);
         }
@@ -399,7 +391,7 @@ namespace dbtools
                 else
                 {
                     OSQLParseNode* pValueNode = pOdbcSpec->getChild(1);
-                    if ( SQL_NODE_STRING == pValueNode->getNodeType() )
+                    if ( SQLNodeType::String == pValueNode->getNodeType() )
                         sReturn = pValueNode->getTokenValue();
                     else
                         pValueNode->parseNodeToStr(sReturn, m_xConnection, &m_aParser.getContext());
@@ -419,7 +411,7 @@ namespace dbtools
                     assert(pValueNode && "OPredicateInputController::getPredicateValue: invalid node child!");
                     if ( !_bForStatementUse )
                     {
-                        if ( SQL_NODE_STRING == pValueNode->getNodeType() )
+                        if ( SQLNodeType::String == pValueNode->getNodeType() )
                             sReturn = pValueNode->getTokenValue();
                         else
                             pValueNode->parseNodeToStr(

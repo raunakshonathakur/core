@@ -715,10 +715,9 @@ bool SwDBManager::GetTableNames(ListBox* pListBox, const OUString& rDBName)
 
 // fill Listbox with column names of a database
 void SwDBManager::GetColumnNames(ListBox* pListBox,
-                             const OUString& rDBName, const OUString& rTableName, bool bAppend)
+                             const OUString& rDBName, const OUString& rTableName)
 {
-    if (!bAppend)
-        pListBox->Clear();
+    pListBox->Clear();
     SwDBData aData;
     aData.sDataSource = rDBName;
     aData.sCommand = rTableName;
@@ -733,7 +732,7 @@ void SwDBManager::GetColumnNames(ListBox* pListBox,
         xConnection = RegisterConnection( sDBName );
     }
 
-    GetColumnNames(pListBox, xConnection, rTableName, bAppend);
+    GetColumnNames(pListBox, xConnection, rTableName);
 }
 
 void SwDBManager::GetColumnNames(ListBox* pListBox,
@@ -991,7 +990,7 @@ bool SwDBManager::MergeMailFiles(SwWrtShell* pSourceShell,
             pSfxDispatcher->Execute( pSourceDocSh->HasName() ? SID_SAVEDOC : SID_SAVEASDOC, SfxCallMode::SYNCHRON|SfxCallMode::RECORD);
         if( bMergeShell || !pSourceDocSh->IsModified() )
         {
-            const SfxFilter* pStoreToFilter = nullptr;
+            std::shared_ptr<const SfxFilter> pStoreToFilter;
             const OUString* pStoreToFilterOptions = nullptr;
 
             CreateStoreToFilter(pStoreToFilter, pStoreToFilterOptions, pSourceDocSh, bEMail, rMergeDescriptor);
@@ -1328,7 +1327,7 @@ void SwDBManager::GetPathAddress(OUString &sPath, OUString &sAddress, uno::Refer
 
 bool SwDBManager::CreateNewTemp(OUString &sPath, const OUString &sAddress,
                                 std::unique_ptr< utl::TempFile > &aTempFile,
-                                const SwMergeDescriptor& rMergeDescriptor,  const SfxFilter* pStoreToFilter)
+                                const SwMergeDescriptor& rMergeDescriptor,  std::shared_ptr<const SfxFilter> pStoreToFilter)
 {
     INetURLObject aEntry(sPath);
     OUString sLeading;
@@ -1470,7 +1469,7 @@ void SwDBManager::UpdateExpFields(SwWrtShell& rWorkShell, SfxObjectShellLock xWo
     }
 }
 
-void SwDBManager::CreateStoreToFilter(const SfxFilter *&pStoreToFilter, const OUString *&pStoreToFilterOptions,
+void SwDBManager::CreateStoreToFilter(std::shared_ptr<const SfxFilter>& pStoreToFilter, const OUString *&pStoreToFilterOptions,
                                       SwDocShell *pSourceDocSh, bool bEMail, const SwMergeDescriptor &rMergeDescriptor)
 {
     pStoreToFilter = SwIoSystem::GetFileFilter(
@@ -1485,7 +1484,7 @@ void SwDBManager::CreateStoreToFilter(const SfxFilter *&pStoreToFilter, const OU
     }
     else if( !rMergeDescriptor.sSaveToFilter.isEmpty())
     {
-        const SfxFilter* pFilter =
+        std::shared_ptr<const SfxFilter> pFilter =
             pFilterContainer->GetFilter4FilterName( rMergeDescriptor.sSaveToFilter );
         if(pFilter)
         {
@@ -1619,7 +1618,7 @@ void SwDBManager::FinishMailMergeFile(SfxObjectShellLock &xWorkDocSh, SwView *pW
 
 bool SwDBManager::SavePrintDoc(SfxObjectShellRef xTargetDocShell, SwView *pTargetView, const SwMergeDescriptor &rMergeDescriptor,
                                std::unique_ptr< utl::TempFile > &aTempFile,
-                               const SfxFilter *&pStoreToFilter, const OUString *&pStoreToFilterOptions,
+                               std::shared_ptr<const SfxFilter>& pStoreToFilter, const OUString *&pStoreToFilterOptions,
                                const bool bMergeShell, bool bCreateSingleFile, const bool bPrinter)
 {
     bool bNoError = true;
@@ -2250,7 +2249,7 @@ bool SwDBManager::FillCalcWithMergeData( SvNumberFormatter *pDocFormatter,
 }
 
 bool SwDBManager::ToNextRecord(
-    const OUString& rDataSource, const OUString& rCommand, sal_Int32 /*nCommandType*/)
+    const OUString& rDataSource, const OUString& rCommand)
 {
     SwDSParam* pFound = nullptr;
     if(pImpl->pMergeData &&
@@ -2369,13 +2368,12 @@ bool SwDBManager::ToRecordId(sal_Int32 nSet)
     return bRet;
 }
 
-bool SwDBManager::OpenDataSource(const OUString& rDataSource, const OUString& rTableOrQuery,
-            sal_Int32 nCommandType, bool bCreate)
+bool SwDBManager::OpenDataSource(const OUString& rDataSource, const OUString& rTableOrQuery)
 {
     SwDBData aData;
     aData.sDataSource = rDataSource;
     aData.sCommand = rTableOrQuery;
-    aData.nCommandType = nCommandType;
+    aData.nCommandType = -1;
 
     SwDSParam* pFound = FindDSData(aData, true);
     uno::Reference< sdbc::XDataSource> xSource;
@@ -2385,11 +2383,6 @@ bool SwDBManager::OpenDataSource(const OUString& rDataSource, const OUString& rT
     uno::Reference< sdbc::XConnection> xConnection;
     if(pParam && pParam->xConnection.is())
         pFound->xConnection = pParam->xConnection;
-    else if(bCreate)
-    {
-        OUString sDataSource(rDataSource);
-        pFound->xConnection = RegisterConnection( sDataSource );
-    }
     if(pFound->xConnection.is())
     {
         try
@@ -2641,8 +2634,8 @@ OUString SwDBManager::LoadAndRegisterDataSource(SwDocShell* pDocShell)
     xFltMgr->appendFilter( sFilterTXT, "*.txt" );
     xFltMgr->appendFilter( sFilterCSV, "*.csv" );
 #ifdef _WIN32
-    xFltMgr->appendFilter( sFilterMDB, "*.mdb" );
-    xFltMgr->appendFilter( sFilterACCDB, "*.accdb" );
+    xFltMgr->appendFilter(sFilterMDB, "*.mdb;*.mde");
+    xFltMgr->appendFilter(sFilterACCDB, "*.accdb;*.accde");
 #endif
 
     xFltMgr->setCurrentFilter( sFilterAll ) ;
@@ -2705,14 +2698,14 @@ SwDBManager::DBConnURITypes SwDBManager::GetDBunoURI(const OUString &rURI, uno::
         type = DBCONN_FLAT;
     }
 #ifdef _WIN32
-    else if(sExt.equalsIgnoreAsciiCase("mdb"))
+    else if (sExt.equalsIgnoreAsciiCase("mdb") || sExt.equalsIgnoreAsciiCase("mde"))
     {
         OUString sDBURL("sdbc:ado:access:PROVIDER=Microsoft.Jet.OLEDB.4.0;DATA SOURCE=");
         sDBURL += aURL.PathToFileName();
         aURLAny <<= sDBURL;
         type = DBCONN_MSJET;
     }
-    else if(sExt.equalsIgnoreAsciiCase("accdb"))
+    else if (sExt.equalsIgnoreAsciiCase("accdb") || sExt.equalsIgnoreAsciiCase("accde"))
     {
         OUString sDBURL("sdbc:ado:PROVIDER=Microsoft.ACE.OLEDB.12.0;DATA SOURCE=");
         sDBURL += aURL.PathToFileName();
@@ -2972,7 +2965,7 @@ void SwDBManager::ExecuteFormLetter( SwWrtShell& rSh,
         {
             //copy rSh to aTempFile
             OUString sTempURL;
-            const SfxFilter *pSfxFlt = SwIoSystem::GetFilterOfFormat(
+            std::shared_ptr<const SfxFilter> pSfxFlt = SwIoSystem::GetFilterOfFormat(
                         FILTER_XML,
                         SwDocShell::Factory().GetFilterContainer() );
             try

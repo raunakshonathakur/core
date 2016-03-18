@@ -154,7 +154,7 @@ SvStream &SfxItemPool::Store(SvStream &rStream) const
 
     // VersionMaps
     {
-        SfxMultiVarRecordWriter aVerRec( &rStream, SFX_ITEMPOOL_REC_VERSIONMAP, 0 );
+        SfxMultiVarRecordWriter aVerRec( &rStream, SFX_ITEMPOOL_REC_VERSIONMAP );
         for ( size_t nVerNo = 0; nVerNo < pImp->aVersions.size(); ++nVerNo )
         {
             aVerRec.NewContent();
@@ -176,7 +176,7 @@ SvStream &SfxItemPool::Store(SvStream &rStream) const
 
     // Pooled Items
     {
-        SfxMultiMixRecordWriter aWhichIdsRec( &rStream, SFX_ITEMPOOL_REC_WHICHIDS, 0 );
+        SfxMultiMixRecordWriter aWhichIdsRec( &rStream, SFX_ITEMPOOL_REC_WHICHIDS );
 
         // First write the atomic Items and then write the Sets (important when loading)
         for (int ft = 0 ; ft < 2 && !rStream.GetError(); ft++)
@@ -196,7 +196,7 @@ SvStream &SfxItemPool::Store(SvStream &rStream) const
 
                 // ! Poolable is not even saved in the Pool
                 // And itemsets/plain-items depending on the round
-                if ( *itrArr && IsItemFlag(**ppDefItem, SfxItemPoolFlags::POOLABLE) &&
+                if ( *itrArr && IsItemPoolable(**ppDefItem) &&
                      pImp->bInSetItem == (dynamic_cast< const SfxSetItem* >(*ppDefItem) !=  nullptr) )
                 {
                     // Own signature, global WhichId and ItemVersion
@@ -209,7 +209,7 @@ SvStream &SfxItemPool::Store(SvStream &rStream) const
                     rStream.WriteUInt32( nCount );
 
                     // Write Items
-                    SfxMultiMixRecordWriter aItemsRec( &rStream, SFX_ITEMPOOL_REC_ITEMS, 0 );
+                    SfxMultiMixRecordWriter aItemsRec( &rStream, SFX_ITEMPOOL_REC_ITEMS );
                     for ( size_t j = 0; j < nCount; ++j )
                     {
                         // Get Item
@@ -254,7 +254,7 @@ SvStream &SfxItemPool::Store(SvStream &rStream) const
     // Save the set Defaults (PoolDefaults)
     if ( !rStream.GetError() )
     {
-        SfxMultiMixRecordWriter aDefsRec( &rStream, SFX_ITEMPOOL_REC_DEFAULTS, 0 );
+        SfxMultiMixRecordWriter aDefsRec( &rStream, SFX_ITEMPOOL_REC_DEFAULTS );
         sal_uInt16 nCount = GetSize_Impl();
         for ( sal_uInt16 n = 0; n < nCount; ++n )
         {
@@ -737,7 +737,7 @@ sal_uInt16 SfxItemPool::GetSize_Impl() const
  * Loads surrogate from 'rStream' and returns the corresponding SfxPoolItem
  * from the rRefPool.
  * If the surrogate contained within the stream == SFX_ITEMS_DIRECT
- * (!SfxItemPoolFlags::POOLABLE), we return 0 and the Item is to be loaded directly
+ * (!poolable), we return 0 and the Item is to be loaded directly
  * from the stream.
  * We also return 0 for 0xfffffff0 (SFX_ITEMS_NULL) and rWhich is set to 0,
  * making the Items unavailable.
@@ -869,7 +869,7 @@ bool SfxItemPool::StoreSurrogate ( SvStream& rStream, const SfxPoolItem*  pItem)
 {
     if ( pItem )
     {
-        bool bRealSurrogate = IsItemFlag(*pItem, SfxItemPoolFlags::POOLABLE);
+        bool bRealSurrogate = IsItemPoolable(*pItem);
         rStream.WriteUInt32( bRealSurrogate
                         ? GetSurrogate( pItem )
                         : SFX_ITEMS_DIRECT  );
@@ -1187,7 +1187,7 @@ bool SfxItemPool::StoreItem( SvStream &rStream, const SfxPoolItem &rItem,
 /**
  * If pRefPool==-1 => do not put!
  */
-const SfxPoolItem* SfxItemPool::LoadItem( SvStream &rStream, bool bDirect,
+const SfxPoolItem* SfxItemPool::LoadItem( SvStream &rStream,
                                           const SfxItemPool *pRefPool )
 {
     sal_uInt16 nWhich(0), nSlot(0); // nSurrogate;
@@ -1228,19 +1228,16 @@ const SfxPoolItem* SfxItemPool::LoadItem( SvStream &rStream, bool bDirect,
 
     // Are we loading via surrogate?
     const SfxPoolItem *pItem = nullptr;
-    if ( !bDirect )
-    {
-        // WhichId known in this version?
-        if ( nWhich )
-            // Load surrogate and react if none present
-            pItem = LoadSurrogate( rStream, nWhich, nSlot, pRefPool );
-        else
-            // Else skip it
-            rStream.SeekRel( sizeof(sal_uInt16) );
-    }
+    // WhichId known in this version?
+    if ( nWhich )
+        // Load surrogate and react if none present
+        pItem = LoadSurrogate( rStream, nWhich, nSlot, pRefPool );
+    else
+        // Else skip it
+        rStream.SeekRel( sizeof(sal_uInt16) );
 
     // Is loaded directly (not via surrogate)?
-    if ( bDirect || ( nWhich && !pItem ) )
+    if ( nWhich && !pItem )
     {
         // bDirekt or not IsPoolable() => Load Item directly
         sal_uInt16 nVersion(0);

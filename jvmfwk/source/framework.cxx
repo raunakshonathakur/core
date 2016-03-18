@@ -22,7 +22,7 @@
 #include "rtl/bootstrap.hxx"
 #include "osl/thread.hxx"
 #include "osl/file.hxx"
-#include "jvmfwk/framework.h"
+#include "jvmfwk/framework.hxx"
 #include "vendorplugin.hxx"
 #include <cassert>
 #include <vector>
@@ -47,7 +47,7 @@ bool areEqualJavaInfo(
 
 }
 
-javaFrameworkError SAL_CALL jfw_findAllJREs(JavaInfo ***pparInfo, sal_Int32 *pSize)
+javaFrameworkError jfw_findAllJREs(JavaInfo ***pparInfo, sal_Int32 *pSize)
 {
     javaFrameworkError retVal = JFW_E_NONE;
     try
@@ -197,7 +197,7 @@ javaFrameworkError SAL_CALL jfw_findAllJREs(JavaInfo ***pparInfo, sal_Int32 *pSi
     return retVal;
 }
 
-javaFrameworkError SAL_CALL jfw_startVM(
+javaFrameworkError jfw_startVM(
     JavaInfo const * pInfo, JavaVMOption * arOptions, sal_Int32 cOptions,
     JavaVM ** ppVM, JNIEnv ** ppEnv)
 {
@@ -372,7 +372,7 @@ javaFrameworkError SAL_CALL jfw_startVM(
     PATH environment variables. If no suitable JavaInfo is found there, it
     inspects all JavaInfos found by the jfw_plugin_get* functions.
  */
-javaFrameworkError SAL_CALL jfw_findAndSelectJRE(JavaInfo **pInfo)
+javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -427,7 +427,7 @@ javaFrameworkError SAL_CALL jfw_findAndSelectJRE(JavaInfo **pInfo)
             {
                 bInfoFound = true;
             }
-            jfw_freeJavaInfo(pHomeInfo);
+            delete pHomeInfo;
         }
 
         // if no Java installation providing all features was detected by using JAVA_HOME,
@@ -460,7 +460,7 @@ javaFrameworkError SAL_CALL jfw_findAndSelectJRE(JavaInfo **pInfo)
                             aCurrentInfo = pJInfo;
                         }
 
-                        jfw_freeJavaInfo(pJInfo);
+                        delete pJInfo;
                     }
                     ++it;
                 }
@@ -529,7 +529,7 @@ javaFrameworkError SAL_CALL jfw_findAndSelectJRE(JavaInfo **pInfo)
                 //The array returned by jfw_plugin_getAllJavaInfos must be freed as well as
                 //its contents
                 for (int j = 0; j < cInfos; j++)
-                    jfw_freeJavaInfo(arInfos[j]);
+                    delete arInfos[j];
                 rtl_freeMemory(arInfos);
 
                 if (bInfoFound)
@@ -624,42 +624,25 @@ javaFrameworkError SAL_CALL jfw_findAndSelectJRE(JavaInfo **pInfo)
     return errcode;
 }
 
-sal_Bool SAL_CALL jfw_areEqualJavaInfo(
-    JavaInfo const * pInfoA,JavaInfo const * pInfoB)
+bool jfw_areEqualJavaInfo(JavaInfo const * pInfoA,JavaInfo const * pInfoB)
 {
     if (pInfoA == pInfoB)
-        return sal_True;
+        return true;
     if (pInfoA == nullptr || pInfoB == nullptr)
-        return sal_False;
-    OUString sVendor(pInfoA->sVendor);
-    OUString sLocation(pInfoA->sLocation);
-    OUString sVersion(pInfoA->sVersion);
-    rtl::ByteSequence sData(pInfoA->arVendorData);
-    if (sVendor.equals(pInfoB->sVendor)
-        && sLocation.equals(pInfoB->sLocation)
-        && sVersion.equals(pInfoB->sVersion)
+        return false;
+    if (pInfoA->sVendor == pInfoB->sVendor
+        && pInfoA->sLocation == pInfoB->sLocation
+        && pInfoA->sVersion == pInfoB->sVersion
         && pInfoA->nFeatures == pInfoB->nFeatures
         && pInfoA->nRequirements == pInfoB->nRequirements
-        && sData == pInfoB->arVendorData)
+        && pInfoA->arVendorData == pInfoB->arVendorData)
     {
-        return sal_True;
+        return true;
     }
-    return sal_False;
+    return false;
 }
 
-
-void SAL_CALL jfw_freeJavaInfo(JavaInfo *pInfo)
-{
-    if (pInfo == nullptr)
-        return;
-    rtl_uString_release(pInfo->sVendor);
-    rtl_uString_release(pInfo->sLocation);
-    rtl_uString_release(pInfo->sVersion);
-    rtl_byte_sequence_release(pInfo->arVendorData);
-    rtl_freeMemory(pInfo);
-}
-
-javaFrameworkError SAL_CALL jfw_getSelectedJRE(JavaInfo **ppInfo)
+javaFrameworkError jfw_getSelectedJRE(JavaInfo **ppInfo)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -713,7 +696,7 @@ javaFrameworkError SAL_CALL jfw_getSelectedJRE(JavaInfo **ppInfo)
     return errcode;
 }
 
-javaFrameworkError SAL_CALL jfw_isVMRunning(sal_Bool *bRunning)
+javaFrameworkError jfw_isVMRunning(sal_Bool *bRunning)
 {
     osl::MutexGuard guard(jfw::FwkMutex::get());
     if (bRunning == nullptr)
@@ -725,8 +708,7 @@ javaFrameworkError SAL_CALL jfw_isVMRunning(sal_Bool *bRunning)
     return JFW_E_NONE;
 }
 
-javaFrameworkError SAL_CALL jfw_getJavaInfoByPath(
-    rtl_uString *pPath, JavaInfo **ppInfo)
+javaFrameworkError jfw_getJavaInfoByPath(rtl_uString *pPath, JavaInfo **ppInfo)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -794,7 +776,7 @@ javaFrameworkError SAL_CALL jfw_getJavaInfoByPath(
 }
 
 
-javaFrameworkError SAL_CALL jfw_setSelectedJRE(JavaInfo const *pInfo)
+javaFrameworkError jfw_setSelectedJRE(JavaInfo const *pInfo)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -817,7 +799,7 @@ javaFrameworkError SAL_CALL jfw_setSelectedJRE(JavaInfo const *pInfo)
             jfw::setJavaSelected();
         }
 
-        jfw_freeJavaInfo(currentInfo);
+        delete currentInfo;
     }
     catch (const jfw::FrameworkException& e)
     {
@@ -827,7 +809,7 @@ javaFrameworkError SAL_CALL jfw_setSelectedJRE(JavaInfo const *pInfo)
     }
     return errcode;
 }
-javaFrameworkError SAL_CALL jfw_setEnabled(sal_Bool bEnabled)
+javaFrameworkError jfw_setEnabled(bool bEnabled)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -861,7 +843,7 @@ javaFrameworkError SAL_CALL jfw_setEnabled(sal_Bool bEnabled)
     return errcode;
 }
 
-javaFrameworkError SAL_CALL jfw_getEnabled(sal_Bool *pbEnabled)
+javaFrameworkError jfw_getEnabled(sal_Bool *pbEnabled)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -884,7 +866,7 @@ javaFrameworkError SAL_CALL jfw_getEnabled(sal_Bool *pbEnabled)
 }
 
 
-javaFrameworkError SAL_CALL jfw_setVMParameters(
+javaFrameworkError jfw_setVMParameters(
     rtl_uString * * arOptions, sal_Int32 nLen)
 {
     javaFrameworkError errcode = JFW_E_NONE;
@@ -909,7 +891,7 @@ javaFrameworkError SAL_CALL jfw_setVMParameters(
     return errcode;
 }
 
-javaFrameworkError SAL_CALL jfw_getVMParameters(
+javaFrameworkError jfw_getVMParameters(
     rtl_uString *** parOptions, sal_Int32 * pLen)
 {
     javaFrameworkError errcode = JFW_E_NONE;
@@ -933,7 +915,7 @@ javaFrameworkError SAL_CALL jfw_getVMParameters(
     return errcode;
 }
 
-javaFrameworkError SAL_CALL jfw_setUserClassPath(rtl_uString * pCp)
+javaFrameworkError jfw_setUserClassPath(rtl_uString * pCp)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -956,7 +938,7 @@ javaFrameworkError SAL_CALL jfw_setUserClassPath(rtl_uString * pCp)
     return errcode;
 }
 
-javaFrameworkError SAL_CALL jfw_getUserClassPath(rtl_uString ** ppCP)
+javaFrameworkError jfw_getUserClassPath(rtl_uString ** ppCP)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -979,7 +961,7 @@ javaFrameworkError SAL_CALL jfw_getUserClassPath(rtl_uString ** ppCP)
     return errcode;
 }
 
-javaFrameworkError SAL_CALL jfw_addJRELocation(rtl_uString * sLocation)
+javaFrameworkError jfw_addJRELocation(rtl_uString * sLocation)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -1031,12 +1013,12 @@ javaFrameworkError jfw_existJRE(const JavaInfo *pInfo, sal_Bool *exist)
     return ret;
 }
 
-void SAL_CALL jfw_lock()
+void jfw_lock()
 {
     jfw::FwkMutex::get().acquire();
 }
 
-void SAL_CALL jfw_unlock()
+void jfw_unlock()
 {
     jfw::FwkMutex::get().release();
 }
@@ -1063,7 +1045,7 @@ CJavaInfo CJavaInfo::createWrapper(::JavaInfo* info)
 }
 void CJavaInfo::attach(::JavaInfo * info)
 {
-    jfw_freeJavaInfo(pInfo);
+    delete pInfo;
     pInfo = info;
 }
 ::JavaInfo * CJavaInfo::detach()
@@ -1075,25 +1057,13 @@ void CJavaInfo::attach(::JavaInfo * info)
 
 CJavaInfo::~CJavaInfo()
 {
-    jfw_freeJavaInfo(pInfo);
+    delete pInfo;
 }
 
 
 JavaInfo * CJavaInfo::copyJavaInfo(const JavaInfo * pInfo)
 {
-    if (pInfo == nullptr)
-        return nullptr;
-    JavaInfo* newInfo =
-          static_cast<JavaInfo*>(rtl_allocateMemory(sizeof(JavaInfo)));
-    if (newInfo)
-    {
-        memcpy(newInfo, pInfo, sizeof(JavaInfo));
-        rtl_uString_acquire(pInfo->sVendor);
-        rtl_uString_acquire(pInfo->sLocation);
-        rtl_uString_acquire(pInfo->sVersion);
-        rtl_byte_sequence_acquire(pInfo->arVendorData);
-    }
-    return newInfo;
+    return pInfo == nullptr ? nullptr : new JavaInfo(*pInfo);
 }
 
 
@@ -1109,7 +1079,7 @@ CJavaInfo & CJavaInfo::operator = (const CJavaInfo& info)
     if (&info == this)
         return *this;
 
-    jfw_freeJavaInfo(pInfo);
+    delete pInfo;
     pInfo = copyJavaInfo(info.pInfo);
     return *this;
 }
@@ -1118,7 +1088,7 @@ CJavaInfo & CJavaInfo::operator = (const ::JavaInfo* info)
     if (info == pInfo)
         return *this;
 
-    jfw_freeJavaInfo(pInfo);
+    delete pInfo;
     pInfo = copyJavaInfo(info);
     return *this;
 }

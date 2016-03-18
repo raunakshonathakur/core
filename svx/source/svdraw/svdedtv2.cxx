@@ -771,7 +771,7 @@ void SdrEditView::DistributeMarkedObjects()
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         if(pFact)
         {
-            std::unique_ptr<AbstractSvxDistributeDialog> pDlg(pFact->CreateSvxDistributeDialog(nullptr, aNewAttr));
+            std::unique_ptr<AbstractSvxDistributeDialog> pDlg(pFact->CreateSvxDistributeDialog(aNewAttr));
             DBG_ASSERT(pDlg, "Dialog creation failed!");
 
             sal_uInt16 nResult = pDlg->Execute();
@@ -1715,7 +1715,7 @@ void SdrEditView::DismantleMarkedObjects(bool bMakeLines)
 // Group
 
 
-void SdrEditView::GroupMarked(const SdrObject* pUserGrp)
+void SdrEditView::GroupMarked()
 {
     if (AreObjectsMarked())
     {
@@ -1763,8 +1763,6 @@ void SdrEditView::GroupMarked(const SdrObject* pUserGrp)
                 {
                     if (pGrp==nullptr)
                     {
-                        if (pUserGrp!=nullptr)
-                            pGrp=pUserGrp->Clone();
                         if (pGrp==nullptr)
                             pGrp=new SdrObjGroup;
                         pDstLst=pGrp->GetSubList();
@@ -2000,9 +1998,9 @@ void SdrEditView::ConvertMarkedToPathObj(bool bLineToArea)
     ImpConvertTo(true, bLineToArea);
 }
 
-void SdrEditView::ConvertMarkedToPolyObj(bool bLineToArea)
+void SdrEditView::ConvertMarkedToPolyObj()
 {
-    ImpConvertTo(false, bLineToArea);
+    ImpConvertTo(false, false/*bLineToArea*/);
 }
 
 

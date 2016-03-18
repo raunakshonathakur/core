@@ -41,6 +41,7 @@
 #include <vcl/sysdata.hxx>
 #include <vcl/metric.hxx>
 #include <vcl/fontcharmap.hxx>
+#include <vcl/opengl/OpenGLWrapper.hxx>
 
 #include "fontsubset.hxx"
 #include "outdev.h"
@@ -1303,6 +1304,15 @@ void ImplGetLogFontFromFontSelect( HDC hDC,
         rLogFont.lfPitchAndFamily = pWinFontData->GetPitchAndFamily();
     }
 
+    static BYTE nDefaultQuality = NONANTIALIASED_QUALITY;
+    if (nDefaultQuality == NONANTIALIASED_QUALITY)
+    {
+        if (OpenGLWrapper::isVCLOpenGLEnabled())
+            nDefaultQuality = ANTIALIASED_QUALITY;
+        else
+            nDefaultQuality = DEFAULT_QUALITY;
+    }
+
     rLogFont.lfWeight          = ImplWeightToWin( pFont->GetWeight() );
     rLogFont.lfHeight          = (LONG)-pFont->mnHeight;
     rLogFont.lfWidth           = (LONG)pFont->mnWidth;
@@ -1312,7 +1322,7 @@ void ImplGetLogFontFromFontSelect( HDC hDC,
     rLogFont.lfEscapement      = pFont->mnOrientation;
     rLogFont.lfOrientation     = rLogFont.lfEscapement;
     rLogFont.lfClipPrecision   = CLIP_DEFAULT_PRECIS;
-    rLogFont.lfQuality         = DEFAULT_QUALITY;
+    rLogFont.lfQuality         = nDefaultQuality;
     rLogFont.lfOutPrecision    = OUT_TT_PRECIS;
     if ( pFont->mnOrientation )
         rLogFont.lfClipPrecision |= CLIP_LH_ANGLES;
@@ -2004,9 +2014,9 @@ bool WinSalGraphics::GetGlyphBoundRect( sal_GlyphId aGlyphId, Rectangle& rRect )
     rRect = Rectangle( Point( +aGM.gmptGlyphOrigin.x, -aGM.gmptGlyphOrigin.y ),
         Size( aGM.gmBlackBoxX, aGM.gmBlackBoxY ) );
     rRect.Left()    = static_cast<int>( mfCurrentFontScale * rRect.Left() );
-    rRect.Right()   = static_cast<int>( mfCurrentFontScale * rRect.Right() );
+    rRect.Right()   = static_cast<int>( mfCurrentFontScale * rRect.Right() ) + 1;
     rRect.Top()     = static_cast<int>( mfCurrentFontScale * rRect.Top() );
-    rRect.Bottom()  = static_cast<int>( mfCurrentFontScale * rRect.Bottom() );
+    rRect.Bottom()  = static_cast<int>( mfCurrentFontScale * rRect.Bottom() ) + 1;
     return true;
 }
 

@@ -83,7 +83,7 @@ private:
     void                ExecuteScenarioSlot( sal_uInt16 nSlotId );
     void                SelectScenario();
     void                EditScenario();
-    void                DeleteScenario( bool bQueryBox );
+    void                DeleteScenario();
 
 private:
     ScScenarioWindow&   mrParent;
@@ -282,7 +282,7 @@ private:
 
     void    SetListMode     ( NavListMode eMode, bool bSetSize = true );
     void    ShowList        ( bool bShow, bool bSetSize );
-    void    ShowScenarios   ( bool bShow, bool bSetSize );
+    void    ShowScenarios   ( bool bSetSize );
 
     void    SetDropMode(sal_uInt16 nNew);
     sal_uInt16  GetDropMode() const         { return nDropMode; }

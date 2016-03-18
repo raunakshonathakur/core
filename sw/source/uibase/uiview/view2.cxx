@@ -19,7 +19,8 @@
 
 #include <config_features.h>
 
-#include <com/sun/star/util/SearchOptions.hpp>
+#include <com/sun/star/util/SearchOptions2.hpp>
+#include <com/sun/star/util/SearchAlgorithms2.hpp>
 #include <com/sun/star/util/SearchFlags.hpp>
 #include <com/sun/star/i18n/TransliterationModules.hpp>
 #include <vcl/graphicfilter.hxx>
@@ -1364,7 +1365,7 @@ void SwView::StateStatusLine(SfxItemSet &rSet)
             case FN_STAT_TEMPLATE:
             {
                 rSet.Put(SfxStringItem( FN_STAT_TEMPLATE,
-                                        rShell.GetCurPageStyle(false)));
+                                        rShell.GetCurPageStyle()));
 
             }
             break;
@@ -1924,9 +1925,9 @@ bool SwView::JumpToSwMark( const OUString& rMark )
         SetCursorAtTop( true );
 
         // For scrolling the FrameSet, the corresponding shell needs to have the focus.
-        bool bHasShFocus = m_pWrtShell->HasShFcs();
+        bool bHasShFocus = m_pWrtShell->HasShellFocus();
         if( !bHasShFocus )
-            m_pWrtShell->ShGetFcs( false );
+            m_pWrtShell->ShellGetFocus();
 
         const SwFormatINetFormat* pINet;
         OUString sCmp;
@@ -1986,12 +1987,14 @@ bool SwView::JumpToSwMark( const OUString& rMark )
                 // normal text search
                 m_pWrtShell->EnterStdMode();
 
-                SearchOptions aSearchOpt(
+                SearchOptions2 aSearchOpt(
                                     SearchAlgorithms_ABSOLUTE, 0,
                                     sName, OUString(),
                                     SvtSysLocale().GetLanguageTag().getLocale(),
                                     0,0,0,
-                                    TransliterationModules_IGNORE_CASE );
+                                    TransliterationModules_IGNORE_CASE,
+                                    SearchAlgorithms2::ABSOLUTE,
+                                    '\\' );
 
                 //todo/mba: assuming that notes shouldn't be searched
                 bool bSearchInNotes = false;
@@ -2044,7 +2047,7 @@ bool SwView::JumpToSwMark( const OUString& rMark )
         SetCursorAtTop( bSaveCT, bSaveCC );
 
         if( !bHasShFocus )
-            m_pWrtShell->ShLooseFcs();
+            m_pWrtShell->ShellLoseFocus();
     }
     return bRet;
 }
@@ -2107,13 +2110,13 @@ long SwView::InsertDoc( sal_uInt16 nSlotId, const OUString& rFileName, const OUS
     if( !rFileName.isEmpty() )
     {
         SfxObjectFactory& rFact = pDocSh->GetFactory();
-        const SfxFilter* pFilter = rFact.GetFilterContainer()->GetFilter4FilterName( rFilterName );
+        std::shared_ptr<const SfxFilter> pFilter = rFact.GetFilterContainer()->GetFilter4FilterName( rFilterName );
         if ( !pFilter )
         {
             pMed = new SfxMedium(rFileName, StreamMode::READ, nullptr, nullptr );
             SfxFilterMatcher aMatcher( rFact.GetFilterContainer()->GetName() );
             pMed->UseInteractionHandler( true );
-            ErrCode nErr = aMatcher.GuessFilter(*pMed, &pFilter, SfxFilterFlags::NONE);
+            ErrCode nErr = aMatcher.GuessFilter(*pMed, pFilter, SfxFilterFlags::NONE);
             if ( nErr )
                 DELETEZ(pMed);
             else
@@ -2277,9 +2280,9 @@ long SwView::InsertMedium( sal_uInt16 nSlotId, SfxMedium* pMedium, sal_Int16 nVe
     return nFound;
 }
 
-void SwView::EnableMailMerge(bool bEnable )
+void SwView::EnableMailMerge()
 {
-    m_bInMailMerge = bEnable;
+    m_bInMailMerge = true;
     SfxBindings& rBind = GetViewFrame()->GetBindings();
     rBind.Invalidate(FN_INSERT_FIELD_DATA_ONLY);
     rBind.Update(FN_INSERT_FIELD_DATA_ONLY);

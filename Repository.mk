@@ -33,6 +33,7 @@ $(eval $(call gb_Helper_register_executables,NONE, \
 	genconv_dict \
 	gendict \
 	genindex_data \
+	genlang \
 	helpex \
 	idxdict \
 	langsupport \
@@ -67,13 +68,13 @@ $(eval $(call gb_Helper_register_executables,NONE, \
         svptest \
         svpclient \
         pixelctl ) \
-	$(if $(and $(ENABLE_GTK), $(filter LINUX %BSD SOLARIS,$(OS))), tilebench) \
+	$(if $(and $(ENABLE_GTK3), $(filter LINUX %BSD SOLARIS,$(OS))), tilebench) \
 	$(if $(filter LINUX MACOSX SOLARIS WNT %BSD,$(OS)),icontest \
 	    outdevgrind) \
 	vcldemo \
 	tiledrendering \
     mtfdemo \
-	$(if $(and $(ENABLE_GTK), $(filter LINUX %BSD SOLARIS,$(OS))), gtktiledviewer) \
+	$(if $(and $(ENABLE_GTK3), $(filter LINUX %BSD SOLARIS,$(OS))), gtktiledviewer) \
 ))
 
 $(eval $(call gb_Helper_register_executables_for_install,SDK,sdk, \
@@ -88,6 +89,7 @@ $(eval $(call gb_Helper_register_executables_for_install,SDK,sdk, \
 ))
 
 $(eval $(call gb_Helper_register_executables_for_install,OOO,brand, \
+	minidump_upload \
 	$(if $(filter-out ANDROID IOS MACOSX WNT,$(OS)),oosplash) \
 	soffice_bin \
 	$(if $(filter DESKTOP,$(BUILD_TYPE)),unopkg_bin) \
@@ -145,7 +147,9 @@ $(eval $(call gb_Helper_register_executables_for_install,OOO,writer_brand, \
 $(eval $(call gb_Helper_register_executables_for_install,OOO,ooo, \
 	gengal \
 	$(if $(filter WNT,$(OS)),,uri-encode) \
-	ui-previewer \
+	$(if $(ENABLE_MACOSX_SANDBOX),, \
+		ui-previewer \
+	) \
 	$(if $(filter WNT,$(OS)), \
 		senddoc \
 	) \
@@ -186,8 +190,10 @@ endif
 
 $(eval $(call gb_Helper_register_executables_for_install,UREBIN,ure,\
 	$(if $(and $(ENABLE_JAVA),$(filter-out MACOSX WNT,$(OS)),$(filter DESKTOP,$(BUILD_TYPE))),javaldx) \
-	regmerge \
-	regview \
+	$(if $(ENABLE_MACOSX_SANDBOX),, \
+		regmerge \
+		regview \
+	) \
 	$(if $(filter DESKTOP,$(BUILD_TYPE)),uno) \
 ))
 
@@ -542,6 +548,7 @@ $(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_OOO,ooo, \
 	collator_data \
 	comphelper \
 	$(call gb_Helper_optional,DBCONNECTIVITY,dbpool2) \
+	$(call gb_Helper_optional,BREAKPAD,crashreport) \
 	deployment \
 	deploymentgui \
 	dict_ja \
@@ -822,6 +829,7 @@ $(eval $(call gb_Helper_register_packages_for_install,ooo,\
 		Pyuno/web \
 		Pyuno/mailmerge \
 	)) \
+	sfx2_classification \
 ))
 
 $(eval $(call gb_Helper_register_packages_for_install,ogltrans,\

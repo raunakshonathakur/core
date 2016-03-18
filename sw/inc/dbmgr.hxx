@@ -245,7 +245,7 @@ friend class SwConnectionDisposedListener_Impl;
 
     SAL_DLLPRIVATE bool CreateNewTemp(OUString &sPath, const OUString &sAddress,
                                       std::unique_ptr< utl::TempFile > &aTempFile,
-                                      const SwMergeDescriptor& rMergeDescriptor,  const SfxFilter* pStoreToFilter);
+                                      const SwMergeDescriptor& rMergeDescriptor,  std::shared_ptr<const SfxFilter> pStoreToFilter);
 
 
     SAL_DLLPRIVATE bool CreateTargetDocShell(sal_Int32 nMaxDumpDocs, bool bMergeShell, vcl::Window *pSourceWindow,
@@ -261,7 +261,7 @@ friend class SwConnectionDisposedListener_Impl;
 
     SAL_DLLPRIVATE void UpdateExpFields(SwWrtShell& rWorkShell, SfxObjectShellLock xWorkDocSh);
 
-    SAL_DLLPRIVATE void CreateStoreToFilter(const SfxFilter *&pStoreToFilter, const OUString *&pStoreToFilterOptions,
+    SAL_DLLPRIVATE void CreateStoreToFilter(std::shared_ptr<const SfxFilter>& pStoreToFilter, const OUString *&pStoreToFilterOptions,
                                             SwDocShell *pSourceDocSh, bool bEMail, const SwMergeDescriptor &rMergeDescriptor);
 
     SAL_DLLPRIVATE void MergeSingleFiles(SwDoc *pWorkDoc, SwWrtShell &rWorkShell, SwWrtShell *pTargetShell, SwDoc *pTargetDoc,
@@ -282,7 +282,7 @@ friend class SwConnectionDisposedListener_Impl;
     SAL_DLLPRIVATE bool SavePrintDoc(SfxObjectShellRef xTargetDocShell, SwView *pTargetView,
                                      const SwMergeDescriptor &rMergeDescriptor,
                                      std::unique_ptr< utl::TempFile > &aTempFile,
-                                     const SfxFilter *&pStoreToFilter, const OUString *&pStoreToFilterOptions,
+                                     std::shared_ptr<const SfxFilter>& pStoreToFilter, const OUString *&pStoreToFilterOptions,
                                      const bool bMergeShell, bool bCreateSingleFile, const bool bPrinter);
 
     SAL_DLLPRIVATE void SetPrinterOptions(const SwMergeDescriptor &rMergeDescriptor,
@@ -332,7 +332,7 @@ public:
 
     /// Fill listbox with all column names of a database table.
     void            GetColumnNames(ListBox* pListBox,
-                            const OUString& rDBName, const OUString& rTableName, bool bAppend = false);
+                            const OUString& rDBName, const OUString& rTableName);
     static void GetColumnNames(ListBox* pListBox,
                             css::uno::Reference< css::sdbc::XConnection> xConnection,
                             const OUString& rTableName, bool bAppend = false);
@@ -366,8 +366,7 @@ public:
                                     const OUString& rTableOrQuery, bool bMergeShell);
 
     /// open the source while fields are updated - for the calculator only!
-    bool            OpenDataSource(const OUString& rDataSource, const OUString& rTableOrQuery,
-                        sal_Int32 nCommandType = -1, bool bCreate = false);
+    bool            OpenDataSource(const OUString& rDataSource, const OUString& rTableOrQuery);
     sal_uInt32      GetSelectedRecordId(const OUString& rDataSource, const OUString& rTableOrQuery, sal_Int32 nCommandType = -1);
     bool            GetColumnCnt(const OUString& rSourceName, const OUString& rTableName,
                             const OUString& rColumnName, sal_uInt32 nAbsRecordId, long nLanguage,
@@ -389,7 +388,7 @@ public:
     bool            FillCalcWithMergeData(SvNumberFormatter *pDocFormatter,
                                           sal_uInt16 nLanguage, bool asString, SwCalc &aCalc);
     bool            ToNextMergeRecord();
-    bool            ToNextRecord(const OUString& rDataSource, const OUString& rTableOrQuery, sal_Int32 nCommandType = -1);
+    bool            ToNextRecord(const OUString& rDataSource, const OUString& rTableOrQuery);
 
     bool            ExistsNextRecord()const;
     sal_uInt32      GetSelectedRecordId();

@@ -2290,9 +2290,10 @@ bool SwFEShell::GotoFly( const OUString& rName, FlyCntType eType, bool bSelFrame
         {
             if( bSelFrame )
             {
-                SelectObj( pFrame->Frame().Pos(), 0, pFrame->GetVirtDrawObj() );
-                if( !ActionPend() )
+                // first make visible, to get a11y events in proper order
+                if (!ActionPend())
                     MakeVisible( pFrame->Frame() );
+                SelectObj( pFrame->Frame().Pos(), 0, pFrame->GetVirtDrawObj() );
             }
             else
             {
@@ -2746,6 +2747,7 @@ long SwFEShell::GetSectionWidth( SwFormat const & rFormat ) const
             switch(eSdrObjectKind)
             {
                 case OBJ_PATHLINE:
+                case OBJ_PATHFILL:
                 {
                     basegfx::B2DPolygon aInnerPoly;
 
@@ -2768,6 +2770,7 @@ long SwFEShell::GetSectionWidth( SwFormat const & rFormat ) const
                 }
                 break;
                 case OBJ_FREELINE:
+                case OBJ_FREEFILL:
                 {
                     basegfx::B2DPolygon aInnerPoly;
 

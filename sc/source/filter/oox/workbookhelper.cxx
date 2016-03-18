@@ -232,7 +232,7 @@ public:
 
 private:
     /** Initializes some basic members and sets needed document properties. */
-    void                initialize( bool bWorkbookFile );
+    void                initialize();
     /** Finalizes the filter process (sets some needed document properties). */
     void                finalize();
 
@@ -322,7 +322,7 @@ WorkbookGlobals::WorkbookGlobals( ExcelFilter& rFilter ) :
 {
     // register at the filter, needed for virtual callbacks (even during construction)
     mrExcelFilter.registerWorkbookGlobals( *this );
-    initialize( true );
+    initialize();
 }
 
 WorkbookGlobals::~WorkbookGlobals()
@@ -528,14 +528,14 @@ void WorkbookGlobals::useInternalChartDataTable( bool bInternal )
 
 // private --------------------------------------------------------------------
 
-void WorkbookGlobals::initialize( bool bWorkbookFile )
+void WorkbookGlobals::initialize()
 {
     maCellStyles = "CellStyles";
     maPageStyles = "PageStyles";
     maCellStyleServ = "com.sun.star.style.CellStyle";
     maPageStyleServ = "com.sun.star.style.PageStyle";
     mnCurrSheet = -1;
-    mbWorkbook = bWorkbookFile;
+    mbWorkbook = true;
     meTextEnc = osl_getThreadTextEncoding();
     mbHasCodePage = false;
 
@@ -604,7 +604,7 @@ void WorkbookGlobals::initialize( bool bWorkbookFile )
         // #i76026# disable Undo while loading the document
         mpDoc->EnableUndo(false);
         // #i79826# disable calculating automatic row height while loading the document
-        mpDoc->EnableAdjustHeight(true);
+        mpDoc->EnableAdjustHeight(false);
         // disable automatic update of linked sheets and DDE links
         mpDoc->EnableExecuteLink(false);
 
@@ -827,9 +827,9 @@ Reference< XCellRange > WorkbookHelper::getCellRangeFromDoc( const CellRangeAddr
     return xRange;
 }
 
-Reference< XNameContainer > WorkbookHelper::getStyleFamily( bool bPageStyles ) const
+Reference< XNameContainer > WorkbookHelper::getCellStyleFamily() const
 {
-    return mrBookGlob.getStyleFamily( bPageStyles );
+    return mrBookGlob.getStyleFamily( false/*bPageStyles*/ );
 }
 
 Reference< XStyle > WorkbookHelper::getStyleObject( const OUString& rStyleName, bool bPageStyle ) const

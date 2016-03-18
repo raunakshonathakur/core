@@ -42,7 +42,7 @@
 #include <memory>
 
 namespace com { namespace sun { namespace star { namespace util {
-    struct SearchOptions;
+    struct SearchOptions2;
 } } } }
 
 using namespace ::com::sun::star::util;
@@ -210,7 +210,7 @@ long SwWrtShell::SelAll()
 
 // Description: Text search
 
-sal_uLong SwWrtShell::SearchPattern( const SearchOptions& rSearchOpt, bool bSearchInNotes,
+sal_uLong SwWrtShell::SearchPattern( const SearchOptions2& rSearchOpt, bool bSearchInNotes,
                                 SwDocPositions eStt, SwDocPositions eEnd,
                                 FindRanges eFlags, bool bReplace )
 {
@@ -256,7 +256,7 @@ sal_uLong SwWrtShell::SearchTempl( const OUString &rTempl,
 
 sal_uLong SwWrtShell::SearchAttr( const SfxItemSet& rFindSet, bool bNoColls,
                                 SwDocPositions eStart, SwDocPositions eEnd,
-                                FindRanges eFlags, const SearchOptions* pSearchOpt,
+                                FindRanges eFlags, const SearchOptions2* pSearchOpt,
                                 const SfxItemSet* pReplaceSet )
 {
     // no enhancement of existing selections
@@ -400,11 +400,11 @@ void SwWrtShell::EndSelect()
         m_bInSelect = false;
         if (m_bAddMode)
         {
-            AddLeaveSelect(nullptr);
+            AddLeaveSelect();
         }
         else
         {
-            SttLeaveSelect(nullptr);
+            SttLeaveSelect();
             m_fnSetCursor = &SwWrtShell::SetCursorKillSel;
             m_fnKillSel = &SwWrtShell::ResetSelect;
         }
@@ -576,7 +576,7 @@ void SwWrtShell::LeaveExtMode()
 // End of a selection; if the selection is empty,
 // ClearMark().
 
-void SwWrtShell::SttLeaveSelect(const Point *, bool )
+void SwWrtShell::SttLeaveSelect()
 {
     if(SwCursorShell::HasSelection() && !IsSelTableCells() && m_bClearMark) {
         return;
@@ -586,7 +586,7 @@ void SwWrtShell::SttLeaveSelect(const Point *, bool )
 
 // Leaving of the selection mode in additional mode
 
-void SwWrtShell::AddLeaveSelect(const Point *, bool )
+void SwWrtShell::AddLeaveSelect()
 {
     if(IsTableMode()) LeaveAddMode();
     else if(SwCursorShell::HasSelection())

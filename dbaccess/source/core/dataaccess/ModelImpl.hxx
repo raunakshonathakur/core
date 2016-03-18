@@ -285,8 +285,7 @@ public:
     inline OUString getDocFileLocation() const   { return m_sDocFileLocation; }
 
     css::uno::Reference< css::embed::XStorage >
-            getStorage(
-                const ObjectType _eType, const sal_Int32 _nDesiredMode = css::embed::ElementModes::READWRITE );
+            getStorage( const ObjectType _eType );
 
 // helper
     const css::uno::Reference< css::util::XNumberFormatsSupplier >&
@@ -342,16 +341,13 @@ public:
 
     /** returns a new ->ODatabaseDocument
 
-        @param _bInitializeIfNecessary
-            calls XLoadable::initNew on the newly created model, if necessary
-
         @precond
             No ->ODatabaseDocument exists so far
 
         @seealso
             getModel_noCreate
     */
-    css::uno::Reference< css::frame::XModel > createNewModel_deliverOwnership( bool _bInitialize );
+    css::uno::Reference< css::frame::XModel > createNewModel_deliverOwnership();
 
     struct ResetModelAccess { friend class ODatabaseDocument; private: ResetModelAccess() { } };
 

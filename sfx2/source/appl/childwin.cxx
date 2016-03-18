@@ -577,11 +577,7 @@ bool SfxChildWindow::WantsFocus() const
 
 bool SfxChildWinInfo::GetExtraData_Impl
 (
-    SfxChildAlignment   *pAlign,
-    SfxChildAlignment   *pLastAlign,
-    Size                *pSize,
-    sal_uInt16          *pLine,
-    sal_uInt16          *pPos
+    SfxChildAlignment   *pAlign
 )   const
 {
     // invalid?
@@ -617,8 +613,6 @@ bool SfxChildWinInfo::GetExtraData_Impl
     if ( nPos == -1 )
         return false;
     aStr = aStr.copy(nPos+1);
-    if ( pLastAlign )
-        *pLastAlign = (SfxChildAlignment) (sal_uInt16) aStr.toInt32();
 
     // Then the splitting information
     nPos = aStr.indexOf(',');
@@ -630,12 +624,6 @@ bool SfxChildWinInfo::GetExtraData_Impl
     Size aChildSize;
     if ( GetPosSizeFromString( aStr, aChildPos, aChildSize ) )
     {
-        if ( pSize )
-            *pSize = aChildSize;
-        if ( pLine )
-            *pLine = (sal_uInt16) aChildPos.X();
-        if ( pPos )
-            *pPos = (sal_uInt16) aChildPos.Y();
         return true;
     }
     return false;

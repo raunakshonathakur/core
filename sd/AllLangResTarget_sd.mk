@@ -17,17 +17,11 @@ $(eval $(call gb_AllLangResTarget_add_srs,sd,\
 
 $(eval $(call gb_SrsTarget_SrsTarget,sd/res))
 
-$(eval $(call gb_SrsTarget_use_srstargets,sd/res,\
-	svx/res \
-))
-
 $(eval $(call gb_SrsTarget_set_include,sd/res,\
     $$(INCLUDE) \
     -I$(SRCDIR)/sd/inc \
     -I$(SRCDIR)/sd/source/ui/inc \
     -I$(SRCDIR)/sd/source/ui/slidesorter/inc \
-    -I$(call gb_SrsTemplateTarget_get_include_dir,sd) \
-    -I$(call gb_SrsTemplateTarget_get_include_dir,) \
 ))
 
 $(eval $(call gb_SrsTarget_add_files,sd/res,\
@@ -47,17 +41,6 @@ $(eval $(call gb_SrsTarget_add_files,sd/res,\
 
 $(eval $(call gb_SrsTarget_add_nonlocalizable_files,sd/res,\
     sd/source/ui/slidesorter/view/SlsResource.src \
-))
-
-$(eval $(call gb_SrsTarget_add_templates,sd/res,\
-    sd/source/ui/app/menuids3_tmpl.src \
-    sd/source/ui/app/menuids_tmpl.src \
-    sd/source/ui/app/popup2_tmpl.src \
-))
-
-$(eval $(call gb_SrsTarget_add_nonlocalizable_templates,sd/res,\
-    sd/source/ui/app/tbxids_tmpl.src \
-    sd/source/ui/app/toolbox2_tmpl.src \
 ))
 
 # vim: set noet sw=4 ts=4:

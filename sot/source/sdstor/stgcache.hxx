@@ -39,8 +39,7 @@ class StgCache
 {
     typedef std::unordered_map
     <
-        sal_Int32, rtl::Reference< StgPage >,
-        std::hash< sal_Int32 >, std::equal_to< sal_Int32 >
+        sal_Int32, rtl::Reference< StgPage >
     > IndexToStgPage;
 
     typedef std::vector< rtl::Reference< StgPage > > LRUList;
@@ -80,8 +79,8 @@ public:
     void  ResetError();
     bool  Open( const OUString& rName, StreamMode );
     void  Close();
-    bool  Read( sal_Int32 nPage, void* pBuf, sal_Int32 nPages );
-    bool  Write( sal_Int32 nPage, void* pBuf, sal_Int32 nPages );
+    bool  Read( sal_Int32 nPage, void* pBuf );
+    bool  Write( sal_Int32 nPage, void* pBuf );
 
     // two routines for accessing FAT pages
     // Assume that the data is a FAT page and get/put FAT data.

@@ -202,7 +202,7 @@ public:
     }
     bool isFixedPageSize() const
     { return mbPapersizeFromSetup; }
-    PrinterController::PageSize modifyJobSetup( const css::uno::Sequence< css::beans::PropertyValue >& i_rProps, bool bNoNUP );
+    PrinterController::PageSize modifyJobSetup( const css::uno::Sequence< css::beans::PropertyValue >& i_rProps );
     void resetPaperToLastConfigured();
 };
 
@@ -855,7 +855,7 @@ bool PrinterController::setupPrinter( vcl::Window* i_pParent )
     return bRet;
 }
 
-PrinterController::PageSize vcl::ImplPrinterControllerData::modifyJobSetup( const css::uno::Sequence< css::beans::PropertyValue >& i_rProps, bool bNoNUP )
+PrinterController::PageSize vcl::ImplPrinterControllerData::modifyJobSetup( const css::uno::Sequence< css::beans::PropertyValue >& i_rProps )
 {
     PrinterController::PageSize aPageSize;
     aPageSize.aSize = mxPrinter->GetPaperSize();
@@ -890,7 +890,7 @@ PrinterController::PageSize vcl::ImplPrinterControllerData::modifyJobSetup( cons
     if( aSetSize.Width && aSetSize.Height )
     {
         Size aSetPaperSize( aSetSize.Width, aSetSize.Height );
-        Size aRealPaperSize( getRealPaperSize( aSetPaperSize, bNoNUP ) );
+        Size aRealPaperSize( getRealPaperSize( aSetPaperSize, true/*bNoNUP*/ ) );
         if( aRealPaperSize != aCurSize )
             aIsSize = aSetSize;
     }
@@ -900,7 +900,7 @@ PrinterController::PageSize vcl::ImplPrinterControllerData::modifyJobSetup( cons
         aPageSize.aSize.Width() = aIsSize.Width;
         aPageSize.aSize.Height() = aIsSize.Height;
 
-        Size aRealPaperSize( getRealPaperSize( aPageSize.aSize, bNoNUP ) );
+        Size aRealPaperSize( getRealPaperSize( aPageSize.aSize, true/*bNoNUP*/ ) );
         if( aRealPaperSize != aCurSize )
             mxPrinter->SetPaperSizeUser( aRealPaperSize, ! isFixedPageSize() );
     }
@@ -990,7 +990,7 @@ PrinterController::PageSize PrinterController::getPageFile( int i_nUnfilteredPag
     mpImplData->mxPrinter->SetMapMode( aMapMode );
 
     // modify job setup if necessary
-    PrinterController::PageSize aPageSize = mpImplData->modifyJobSetup( aPageParm, true );
+    PrinterController::PageSize aPageSize = mpImplData->modifyJobSetup( aPageParm );
 
     o_rMtf.SetPrefSize( aPageSize.aSize );
     o_rMtf.SetPrefMapMode( aMapMode );
@@ -1781,21 +1781,16 @@ sal_Int64 PrinterOptionsHelper::getIntValue( const OUString& i_rPropertyName, sa
     return (aVal >>= nRet) ? nRet : i_nDefault;
 }
 
-OUString PrinterOptionsHelper::getStringValue( const OUString& i_rPropertyName, const OUString& i_rDefault ) const
+OUString PrinterOptionsHelper::getStringValue( const OUString& i_rPropertyName ) const
 {
     OUString aRet;
     css::uno::Any aVal( getValue( i_rPropertyName ) );
-    return (aVal >>= aRet) ? aRet : i_rDefault;
+    return (aVal >>= aRet) ? aRet : OUString();
 }
 
-bool PrinterOptionsHelper::processProperties( const css::uno::Sequence< css::beans::PropertyValue >& i_rNewProp,
-                                              std::set< OUString >* o_pChangeProp )
+bool PrinterOptionsHelper::processProperties( const css::uno::Sequence< css::beans::PropertyValue >& i_rNewProp )
 {
     bool bChanged = false;
-
-    // clear the changed set
-    if( o_pChangeProp )
-        o_pChangeProp->clear();
 
     sal_Int32 nElements = i_rNewProp.getLength();
     const css::beans::PropertyValue* pVals = i_rNewProp.getConstArray();
@@ -1814,8 +1809,6 @@ bool PrinterOptionsHelper::processProperties( const css::uno::Sequence< css::bea
 
         if( bElementChanged )
         {
-            if( o_pChangeProp )
-                o_pChangeProp->insert( pVals[ i ].Name );
             m_aPropertyMap[ pVals[i].Name ] = pVals[i].Value;
             bChanged = true;
         }

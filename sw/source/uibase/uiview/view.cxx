@@ -942,7 +942,7 @@ SwView::SwView( SfxViewFrame *_pFrame, SfxViewShell* pOldSh )
             SET_CURR_SHELL( m_pWrtShell );
             m_pWrtShell->StartAction();
             m_pWrtShell->CalcLayout();
-            m_pWrtShell->GetDoc()->getIDocumentFieldsAccess().UpdateFields(nullptr, false);
+            m_pWrtShell->GetDoc()->getIDocumentFieldsAccess().UpdateFields(false);
             m_pWrtShell->EndAction();
         }
         m_pWrtShell->GetDoc()->getIDocumentState().SetUpdateExpFieldStat( false );
@@ -1236,13 +1236,13 @@ void SwView::ReadUserData( const OUString &rUserData, bool bBrowse )
     }
 }
 
-void SwView::ReadUserDataSequence ( const uno::Sequence < beans::PropertyValue >& rSequence, bool bBrowse )
+void SwView::ReadUserDataSequence ( const uno::Sequence < beans::PropertyValue >& rSequence )
 {
     if(GetDocShell()->IsPreview()||m_bIsPreviewDoubleClick)
         return;
     bool bIsOwnDocument = lcl_IsOwnDocument( *this );
     sal_Int32 nLength = rSequence.getLength();
-    if (nLength && (!m_pWrtShell->IsNewLayout() || m_pWrtShell->GetViewOptions()->getBrowseMode() || bBrowse) )
+    if (nLength)
     {
         SET_CURR_SHELL(m_pWrtShell);
         const beans::PropertyValue *pValue = rSequence.getConstArray();
@@ -1251,7 +1251,8 @@ void SwView::ReadUserDataSequence ( const uno::Sequence < beans::PropertyValue >
         const SwViewOption* pVOpt = m_pWrtShell->GetViewOptions();
 
         sal_Int64 nX = rRect.Left(), nY = rRect.Top(), nLeft = rVis.Left(), nTop = rVis.Top();
-        sal_Int64 nRight = bBrowse ? LONG_MIN : rVis.Right(), nBottom = bBrowse ? LONG_MIN : rVis.Bottom();
+        sal_Int64 nRight = LONG_MIN;
+        sal_Int64 nBottom = LONG_MIN;
         sal_Int16 nZoomType = static_cast< sal_Int16 >(pVOpt->GetZoomType());
         sal_Int16 nZoomFactor = static_cast < sal_Int16 > (pVOpt->GetZoom());
         bool bViewLayoutBookMode = pVOpt->IsViewLayoutBookMode();
@@ -1422,7 +1423,7 @@ void SwView::ReadUserDataSequence ( const uno::Sequence < beans::PropertyValue >
 // go to the last editing position when opening own files
                 if(m_bOldShellWasPagePreview||bIsOwnDocument)
                 {
-                    if ( bBrowse && bGotVisibleLeft && bGotVisibleTop )
+                    if ( bGotVisibleLeft && bGotVisibleTop )
                     {
                         Point aTopLeft(aVis.TopLeft());
                         // make sure the document is still centered
@@ -1452,7 +1453,7 @@ void SwView::ReadUserDataSequence ( const uno::Sequence < beans::PropertyValue >
     }
 }
 
-void SwView::WriteUserDataSequence ( uno::Sequence < beans::PropertyValue >& rSequence, bool bBrowse )
+void SwView::WriteUserDataSequence ( uno::Sequence < beans::PropertyValue >& rSequence )
 {
     const SwRect& rRect = m_pWrtShell->GetCharRect();
     const Rectangle& rVis = GetVisArea();
@@ -1472,9 +1473,9 @@ void SwView::WriteUserDataSequence ( uno::Sequence < beans::PropertyValue >& rSe
 
     aVector.push_back(comphelper::makePropertyValue("VisibleTop", convertTwipToMm100 ( rVis.Top() )));
 
-    aVector.push_back(comphelper::makePropertyValue("VisibleRight", convertTwipToMm100 ( bBrowse ? LONG_MIN : rVis.Right() )));
+    aVector.push_back(comphelper::makePropertyValue("VisibleRight", convertTwipToMm100 ( rVis.Right() )));
 
-    aVector.push_back(comphelper::makePropertyValue("VisibleBottom", convertTwipToMm100 ( bBrowse ? LONG_MIN : rVis.Bottom() )));
+    aVector.push_back(comphelper::makePropertyValue("VisibleBottom", convertTwipToMm100 ( rVis.Bottom() )));
 
     const sal_Int16 nZoomType = static_cast< sal_Int16 >(m_pWrtShell->GetViewOptions()->GetZoomType());
     aVector.push_back(comphelper::makePropertyValue("ZoomType", nZoomType));

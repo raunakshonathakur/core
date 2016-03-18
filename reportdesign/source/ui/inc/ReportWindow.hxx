@@ -143,11 +143,11 @@ namespace rptui
         sal_Int32       GetTotalWidth() const;
 
         /** calculate the max width of the markers
+        * The end marker will not be used for calculation.
         *
-        * @param _bWithEnd  if <TRUE/> the end marker will be used for calculation as well otherwise not.
         * \return the max width
         */
-        sal_Int32       getMaxMarkerWidth(bool _bWithEnd) const;
+        sal_Int32       getMaxMarkerWidth() const;
 
         void            ScrollChildren(const Point& _aThumbPos);
 
@@ -197,12 +197,8 @@ namespace rptui
         void collapseSections(const css::uno::Sequence< css::beans::PropertyValue>& _aCollpasedSections);
 
         /** align all marked objects in all sections
-        *
-        * \param eHor
-        * \param eVert
-        * \param bBoundRects
         */
-        void alignMarkedObjects(sal_Int32 _nControlModification, bool _bAlignAtSection, bool bBoundRects = false);
+        void alignMarkedObjects(sal_Int32 _nControlModification, bool _bAlignAtSection);
 
         sal_uInt32 getMarkedObjectCount() const;
 

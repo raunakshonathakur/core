@@ -367,13 +367,13 @@ Rectangle ScDetectiveFunc::GetDrawRect( SCCOL nCol, SCROW nRow ) const
 static bool lcl_IsOtherTab( const basegfx::B2DPolyPolygon& rPolyPolygon )
 {
     //  test if rPolygon is the line end for "other table" (rectangle)
-    if(1L == rPolyPolygon.count())
+    if(1 == rPolyPolygon.count())
     {
-        const basegfx::B2DPolygon aSubPoly(rPolyPolygon.getB2DPolygon(0L));
+        const basegfx::B2DPolygon aSubPoly(rPolyPolygon.getB2DPolygon(0));
 
         // #i73305# circle consists of 4 segments, too, distinguishable from square by
         // the use of control points
-        if(4L == aSubPoly.count() && aSubPoly.isClosed() && !aSubPoly.areControlPointsUsed())
+        if(4 == aSubPoly.count() && aSubPoly.isClosed() && !aSubPoly.areControlPointsUsed())
         {
             return true;
         }
@@ -689,7 +689,7 @@ void ScDetectiveFunc::DeleteArrowsAt( SCCOL nCol, SCROW nRow, bool bDestPnt )
         }
 
         for (size_t i=1; i<=nDelCount; ++i)
-            pModel->AddCalcUndo( new SdrUndoRemoveObj( *ppObj[nDelCount-i] ) );
+            pModel->AddCalcUndo( new SdrUndoDelObj( *ppObj[nDelCount-i] ) );
 
         for (size_t i=1; i<=nDelCount; ++i)
             pPage->RemoveObject( ppObj[nDelCount-i]->GetOrdNum() );

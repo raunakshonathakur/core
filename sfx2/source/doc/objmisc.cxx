@@ -1439,7 +1439,7 @@ ErrCode SfxObjectShell::CallBasic( const OUString& rMacro,
     SfxApplication* pApp = SfxGetpApp();
     if( pApp->GetName() != rBasic )
     {
-        if ( !AdjustMacroMode( OUString() ) )
+        if ( !AdjustMacroMode() )
             return ERRCODE_IO_ACCESSDENIED;
     }
 
@@ -1531,7 +1531,7 @@ ErrCode SfxObjectShell::CallXScript( const Reference< XInterface >& _rxScriptCon
         std::unique_ptr< VclAbstractDialog > pScriptErrDlg;
         SfxAbstractDialogFactory* pFact = SfxAbstractDialogFactory::Create();
         if ( pFact )
-            pScriptErrDlg.reset( pFact->CreateScriptErrorDialog( nullptr, aException ) );
+            pScriptErrDlg.reset( pFact->CreateScriptErrorDialog( aException ) );
         OSL_ENSURE( pScriptErrDlg.get(), "SfxObjectShell::CallXScript: no script error dialog!" );
 
         if ( pScriptErrDlg.get() )
@@ -1694,10 +1694,10 @@ void SfxObjectShell::Invalidate( sal_uInt16 nId )
         Invalidate_Impl( pFrame->GetBindings(), nId );
 }
 
-bool SfxObjectShell::AdjustMacroMode( const OUString& /*rScriptType*/, bool bSuppressUI )
+bool SfxObjectShell::AdjustMacroMode()
 {
     uno::Reference< task::XInteractionHandler > xInteraction;
-    if ( pMedium && !bSuppressUI )
+    if ( pMedium )
         xInteraction = pMedium->GetInteractionHandler();
 
     CheckForBrokenDocSignatures_Impl( xInteraction );

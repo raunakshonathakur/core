@@ -47,7 +47,7 @@
 #include <com/sun/star/ui/dialogs/FolderPicker.hpp>
 #include <com/sun/star/ucb/XContentProvider.hpp>
 #if HAVE_FEATURE_JAVA
-#include <jvmfwk/framework.h>
+#include <jvmfwk/framework.hxx>
 #endif
 
 // define ----------------------------------------------------------------
@@ -214,7 +214,7 @@ void SvxJavaOptionsPage::dispose()
     for ( pIter = m_aAddedInfos.begin(); pIter != m_aAddedInfos.end(); ++pIter )
     {
         JavaInfo* pInfo = *pIter;
-        jfw_freeJavaInfo( pInfo );
+        delete pInfo;
     }
     m_aAddedInfos.clear();
 
@@ -442,7 +442,7 @@ void SvxJavaOptionsPage::ClearJavaInfo()
         for ( sal_Int32 i = 0; i < m_nInfoSize; ++i )
         {
             JavaInfo* pInfo = *parInfo++;
-            jfw_freeJavaInfo( pInfo );
+            delete pInfo;
         }
 
         rtl_freeMemory( m_parJavaInfo );
@@ -508,7 +508,7 @@ void SvxJavaOptionsPage::LoadJREs()
         }
     }
 
-    jfw_freeJavaInfo( pSelectedJava );
+    delete pSelectedJava;
 #else
     (void) this;
 #endif
@@ -596,13 +596,13 @@ void SvxJavaOptionsPage::AddFolder( const OUString& _rFolder )
 
         if ( !bFound )
         {
-            jfw_addJRELocation( pInfo->sLocation );
+            jfw_addJRELocation( pInfo->sLocation.pData );
             AddJRE( pInfo );
             m_aAddedInfos.push_back( pInfo );
             nPos = m_pJavaList->GetEntryCount() - 1;
         }
         else
-            jfw_freeJavaInfo( pInfo );
+            delete pInfo;
 
         SvTreeListEntry* pEntry = m_pJavaList->GetEntry( nPos );
         m_pJavaList->Select( pEntry );
@@ -722,7 +722,7 @@ bool SvxJavaOptionsPage::FillItemSet( SfxItemSet* /*rCoreSet*/ )
                     bModified = true;
                 }
             }
-            jfw_freeJavaInfo( pSelectedJava );
+            delete pSelectedJava;
             break;
         }
     }

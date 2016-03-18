@@ -42,8 +42,6 @@
 #include "NSURL_OOoAdditions.hxx"
 
 #pragma mark DEFINES
-#define CLASS_NAME "SalAquaFolderPicker"
-
 
 // namespace directives
 
@@ -75,11 +73,7 @@ namespace
 SalAquaFolderPicker::SalAquaFolderPicker( const uno::Reference<lang::XMultiServiceFactory>& xServiceMgr ) :
     m_xServiceMgr( xServiceMgr )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-
     m_nDialogType = NAVIGATIONSERVICES_DIRECTORY;
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 
@@ -88,19 +82,13 @@ SalAquaFolderPicker::SalAquaFolderPicker( const uno::Reference<lang::XMultiServi
 
 void SAL_CALL SalAquaFolderPicker::setTitle( const rtl::OUString& aTitle ) throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__, "title", aTitle);
-
     SolarMutexGuard aGuard;
 
     implsetTitle(aTitle);
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 sal_Int16 SAL_CALL SalAquaFolderPicker::execute() throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-
     SolarMutexGuard aGuard;
 
     sal_Int16 retVal = 0;
@@ -114,7 +102,6 @@ sal_Int16 SAL_CALL SalAquaFolderPicker::execute() throw( uno::RuntimeException )
 #else
     case NSOKButton:
 #endif
-        OSL_TRACE("Dialog returned with OK");
         retVal = ExecutableDialogResults::OK;
         break;
 
@@ -123,7 +110,6 @@ sal_Int16 SAL_CALL SalAquaFolderPicker::execute() throw( uno::RuntimeException )
 #else
     case NSCancelButton:
 #endif
-        OSL_TRACE("Dialog was cancelled!");
         retVal = ExecutableDialogResults::CANCEL;
         break;
 
@@ -132,7 +118,6 @@ sal_Int16 SAL_CALL SalAquaFolderPicker::execute() throw( uno::RuntimeException )
         break;
     }
 
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
     return retVal;
 }
 
@@ -143,32 +128,22 @@ sal_Int16 SAL_CALL SalAquaFolderPicker::execute() throw( uno::RuntimeException )
 void SAL_CALL SalAquaFolderPicker::setDisplayDirectory( const rtl::OUString& aDirectory )
     throw( lang::IllegalArgumentException, uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__, "directory", aDirectory);
-
     SolarMutexGuard aGuard;
 
     implsetDisplayDirectory(aDirectory);
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 rtl::OUString SAL_CALL SalAquaFolderPicker::getDisplayDirectory() throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-
     SolarMutexGuard aGuard;
 
     OUString aDirectory = implgetDisplayDirectory();
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__, aDirectory);
 
     return aDirectory;
 }
 
 rtl::OUString SAL_CALL SalAquaFolderPicker::getDirectory() throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-
     SolarMutexGuard aGuard;
 
     NSArray *files = nil;
@@ -186,26 +161,18 @@ rtl::OUString SAL_CALL SalAquaFolderPicker::getDirectory() throw( uno::RuntimeEx
     rtl::OUString aDirectory;
 
     NSURL *url = [files objectAtIndex:0];
-    OSL_TRACE("handling %s", [[url description] UTF8String]);
 
     aDirectory = [url OUStringForInfo:FULLPATH];
 
     implsetDisplayDirectory(aDirectory);
 
-    OSL_TRACE("dir url: %s", OUStringToOString(aDirectory, RTL_TEXTENCODING_UTF8).getStr());
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
     return aDirectory;
 }
 
 void SAL_CALL SalAquaFolderPicker::setDescription( const rtl::OUString& rDescription )
     throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__, "description", rDescription);
-
     [m_pDialog setMessage:[NSString stringWithOUString:rDescription]];
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 
@@ -215,11 +182,7 @@ void SAL_CALL SalAquaFolderPicker::setDescription( const rtl::OUString& rDescrip
 rtl::OUString SAL_CALL SalAquaFolderPicker::getImplementationName()
     throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-
     rtl::OUString retVal( FOLDER_PICKER_IMPL_NAME );
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__, retVal);
 
     return retVal;
 }
@@ -233,9 +196,6 @@ sal_Bool SAL_CALL SalAquaFolderPicker::supportsService( const rtl::OUString& sSe
 uno::Sequence<rtl::OUString> SAL_CALL SalAquaFolderPicker::getSupportedServiceNames()
     throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
-
     return FolderPicker_getSupportedServiceNames();
 }
 
@@ -245,13 +205,9 @@ uno::Sequence<rtl::OUString> SAL_CALL SalAquaFolderPicker::getSupportedServiceNa
 
 void SAL_CALL SalAquaFolderPicker::cancel() throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-
     SolarMutexGuard aGuard;
 
     [m_pDialog cancel:nil];
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 
@@ -261,8 +217,6 @@ void SAL_CALL SalAquaFolderPicker::cancel() throw( uno::RuntimeException )
 void SAL_CALL SalAquaFolderPicker::disposing( const lang::EventObject& )
     throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

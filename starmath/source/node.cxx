@@ -258,21 +258,6 @@ void SmNode::Prepare(const SmFormat &rFormat, const SmDocShell &rDocShell)
     ForEachNonNull(this, [&rFormat, &rDocShell](SmNode *pNode){pNode->Prepare(rFormat, rDocShell);});
 }
 
-sal_uInt16 SmNode::FindIndex() const
-{
-    assert(mpParentNode != nullptr && "FindIndex() requires this is a subnode.");
-
-    for (sal_uInt16 i = 0; i < mpParentNode->GetNumSubNodes(); ++i) {
-        if (mpParentNode->GetSubNode(i) == this) {
-            return i;
-        }
-    }
-
-    assert(false && "Connection between parent and child is inconsistent.");
-    return 0;
-}
-
-
 void SmNode::Move(const Point& rPosition)
 {
     if (rPosition.X() == 0  &&  rPosition.Y() == 0)
@@ -378,11 +363,6 @@ const SmNode * SmNode::FindRectClosestTo(const Point &rPoint) const
     return pResult;
 }
 
-void SmNode::GetAccessibleText( OUStringBuffer &/*rText*/ ) const
-{
-    SAL_WARN("starmath", "SmNode: GetAccessibleText not overridden");
-}
-
 const SmNode * SmNode::FindNodeWithAccessibleIndex(sal_Int32 nAccIdx) const
 {
     const SmNode *pResult = nullptr;
@@ -413,105 +393,6 @@ const SmNode * SmNode::FindNodeWithAccessibleIndex(sal_Int32 nAccIdx) const
     return pResult;
 }
 
-#ifdef DEBUG_ENABLE_DUMPASDOT
-void SmNode::DumpAsDot(std::ostream &out, OUString* label, int number, int& id, int parent) const
-{
-    //If this is the root start the file
-    if(number == -1){
-        out<<"digraph {"<<std::endl;
-        if(label){
-            out<<"labelloc = \"t\";"<<std::endl;
-            OUString eq(*label);
-            //CreateTextFromNode(eq);
-            eq = eq.replaceAll("\n", " ");
-            eq = eq.replaceAll("\\", "\\\\");
-            eq = eq.replaceAll("\"", "\\\"");
-            out<<"label= \"Equation: \\\"";
-            out<< OUStringToOString(eq, RTL_TEXTENCODING_UTF8).getStr();
-            out<<"\\\"\";"<<std::endl;
-        }
-    }
-
-    //Some how out<<(int)this; doesn't work... So we  do this nasty workaround...
-    char strid[100];
-    sprintf(strid, "%i", id);
-
-    char strnr[100];
-    sprintf(strnr, "%i", number);
-
-    //Dump connection to this node
-    if( parent != -1 ){
-        char pid[100];
-        sprintf(pid, "%i", parent);
-        out<<"n"<<pid<<" -> n"<<strid<<" [label=\""<<strnr<<"\"];"<<std::endl;
-    //If doesn't have parent and isn't a rootnode:
-    } else if(number != -1) {
-        out<<"orphaned -> n"<<strid<<" [label=\""<<strnr<<"\"];"<<std::endl;
-    }
-
-    //Dump this node
-    out<<"n"<< strid<<" [label=\"";
-    switch( GetType() ) {
-        case NTABLE:           out<<"SmTableNode"; break;
-        case NBRACE:           out<<"SmBraceNode"; break;
-        case NBRACEBODY:       out<<"SmBracebodyNode"; break;
-        case NOPER:            out<<"SmOperNode"; break;
-        case NALIGN:           out<<"SmAlignNode"; break;
-        case NATTRIBUT:        out<<"SmAttributNode"; break;
-        case NFONT:            out<<"SmFontNode"; break;
-        case NUNHOR:           out<<"SmUnHorNode"; break;
-        case NBINHOR:          out<<"SmBinHorNode"; break;
-        case NBINVER:          out<<"SmBinVerNode"; break;
-        case NBINDIAGONAL:     out<<"SmBinDiagonalNode"; break;
-        case NSUBSUP:          out<<"SmSubSupNode"; break;
-        case NMATRIX:          out<<"SmMatrixNode"; break;
-        case NPLACE:           out<<"SmPlaceNode"; break;
-        case NTEXT:
-            out<<"SmTextNode: ";
-            out<< OUStringToOString(((SmTextNode*)this)->GetText(), RTL_TEXTENCODING_UTF8).getStr();
-            break;
-        case NSPECIAL:             out<<"SmSpecialNode"; break;
-        case NGLYPH_SPECIAL:   out<<"SmGlyphSpecialNode"; break;
-        case NMATH:
-            out<<"SmMathSymbolNode: ";
-            out<< OUStringToOString(((SmMathSymbolNode*)this)->GetText(), RTL_TEXTENCODING_UTF8).getStr();
-            break;
-        case NBLANK:           out<<"SmBlankNode"; break;
-        case NERROR:           out<<"SmErrorNode"; break;
-        case NLINE:            out<<"SmLineNode"; break;
-        case NEXPRESSION:      out<<"SmExpressionNode"; break;
-        case NPOLYLINE:        out<<"SmPolyLineNode"; break;
-        case NROOT:            out<<"SmRootNode"; break;
-        case NROOTSYMBOL:      out<<"SmRootSymbolNode"; break;
-        case NRECTANGLE:       out<<"SmRectangleNode"; break;
-        case NVERTICAL_BRACE:  out<<"SmVerticalBraceNode"; break;
-        case NMATHIDENT:       out<<"SmMathIdentifierNode"; break;
-        case NINTDYNSYMBOL:            out<<"SmDynIntegralSymbolNode"; break;
-        case NINTDYN:            out<<"SmDynIntegralNode"; break;
-        default:
-            out<<"Unknown Node";
-    }
-    out<<"\"";
-    if(IsSelected())
-        out<<", style=dashed";
-    out<<"];"<<std::endl;
-
-    //Dump subnodes
-    int myid = id;
-    sal_uInt16 nSize = GetNumSubNodes();
-    for (sal_uInt16 i = 0; i < nSize;  i++)
-    {
-        const SmNode *pNode = GetSubNode(i);
-        if (pNode)
-            pNode->DumpAsDot(out, NULL, i, ++id, myid);
-    }
-
-    //If this is the root end the file
-    if( number == -1 )
-        out<<"}"<<std::endl;
-}
-#endif /* DEBUG_ENABLE_DUMPASDOT */
-
 long SmNode::GetFormulaBaseline() const
 {
     SAL_WARN("starmath", "This dummy implementation should not have been called.");
@@ -519,51 +400,9 @@ long SmNode::GetFormulaBaseline() const
 }
 
 
-SmStructureNode::SmStructureNode( const SmStructureNode &rNode ) :
-    SmNode( rNode.GetType(), rNode.GetToken() )
-{
-    size_t i;
-    for (i = 0;  i < aSubNodes.size();  i++)
-        delete aSubNodes[i];
-    aSubNodes.resize(0);
-
-    auto nSize = rNode.aSubNodes.size();
-    aSubNodes.resize( nSize );
-    for (i = 0;  i < nSize;  ++i)
-    {
-        SmNode *pNode = rNode.aSubNodes[i];
-        aSubNodes[i] = pNode ? new SmNode( *pNode ) : nullptr;
-    }
-    ClaimPaternity();
-}
-
-
 SmStructureNode::~SmStructureNode()
 {
     ForEachNonNull(this, boost::checked_deleter<SmNode>());
-}
-
-
-SmStructureNode & SmStructureNode::operator = ( const SmStructureNode &rNode )
-{
-    SmNode::operator = ( rNode );
-
-    size_t i;
-    for (i = 0;  i < aSubNodes.size();  i++)
-        delete aSubNodes[i];
-    aSubNodes.resize(0);
-
-    auto nSize = rNode.aSubNodes.size();
-    aSubNodes.resize( nSize );
-    for (i = 0;  i < nSize;  ++i)
-    {
-        SmNode *pNode = rNode.aSubNodes[i];
-        aSubNodes[i] = pNode ? new SmNode( *pNode ) : nullptr;
-    }
-
-    ClaimPaternity();
-
-    return *this;
 }
 
 
@@ -916,8 +755,8 @@ void SmRootNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
     SmNode *pExtra   = GetSubNode(0),
            *pRootSym = GetSubNode(1),
            *pBody    = GetSubNode(2);
-    OSL_ENSURE(pRootSym, "Sm: NULL pointer");
-    OSL_ENSURE(pBody,    "Sm: NULL pointer");
+    assert(pRootSym);
+    assert(pBody);
 
     pBody->Arrange(rDev, rFormat);
 
@@ -981,8 +820,8 @@ void SmDynIntegralNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
 {
     SmNode  *pDynIntegralSym = Symbol(),
            *pBody    = Body();
-    OSL_ENSURE(pDynIntegralSym, "Sm: NULL pointer");
-    OSL_ENSURE(pBody,    "Sm: NULL pointer");
+    assert(pDynIntegralSym);
+    assert(pBody);
 
     pBody->Arrange(rDev, rFormat);
 
@@ -1029,9 +868,9 @@ void SmBinHorNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
     SmNode *pLeft  = GetSubNode(0),
            *pOper  = GetSubNode(1),
            *pRight = GetSubNode(2);
-    OSL_ENSURE(pLeft  != nullptr, "Sm: NULL pointer");
-    OSL_ENSURE(pOper  != nullptr, "Sm: NULL pointer");
-    OSL_ENSURE(pRight != nullptr, "Sm: NULL pointer");
+    assert(pLeft);
+    assert(pOper);
+    assert(pRight);
 
     pOper->SetSize(Fraction (rFormat.GetRelSize(SIZ_OPERATOR), 100));
 
@@ -1068,9 +907,9 @@ void SmBinVerNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
     SmNode *pNum   = GetSubNode(0),
            *pLine  = GetSubNode(1),
            *pDenom = GetSubNode(2);
-    OSL_ENSURE(pNum,   "Sm : NULL pointer");
-    OSL_ENSURE(pLine,  "Sm : NULL pointer");
-    OSL_ENSURE(pDenom, "Sm : NULL pointer");
+    assert(pNum);
+    assert(pLine);
+    assert(pDenom);
 
     bool  bIsTextmode = rFormat.IsTextmode();
     if (bIsTextmode)
@@ -1333,12 +1172,12 @@ void SmBinDiagonalNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
     // within the GraphicWindow sets the FormulaCursor correctly (cf. SmRootNode)
     SmNode *pLeft  = GetSubNode(0),
            *pRight = GetSubNode(1);
-    OSL_ENSURE(pLeft, "Sm : NULL pointer");
-    OSL_ENSURE(pRight, "Sm : NULL pointer");
+    assert(pLeft);
+    assert(pRight);
 
     OSL_ENSURE(GetSubNode(2)->GetType() == NPOLYLINE, "Sm : wrong node type");
     SmPolyLineNode *pOper = static_cast<SmPolyLineNode *>(GetSubNode(2));
-    OSL_ENSURE(pOper, "Sm : NULL pointer");
+    assert(pOper);
 
     //! some routines being called extract some info from the OutputDevice's
     //! font (eg the space to be used for borders OR the font name(!!)).
@@ -1399,7 +1238,7 @@ void SmSubSupNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
                "Sm: wrong number of subnodes");
 
     SmNode *pBody = GetBody();
-    OSL_ENSURE(pBody, "Sm: NULL pointer");
+    assert(pBody);
 
     long  nOrigHeight = pBody->GetFont().GetFontSize().Height();
 
@@ -1601,9 +1440,9 @@ void SmBraceNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
     SmNode *pLeft  = GetSubNode(0),
            *pBody  = GetSubNode(1),
            *pRight = GetSubNode(2);
-    OSL_ENSURE(pLeft,  "Sm: NULL pointer");
-    OSL_ENSURE(pBody,  "Sm: NULL pointer");
-    OSL_ENSURE(pRight, "Sm: NULL pointer");
+    assert(pLeft);
+    assert(pBody);
+    assert(pRight);
 
     pBody->Arrange(rDev, rFormat);
 
@@ -1759,9 +1598,9 @@ void SmVerticalBraceNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
     SmNode *pBody   = GetSubNode(0),
            *pBrace  = GetSubNode(1),
            *pScript = GetSubNode(2);
-    OSL_ENSURE(pBody,   "Sm: NULL pointer!");
-    OSL_ENSURE(pBrace,  "Sm: NULL pointer!");
-    OSL_ENSURE(pScript, "Sm: NULL pointer!");
+    assert(pBody);
+    assert(pBrace);
+    assert(pScript);
 
     SmTmpDevice aTmpDev (rDev, true);
     aTmpDev.SetFont(GetFont());
@@ -1818,7 +1657,7 @@ void SmVerticalBraceNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
 SmNode * SmOperNode::GetSymbol()
 {
     SmNode *pNode = GetSubNode(0);
-    OSL_ENSURE(pNode, "Sm: NULL pointer!");
+    assert(pNode);
 
     if (pNode->GetType() == NSUBSUP)
         pNode = static_cast<SmSubSupNode *>(pNode)->GetBody();
@@ -1861,8 +1700,8 @@ void SmOperNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
     SmNode *pOper = GetSubNode(0);
     SmNode *pBody = GetSubNode(1);
 
-    OSL_ENSURE(pOper, "Sm: missing subnode");
-    OSL_ENSURE(pBody, "Sm: missing subnode");
+    assert(pOper);
+    assert(pBody);
 
     pBody->Arrange(rDev,rFormat);
     long nHeight = pBody->GetHeight();
@@ -1914,8 +1753,8 @@ void SmAttributNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
 {
     SmNode *pAttr = GetSubNode(0),
            *pBody = GetSubNode(1);
-    OSL_ENSURE(pBody, "Sm: body missing");
-    OSL_ENSURE(pAttr, "Sm: attribute missing");
+    assert(pBody);
+    assert(pAttr);
 
     pBody->Arrange(rDev, rFormat);
 
@@ -2060,7 +1899,8 @@ void SmFontNode::CreateTextFromNode(OUString &rText)
         default:
             break;
     }
-    GetSubNode(1)->CreateTextFromNode(rText);
+    if(GetNumSubNodes() > 1)
+        GetSubNode(1)->CreateTextFromNode(rText);
 }
 
 void SmFontNode::Prepare(const SmFormat &rFormat, const SmDocShell &rDocShell)
@@ -2090,7 +1930,7 @@ void SmFontNode::Prepare(const SmFormat &rFormat, const SmDocShell &rDocShell)
 void SmFontNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
 {
     SmNode *pNode = GetSubNode(1);
-    OSL_ENSURE(pNode, "Sm: missing subnode");
+    assert(pNode);
 
     switch (GetToken().eType)
     {   case TSIZE :
@@ -3026,14 +2866,6 @@ void SmBlankNode::Arrange(OutputDevice &rDev, const SmFormat &rFormat)
 
 /**************************************************************************/
 //Implementation of all accept methods for SmVisitor
-
-void SmNode::Accept(SmVisitor*){
-    //This method is only implemented to avoid making SmNode abstract because an
-    //obscure copy constructor is used... I can't find it's implementation, and
-    //don't want to figure out how to fix it... If you want to, just delete this
-    //method, making SmNode abstract, and see where you can an problem with that.
-    SAL_WARN("starmath", "SmNode should not be visitable!");
-}
 
 void SmTableNode::Accept(SmVisitor* pVisitor) {
     pVisitor->Visit(this);

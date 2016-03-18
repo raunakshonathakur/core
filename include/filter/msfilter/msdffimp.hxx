@@ -525,9 +525,7 @@ public:
                     sal_uLong nSkipCount = 0 );
     bool SeekToRec2( sal_uInt16 nRecId1,
                      sal_uInt16 nRecId2,
-                     sal_uLong nMaxFilePos,
-                     DffRecordHeader* pRecHd = nullptr,
-                     sal_uLong nSkipCount = 0 ) const;
+                     sal_uLong nMaxFilePos ) const;
 
     static OUString MSDFFReadZString( SvStream& rIn,
                                            sal_uInt32 nMaxLen,

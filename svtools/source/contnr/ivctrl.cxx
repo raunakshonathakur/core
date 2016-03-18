@@ -101,11 +101,11 @@ void SvtIconChoiceCtrl::dispose()
     Control::dispose();
 }
 
-SvxIconChoiceCtrlEntry* SvtIconChoiceCtrl::InsertEntry( const OUString& rText, const Image& rImage, sal_uLong nPos, const Point* pPos, SvxIconViewFlags nFlags  )
+SvxIconChoiceCtrlEntry* SvtIconChoiceCtrl::InsertEntry( const OUString& rText, const Image& rImage  )
 {
-    SvxIconChoiceCtrlEntry* pEntry = new SvxIconChoiceCtrlEntry( rText, rImage, nFlags);
+    SvxIconChoiceCtrlEntry* pEntry = new SvxIconChoiceCtrlEntry( rText, rImage, SvxIconViewFlags::NONE);
 
-    _pImp->InsertEntry( pEntry, nPos, pPos );
+    _pImp->InsertEntry( pEntry, CONTAINER_APPEND );
 
     return pEntry;
 }
@@ -227,11 +227,11 @@ void SvtIconChoiceCtrl::SetPointFont(const vcl::Font& rFont)
     }
 }
 
-SvxIconChoiceCtrlEntry* SvtIconChoiceCtrl::GetEntry( const Point& rPixPos, bool bHit ) const
+SvxIconChoiceCtrlEntry* SvtIconChoiceCtrl::GetEntry( const Point& rPixPos ) const
 {
     Point aPos( rPixPos );
     aPos -= GetMapMode().GetOrigin();
-    return const_cast<SvtIconChoiceCtrl*>(this)->_pImp->GetEntry( aPos, bHit );
+    return const_cast<SvtIconChoiceCtrl*>(this)->_pImp->GetEntry( aPos );
 }
 
 void SvtIconChoiceCtrl::SetStyle( WinBits nWinStyle )
@@ -285,9 +285,9 @@ bool SvtIconChoiceCtrl::IsEntryEditing() const
     return _pImp->IsEntryEditing();
 }
 
-void SvtIconChoiceCtrl::SetChoiceWithCursor ( bool bDo )
+void SvtIconChoiceCtrl::SetChoiceWithCursor()
 {
-    _pImp->SetChoiceWithCursor (bDo);
+    _pImp->SetChoiceWithCursor();
 }
 
 void SvtIconChoiceCtrl::KeyInput( const KeyEvent& rKEvt )

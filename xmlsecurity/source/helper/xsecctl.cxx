@@ -39,8 +39,7 @@
 #include <unotools/datetime.hxx>
 #include <comphelper/ofopxmlhelper.hxx>
 #include <sax/tools/converter.hxx>
-
-#include <certificate.hxx>
+#include <ooxmlsecexporter.hxx>
 
 namespace cssu = com::sun::star::uno;
 namespace cssl = com::sun::star::lang;
@@ -89,19 +88,12 @@ int XSecController::findSignatureInfor( sal_Int32 nSecurityId) const
  *   SYNOPSIS
  *  index = findSignatureInfor( nSecurityId );
  *
- *   FUNCTION
- *  see NAME.
- *
  *   INPUTS
  *  nSecurityId - the signature's id
  *
  *   RESULT
  *  index - the index of the signature, or -1 when no such signature
  *          existing
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     int i;
@@ -124,24 +116,11 @@ void XSecController::createXSecComponent( )
  *   NAME
  *  bResult = createXSecComponent -- creates xml security components
  *
- *   SYNOPSIS
- *  createXSecComponent( );
- *
  *   FUNCTION
  *  Creates xml security components, including:
  *  1. an xml signature bridge component ( Java based or C based)
  *  2. an XMLDocumentWrapper component ( Java based or C based)
  *  3. a SAXEventKeeper component
- *
- *   INPUTS
- *  empty
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     OUString sSAXEventKeeper( SAXEVENTKEEPER_COMPONENT );
@@ -244,10 +223,6 @@ bool XSecController::chainOn( bool bRetrievingLastEvent )
  *  So for the SAXEventKeeper, it needs to receive all missed key SAX
  *  events except that startElement event, then adds a new
  *  ElementCollector, then receives that startElement event.
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     bool rc = false;
@@ -329,22 +304,6 @@ void XSecController::chainOff()
  *
  *   NAME
  *  chainOff -- disconnects the SAXEventKeeper from the SAX chain.
- *
- *   SYNOPSIS
- *  chainOff( );
- *
- *   FUNCTION
- *  See NAME.
- *
- *   INPUTS
- *  empty
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     if (!m_bIsSAXEventKeeperSticky )
@@ -400,16 +359,6 @@ void XSecController::checkChainingStatus()
  *  1. some element is being collected, or
  *  2. the SAX event stream is blocking.
  *  Otherwise, chain off the SAXEventKeeper.
- *
- *   INPUTS
- *  empty
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     if ( m_bIsCollectingElement || m_bIsBlocking )
@@ -429,23 +378,10 @@ void XSecController::initializeSAXChain()
  *  initializeSAXChain -- initializes the SAX chain according to the
  *  current setting.
  *
- *   SYNOPSIS
- *  initializeSAXChain( );
- *
  *   FUNCTION
  *  Initializes the SAX chain, if the SAXEventKeeper is asked to be always
  *  on the SAX chain, chains it on. Otherwise, starts the
  *  ElementStackKeeper to reserve key SAX events.
- *
- *   INPUTS
- *  empty
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     m_bIsSAXEventKeeperConnected = false;
@@ -463,7 +399,7 @@ void XSecController::initializeSAXChain()
     chainOff();
 }
 
-cssu::Reference< com::sun::star::io::XInputStream >
+cssu::Reference< css::io::XInputStream >
     XSecController::getObjectInputStream( const OUString& objectURL )
 /****** XSecController/getObjectInputStream ************************************
  *
@@ -473,21 +409,14 @@ cssu::Reference< com::sun::star::io::XInputStream >
  *   SYNOPSIS
  *  xInputStream = getObjectInputStream( objectURL );
  *
- *   FUNCTION
- *  See NAME.
- *
  *   INPUTS
  *  objectURL - the object uri
  *
  *   RESULT
  *  xInputStream - the XInputStream interface
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
-        cssu::Reference< com::sun::star::io::XInputStream > xObjectInputStream;
+        cssu::Reference< css::io::XInputStream > xObjectInputStream;
 
     DBG_ASSERT( m_xUriBinding.is(), "Need XUriBinding!" );
 
@@ -515,9 +444,6 @@ void XSecController::startMission(
  *   NAME
  *  startMission -- starts a new security mission.
  *
- *   SYNOPSIS
- *  startMission( xUriBinding, xSecurityContect );
- *
  *   FUNCTION
  *  get ready for a new mission.
  *
@@ -526,13 +452,6 @@ void XSecController::startMission(
  *                          XInputStreams
  *  xSecurityContext  - the security context component which can provide
  *                      cryptoken
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     m_xUriBinding = xUriBinding;
@@ -561,21 +480,11 @@ void XSecController::setSAXChainConnector(
  *                        xDocumentHandler,
  *                        xElementStackKeeper );
  *
- *   FUNCTION
- *  See NAME.
- *
  *   INPUTS
  *  xInitialization     - the previous node on the SAX chain
  *  xDocumentHandler    - the next node on the SAX chain
  *  xElementStackKeeper - the ElementStackKeeper component which reserves
  *                        missed key SAX events for the SAXEventKeeper
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     m_bIsPreviousNodeInitializable = true;
@@ -591,22 +500,6 @@ void XSecController::clearSAXChainConnector()
  *
  *   NAME
  *  clearSAXChainConnector -- resets the collaborating components.
- *
- *   SYNOPSIS
- *  clearSAXChainConnector( );
- *
- *   FUNCTION
- *  See NAME.
- *
- *   INPUTS
- *  empty
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     /*
@@ -634,21 +527,8 @@ void XSecController::endMission()
  *   NAME
  *  endMission -- forces to end all missions
  *
- *   SYNOPSIS
- *  endMission( );
- *
  *   FUNCTION
  *  Deletes all signature information and forces all missions to an end.
- *
- *   INPUTS
- *  empty
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     sal_Int32 size = m_vInternalSignatureInformations.size();
@@ -697,19 +577,9 @@ void XSecController::exportSignature(
  *   SYNOPSIS
  *  exportSignature( xDocumentHandler, signatureInfo);
  *
- *   FUNCTION
- *  see NAME.
- *
  *   INPUTS
  *  xDocumentHandler    - the document handler to receive the signature
  *  signatureInfo       - signature to be exported
- *
- *   RESULT
- *  empty
- *
- *   AUTHOR
- *  Michael Mi
- *  Email: michael.mi@sun.com
  ******************************************************************************/
 {
     /*
@@ -985,381 +855,10 @@ void XSecController::exportSignature(
     xDocumentHandler->endElement( tag_Signature );
 }
 
-/// Should we intentionally not sign this stream?
-static bool lcl_isOOXMLBlacklist(const OUString& rStreamName)
-{
-#if !HAVE_BROKEN_STATIC_INITILIZER_LIST
-    static
-#endif
-    const std::initializer_list<OUStringLiteral> vBlacklist =
-    {
-        OUStringLiteral("/%5BContent_Types%5D.xml"),
-        OUStringLiteral("/docProps/app.xml"),
-        OUStringLiteral("/docProps/core.xml")
-    };
-    // Just check the prefix, as we don't care about the content type part of the stream name.
-    return std::find_if(vBlacklist.begin(), vBlacklist.end(), [&](const OUStringLiteral& rLiteral) { return rStreamName.startsWith(rLiteral); }) != vBlacklist.end();
-}
-
-/// Should we intentionally not sign this relation type?
-static bool lcl_isOOXMLRelationBlacklist(const OUString& rRelationName)
-{
-#if !HAVE_BROKEN_STATIC_INITILIZER_LIST
-    static
-#endif
-    const std::initializer_list<OUStringLiteral> vBlacklist =
-    {
-        OUStringLiteral("http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"),
-        OUStringLiteral("http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"),
-        OUStringLiteral("http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/origin")
-    };
-    return std::find(vBlacklist.begin(), vBlacklist.end(), rRelationName) != vBlacklist.end();
-}
-
 void XSecController::exportOOXMLSignature(const uno::Reference<embed::XStorage>& xRootStorage, const uno::Reference<xml::sax::XDocumentHandler>& xDocumentHandler, const SignatureInformation& rInformation)
 {
-    uno::Reference<embed::XHierarchicalStorageAccess> xHierarchicalStorageAccess(xRootStorage, uno::UNO_QUERY);
-
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute(ATTR_XMLNS, NS_XMLDSIG);
-        pAttributeList->AddAttribute(ATTR_ID, "idPackageSignature");
-        xDocumentHandler->startElement(TAG_SIGNATURE, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    }
-    xDocumentHandler->startElement(TAG_SIGNEDINFO, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_C14N);
-        xDocumentHandler->startElement(TAG_CANONICALIZATIONMETHOD, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-        xDocumentHandler->endElement(TAG_CANONICALIZATIONMETHOD);
-    }
-
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_RSASHA256);
-        xDocumentHandler->startElement(TAG_SIGNATUREMETHOD, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-        xDocumentHandler->endElement(TAG_SIGNATUREMETHOD);
-    }
-
-    const SignatureReferenceInformations& rReferences = rInformation.vSignatureReferenceInfors;
-    for (const SignatureReferenceInformation& rReference : rReferences)
-    {
-        if (rReference.nType == SignatureReferenceType::SAMEDOCUMENT)
-        {
-            {
-                rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-                if (rReference.ouURI != "idSignedProperties")
-                    pAttributeList->AddAttribute("Type", "http://www.w3.org/2000/09/xmldsig#Object");
-                else
-                    pAttributeList->AddAttribute("Type", "http://uri.etsi.org/01903#SignedProperties");
-                pAttributeList->AddAttribute(ATTR_URI, CHAR_FRAGMENT + rReference.ouURI);
-                xDocumentHandler->startElement(TAG_REFERENCE, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-            }
-            if (rReference.ouURI == "idSignedProperties")
-            {
-                xDocumentHandler->startElement(TAG_TRANSFORMS, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-                rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-                pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_C14N);
-                xDocumentHandler->startElement(TAG_TRANSFORM, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-                xDocumentHandler->endElement(TAG_TRANSFORM);
-                xDocumentHandler->endElement(TAG_TRANSFORMS);
-            }
-
-            {
-                rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-                pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_XMLDSIGSHA256);
-                xDocumentHandler->startElement(TAG_DIGESTMETHOD, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-                xDocumentHandler->endElement(TAG_DIGESTMETHOD);
-            }
-            xDocumentHandler->startElement(TAG_DIGESTVALUE, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-            xDocumentHandler->characters(rReference.ouDigestValue);
-            xDocumentHandler->endElement(TAG_DIGESTVALUE);
-            xDocumentHandler->endElement(TAG_REFERENCE);
-        }
-    }
-
-    xDocumentHandler->endElement(TAG_SIGNEDINFO);
-
-    xDocumentHandler->startElement(TAG_SIGNATUREVALUE, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters(rInformation.ouSignatureValue);
-    xDocumentHandler->endElement(TAG_SIGNATUREVALUE);
-
-    xDocumentHandler->startElement(TAG_KEYINFO, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->startElement(TAG_X509DATA, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->startElement(TAG_X509CERTIFICATE, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters(rInformation.ouX509Certificate);
-    xDocumentHandler->endElement(TAG_X509CERTIFICATE);
-    xDocumentHandler->endElement(TAG_X509DATA);
-    xDocumentHandler->endElement(TAG_KEYINFO);
-
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute(ATTR_ID, "idPackageObject");
-        xDocumentHandler->startElement(TAG_OBJECT, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    }
-    xDocumentHandler->startElement(TAG_MANIFEST, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    for (const SignatureReferenceInformation& rReference : rReferences)
-    {
-        if (rReference.nType != SignatureReferenceType::SAMEDOCUMENT)
-        {
-            if (lcl_isOOXMLBlacklist(rReference.ouURI))
-                continue;
-
-            {
-                rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-                pAttributeList->AddAttribute(ATTR_URI, rReference.ouURI);
-                xDocumentHandler->startElement(TAG_REFERENCE, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-            }
-
-            // Transforms
-            if (rReference.ouURI.endsWith("?ContentType=application/vnd.openxmlformats-package.relationships+xml"))
-            {
-                OUString aURI = rReference.ouURI;
-                // Ignore leading slash.
-                if (aURI.startsWith("/"))
-                    aURI = aURI.copy(1);
-                // Ignore query part of the URI.
-                sal_Int32 nQueryPos = aURI.indexOf('?');
-                if (nQueryPos != -1)
-                    aURI = aURI.copy(0, nQueryPos);
-
-                uno::Reference<io::XInputStream> xRelStream(xHierarchicalStorageAccess->openStreamElementByHierarchicalName(aURI, embed::ElementModes::READ), uno::UNO_QUERY);
-                xDocumentHandler->startElement(TAG_TRANSFORMS, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-                {
-                    rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-                    pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_RELATIONSHIP);
-                    xDocumentHandler->startElement(TAG_TRANSFORM, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-                }
-
-                uno::Sequence< uno::Sequence<beans::StringPair> > aRelationsInfo = comphelper::OFOPXMLHelper::ReadRelationsInfoSequence(xRelStream, aURI, mxCtx);
-                for (const uno::Sequence<beans::StringPair>& rPairs : aRelationsInfo)
-                {
-                    OUString aId;
-                    OUString aType;
-                    for (const beans::StringPair& rPair : rPairs)
-                    {
-                        if (rPair.First == "Id")
-                            aId = rPair.Second;
-                        else if (rPair.First == "Type")
-                            aType = rPair.Second;
-                    }
-
-                    if (lcl_isOOXMLRelationBlacklist(aType))
-                        continue;
-
-                    {
-                        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-                        pAttributeList->AddAttribute(ATTR_XMLNS ":" NSTAG_MDSSI, NS_MDSSI);
-                        pAttributeList->AddAttribute(ATTR_SOURCEID, aId);
-                        xDocumentHandler->startElement(NSTAG_MDSSI ":" TAG_RELATIONSHIPREFERENCE, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-                    }
-                    xDocumentHandler->endElement(NSTAG_MDSSI ":" TAG_RELATIONSHIPREFERENCE);
-                }
-
-                xDocumentHandler->endElement(TAG_TRANSFORM);
-                {
-                    rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-                    pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_C14N);
-                    xDocumentHandler->startElement(TAG_TRANSFORM, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-                }
-                xDocumentHandler->endElement(TAG_TRANSFORM);
-                xDocumentHandler->endElement(TAG_TRANSFORMS);
-            }
-
-            {
-                rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-                pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_XMLDSIGSHA256);
-                xDocumentHandler->startElement(TAG_DIGESTMETHOD, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-                xDocumentHandler->endElement(TAG_DIGESTMETHOD);
-            }
-            xDocumentHandler->startElement(TAG_DIGESTVALUE, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-            xDocumentHandler->characters(rReference.ouDigestValue);
-            xDocumentHandler->endElement(TAG_DIGESTVALUE);
-            xDocumentHandler->endElement(TAG_REFERENCE);
-        }
-    }
-    xDocumentHandler->endElement(TAG_MANIFEST);
-
-    // SignatureProperties
-    xDocumentHandler->startElement(TAG_SIGNATUREPROPERTIES, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute(ATTR_ID, "idSignatureTime");
-        pAttributeList->AddAttribute(ATTR_TARGET, "#idPackageSignature");
-        xDocumentHandler->startElement(TAG_SIGNATUREPROPERTY, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    }
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute(ATTR_XMLNS ":" NSTAG_MDSSI, NS_MDSSI);
-        xDocumentHandler->startElement(NSTAG_MDSSI ":" TAG_SIGNATURETIME, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    }
-    xDocumentHandler->startElement(NSTAG_MDSSI ":" TAG_FORMAT, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("YYYY-MM-DDThh:mm:ssTZD");
-    xDocumentHandler->endElement(NSTAG_MDSSI ":" TAG_FORMAT);
-
-    xDocumentHandler->startElement(NSTAG_MDSSI ":" TAG_VALUE, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    OUString aSignatureTimeValue;
-    if (!rInformation.ouDateTime.isEmpty())
-        aSignatureTimeValue = rInformation.ouDateTime;
-    else
-    {
-        aSignatureTimeValue = utl::toISO8601(rInformation.stDateTime);
-        // Ignore sub-seconds.
-        sal_Int32 nCommaPos = aSignatureTimeValue.indexOf(',');
-        if (nCommaPos != -1)
-        {
-            aSignatureTimeValue = aSignatureTimeValue.copy(0, nCommaPos);
-            aSignatureTimeValue += "Z";
-        }
-    }
-    xDocumentHandler->characters(aSignatureTimeValue);
-    xDocumentHandler->endElement(NSTAG_MDSSI ":" TAG_VALUE);
-
-    xDocumentHandler->endElement(NSTAG_MDSSI ":" TAG_SIGNATURETIME);
-    xDocumentHandler->endElement(TAG_SIGNATUREPROPERTY);
-    xDocumentHandler->endElement(TAG_SIGNATUREPROPERTIES);
-
-    xDocumentHandler->endElement(TAG_OBJECT);
-
-    // idOfficeObject
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute(ATTR_ID, "idOfficeObject");
-        xDocumentHandler->startElement(TAG_OBJECT, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    }
-    xDocumentHandler->startElement(TAG_SIGNATUREPROPERTIES, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute(ATTR_ID, "idOfficeV1Details");
-        pAttributeList->AddAttribute(ATTR_TARGET, "#idPackageSignature");
-        xDocumentHandler->startElement(TAG_SIGNATUREPROPERTY, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    }
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute(ATTR_XMLNS, "http://schemas.microsoft.com/office/2006/digsig");
-        xDocumentHandler->startElement("SignatureInfoV1", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    }
-    xDocumentHandler->startElement("SetupId", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->endElement("SetupId");
-    xDocumentHandler->startElement("SignatureText", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->endElement("SignatureText");
-    xDocumentHandler->startElement("SignatureImage", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->endElement("SignatureImage");
-    xDocumentHandler->startElement("SignatureComments", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters(rInformation.ouDescription);
-    xDocumentHandler->endElement("SignatureComments");
-    // Just hardcode something valid according to [MS-OFFCRYPTO].
-    xDocumentHandler->startElement("WindowsVersion", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("6.1");
-    xDocumentHandler->endElement("WindowsVersion");
-    xDocumentHandler->startElement("OfficeVersion", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("16.0");
-    xDocumentHandler->endElement("OfficeVersion");
-    xDocumentHandler->startElement("ApplicationVersion", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("16.0");
-    xDocumentHandler->endElement("ApplicationVersion");
-    xDocumentHandler->startElement("Monitors", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("1");
-    xDocumentHandler->endElement("Monitors");
-    xDocumentHandler->startElement("HorizontalResolution", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("1280");
-    xDocumentHandler->endElement("HorizontalResolution");
-    xDocumentHandler->startElement("VerticalResolution", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("800");
-    xDocumentHandler->endElement("VerticalResolution");
-    xDocumentHandler->startElement("ColorDepth", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("32");
-    xDocumentHandler->endElement("ColorDepth");
-    xDocumentHandler->startElement("SignatureProviderId", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("{00000000-0000-0000-0000-000000000000}");
-    xDocumentHandler->endElement("SignatureProviderId");
-    xDocumentHandler->startElement("SignatureProviderUrl", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->endElement("SignatureProviderUrl");
-    xDocumentHandler->startElement("SignatureProviderDetails", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("9"); // This is what MSO 2016 writes, though [MS-OFFCRYPTO] doesn't document what the value means.
-    xDocumentHandler->endElement("SignatureProviderDetails");
-    xDocumentHandler->startElement("SignatureType", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters("1");
-    xDocumentHandler->endElement("SignatureType");
-    xDocumentHandler->endElement("SignatureInfoV1");
-    xDocumentHandler->endElement(TAG_SIGNATUREPROPERTY);
-    xDocumentHandler->endElement(TAG_SIGNATUREPROPERTIES);
-    xDocumentHandler->endElement(TAG_OBJECT);
-
-    xDocumentHandler->startElement(TAG_OBJECT, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute(ATTR_XMLNS ":" NSTAG_XD, NS_XD);
-        pAttributeList->AddAttribute(ATTR_TARGET, "#idPackageSignature");
-        xDocumentHandler->startElement(NSTAG_XD ":" TAG_QUALIFYINGPROPERTIES, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    }
-
-    // FIXME why does this part crash NSS when MOZILLA_CERTIFICATE_FOLDER is not set?
-    static bool bTest = getenv("LO_TESTNAME");
-    if (!bTest)
-    {
-        {
-            rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-            pAttributeList->AddAttribute(ATTR_ID, "idSignedProperties");
-            xDocumentHandler->startElement(NSTAG_XD ":" TAG_SIGNEDPROPERTIES, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-        }
-
-        xDocumentHandler->startElement("xd:SignedSignatureProperties", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-        xDocumentHandler->startElement("xd:SigningTime", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-        xDocumentHandler->characters(aSignatureTimeValue);
-        xDocumentHandler->endElement("xd:SigningTime");
-        xDocumentHandler->startElement("xd:SigningCertificate", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-        xDocumentHandler->startElement("xd:Cert", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-        xDocumentHandler->startElement("xd:CertDigest", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-        {
-            rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-            pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_XMLDSIGSHA256);
-            xDocumentHandler->startElement("DigestMethod", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-        }
-        xDocumentHandler->endElement("DigestMethod");
-        xDocumentHandler->startElement("DigestValue", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-
-        if (rInformation.ouCertDigest.isEmpty())
-        {
-            uno::Reference<xml::crypto::XSecurityEnvironment> xEnvironment = m_xSecurityContext->getSecurityEnvironment();
-            uno::Reference<security::XCertificate> xCertificate = xEnvironment->createCertificateFromAscii(rInformation.ouX509Certificate);
-            if (xmlsecurity::Certificate* pCertificate = dynamic_cast<xmlsecurity::Certificate*>(xCertificate.get()))
-            {
-                OUStringBuffer aBuffer;
-                sax::Converter::encodeBase64(aBuffer, pCertificate->getSHA256Thumbprint());
-                xDocumentHandler->characters(aBuffer.makeStringAndClear());
-            }
-            else
-                SAL_WARN("xmlsecurity.helper", "XCertificate implementation without an xmlsecurity::Certificate one");
-        }
-        else
-            xDocumentHandler->characters(rInformation.ouCertDigest);
-
-        xDocumentHandler->endElement("DigestValue");
-        xDocumentHandler->endElement("xd:CertDigest");
-        xDocumentHandler->startElement("xd:IssuerSerial", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-        xDocumentHandler->startElement("X509IssuerName", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-        xDocumentHandler->characters(rInformation.ouX509IssuerName);
-        xDocumentHandler->endElement("X509IssuerName");
-        xDocumentHandler->startElement("X509SerialNumber", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-        xDocumentHandler->characters(rInformation.ouX509SerialNumber);
-        xDocumentHandler->endElement("X509SerialNumber");
-        xDocumentHandler->endElement("xd:IssuerSerial");
-        xDocumentHandler->endElement("xd:Cert");
-        xDocumentHandler->endElement("xd:SigningCertificate");
-        xDocumentHandler->startElement("xd:SignaturePolicyIdentifier", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-        xDocumentHandler->startElement("xd:SignaturePolicyImplied", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-        xDocumentHandler->endElement("xd:SignaturePolicyImplied");
-        xDocumentHandler->endElement("xd:SignaturePolicyIdentifier");
-        xDocumentHandler->endElement("xd:SignedSignatureProperties");
-
-        xDocumentHandler->endElement(NSTAG_XD ":" TAG_SIGNEDPROPERTIES);
-    }
-    xDocumentHandler->endElement(NSTAG_XD ":" TAG_QUALIFYINGPROPERTIES);
-    xDocumentHandler->endElement(TAG_OBJECT);
-
-    xDocumentHandler->endElement(TAG_SIGNATURE);
+    OOXMLSecExporter aExporter(mxCtx, xRootStorage, xDocumentHandler, rInformation);
+    aExporter.writeSignature();
 }
 
 SignatureInformation XSecController::getSignatureInformation( sal_Int32 nSecurityId ) const
@@ -1426,8 +925,8 @@ void SAL_CALL XSecController::bufferStatusChanged( sal_Bool /*isBufferEmpty*/)
 /*
  * XSignatureCreationResultListener
  */
-void SAL_CALL XSecController::signatureCreated( sal_Int32 securityId, com::sun::star::xml::crypto::SecurityOperationStatus nResult )
-        throw (com::sun::star::uno::RuntimeException, std::exception)
+void SAL_CALL XSecController::signatureCreated( sal_Int32 securityId, css::xml::crypto::SecurityOperationStatus nResult )
+        throw (css::uno::RuntimeException, std::exception)
 {
     int index = findSignatureInfor(securityId);
     assert(index != -1 && "Signature Not Found!");
@@ -1438,8 +937,8 @@ void SAL_CALL XSecController::signatureCreated( sal_Int32 securityId, com::sun::
 /*
  * XSignatureVerifyResultListener
  */
-void SAL_CALL XSecController::signatureVerified( sal_Int32 securityId, com::sun::star::xml::crypto::SecurityOperationStatus nResult )
-        throw (com::sun::star::uno::RuntimeException, std::exception)
+void SAL_CALL XSecController::signatureVerified( sal_Int32 securityId, css::xml::crypto::SecurityOperationStatus nResult )
+        throw (css::uno::RuntimeException, std::exception)
 {
     int index = findSignatureInfor(securityId);
     assert(index != -1 && "Signature Not Found!");

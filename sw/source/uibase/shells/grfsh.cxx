@@ -355,7 +355,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
             if (nSlot == FN_DRAW_WRAP_DLG)
                 pDlg->SetCurPageId("wrap");
 
-            if( pDlg->Execute() )
+            if (pDlg->Execute() == RET_OK)
             {
                 rSh.StartAllAction();
                 rSh.StartUndo(UNDO_START);
@@ -799,7 +799,7 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
                     const sal_uInt16 eGraphicType( rSh.GetGraphicType() );
                     if ( ( eGraphicType == GRAPHIC_NONE ||
                            eGraphicType == GRAPHIC_DEFAULT ) &&
-                         rSh.IsGrfSwapOut( true ) )
+                         rSh.IsLinkedGrfSwapOut() )
                     {
                         rSet.DisableItem( nWhich );
                         if( AddGrfUpdateSlot( nWhich ))

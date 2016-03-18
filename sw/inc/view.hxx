@@ -261,9 +261,9 @@ class SW_DLLPUBLIC SwView: public SfxViewShell
 
     // methods for searching
     // set search context
-    SAL_DLLPRIVATE bool              SearchAndWrap(bool bApi = false);
-    SAL_DLLPRIVATE bool          SearchAll(sal_uInt16* pFound = nullptr);
-    SAL_DLLPRIVATE sal_uLong         FUNC_Search( const SwSearchOptions& rOptions );
+    SAL_DLLPRIVATE bool          SearchAndWrap(bool bApi = false);
+    SAL_DLLPRIVATE bool          SearchAll();
+    SAL_DLLPRIVATE sal_uLong     FUNC_Search( const SwSearchOptions& rOptions );
     SAL_DLLPRIVATE void          Replace();
 
     bool                        IsDocumentBorder();
@@ -384,7 +384,7 @@ public:
     virtual ErrCode         DoVerb( long nVerb ) override;
 
     virtual sal_uInt16          SetPrinter( SfxPrinter* pNew,
-                                        SfxPrinterChangeFlags nDiff = SFX_PRINTER_ALL, bool bIsAPI=false) override;
+                                        SfxPrinterChangeFlags nDiff = SFX_PRINTER_ALL) override;
     ShellModes              GetShellMode();
 
     css::view::XSelectionSupplier*       GetUNOObject();
@@ -504,7 +504,7 @@ public:
     void            ExecTabWin(SfxRequest&);
     void            ExecuteStatusLine(SfxRequest&);
     DECL_LINK_TYPED( ExecRulerClick, Ruler *, void );
-    void            ExecSearch(SfxRequest&, bool bNoMessage = false);
+    void            ExecSearch(SfxRequest&);
     void            ExecViewOptions(SfxRequest &);
 
     void            StateViewOptions(SfxItemSet &);
@@ -575,8 +575,8 @@ public:
 
     virtual void    WriteUserData(OUString &, bool bBrowse = false) override;
     virtual void    ReadUserData(const OUString &, bool bBrowse = false) override;
-    virtual void    ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse ) override;
-    virtual void    WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse ) override;
+    virtual void    ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >& ) override;
+    virtual void    WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >& ) override;
 
     void SetCursorAtTop( bool bFlag, bool bCenter = false )
         { m_bTopCursor = bFlag; m_bCenterCursor = bCenter; }
@@ -598,7 +598,7 @@ public:
     bool IsPasteSpecialAllowed();
 
     // Enable mail merge - mail merge field dialog enabled
-    void EnableMailMerge(bool bEnable = true);
+    void EnableMailMerge();
     //apply Accessiblity options
     void ApplyAccessiblityOptions(SvtAccessibilityOptions& rAccessibilityOptions);
 

@@ -94,8 +94,6 @@ SvParser::~SvParser()
         rtl_destroyTextToUnicodeConverter( pImplData->hConv );
     }
 
-    delete pImplData;
-
     delete [] pTokenStack;
 }
 
@@ -124,7 +122,7 @@ void SvParser::SetSrcEncoding( rtl_TextEncoding eEnc )
         {
             eSrcEnc = eEnc;
             if( !pImplData )
-                pImplData = new SvParser_Impl;
+                pImplData.reset(new SvParser_Impl);
             pImplData->hConv = rtl_createTextToUnicodeConverter( eSrcEnc );
             DBG_ASSERT( pImplData->hConv,
                         "SvParser::SetSrcEncoding: no converter for source encoding" );
@@ -429,7 +427,7 @@ int SvParser::GetNextToken()
         nTokenValue = -1;   // marker for no value read
         bTokenHasValue = false;
 
-        nRet = _GetNextToken();
+        nRet = GetNextToken_();
         if( SVPAR_PENDING == eState )
             return nRet;
     }
@@ -523,7 +521,7 @@ void SvParser::SaveState( int nToken )
     // save actual status
     if( !pImplData )
     {
-        pImplData = new SvParser_Impl;
+        pImplData.reset(new SvParser_Impl);
         pImplData->nSaveToken = 0;
     }
 
@@ -672,10 +670,7 @@ struct SvKeyValueIterator::Impl
 
 SvKeyValueIterator::SvKeyValueIterator() : mpImpl(new Impl) {}
 
-SvKeyValueIterator::~SvKeyValueIterator()
-{
-    delete mpImpl;
-}
+SvKeyValueIterator::~SvKeyValueIterator() = default;
 
 bool SvKeyValueIterator::GetFirst (SvKeyValue &rKeyVal)
 {

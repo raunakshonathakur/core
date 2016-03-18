@@ -326,6 +326,12 @@ void Window::StartTracking( StartTrackingFlags nFlags )
     pSVData->maWinData.mpTrackWin   = this;
     pSVData->maWinData.mnTrackFlags = nFlags;
     CaptureMouse();
+
+    if (nFlags & StartTrackingFlags::UseToolKitDrag)
+    {
+        SalFrame* pFrame = mpWindowImpl->mpFrame;
+        pFrame->StartToolKitMoveBy();
+    }
 }
 
 void Window::EndTracking( TrackingEventFlags nFlags )
@@ -1018,12 +1024,15 @@ void Window::SetCompoundControl( bool bCompound )
 
 void Window::IncrementLockCount()
 {
+    assert( mpWindowImpl != nullptr );
     mpWindowImpl->mnLockCount++;
 }
 
 void Window::DecrementLockCount()
 {
-    mpWindowImpl->mnLockCount--;
+    assert( mpWindowImpl != nullptr );
+    if (mpWindowImpl)
+        mpWindowImpl->mnLockCount--;
 }
 
 WinBits Window::GetStyle() const
@@ -1090,9 +1099,9 @@ bool Window::IsToolbarFloatingWindow() const
     return mpWindowImpl && mpWindowImpl->mbToolbarFloatingWindow;
 }
 
-void Window::EnableAllResize( bool bEnable )
+void Window::EnableAllResize()
 {
-    mpWindowImpl->mbAllResize = bEnable;
+    mpWindowImpl->mbAllResize = true;
 }
 
 void Window::EnableChildTransparentMode( bool bEnable )

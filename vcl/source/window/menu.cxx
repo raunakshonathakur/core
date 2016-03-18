@@ -421,7 +421,7 @@ void Menu::InsertItem(sal_uInt16 nItemId, const OUString& rStr,
     SetItemImage( nItemId, rImage );
 }
 
-void Menu::InsertItem( const ResId& rResId, sal_uInt16 nPos )
+void Menu::InsertItem( const ResId& rResId )
 {
     ResMgr* pMgr = rResId.GetResMgr();
     if( ! pMgr )
@@ -456,16 +456,16 @@ void Menu::InsertItem( const ResId& rResId, sal_uInt16 nPos )
             Bitmap aBmp( ResId( static_cast<RSHEADER_TYPE*>(GetClassRes()), *pMgr ) );
             Image const aImg(aBmp);
             if ( !aText.isEmpty() )
-                InsertItem( nItemId, aText, aImg, nStatus, OString(), nPos );
+                InsertItem( nItemId, aText, aImg, nStatus );
             else
-                InsertItem( nItemId, aImg, nStatus, OString(), nPos );
+                InsertItem( nItemId, aImg, nStatus );
         }
         IncrementRes( GetObjSizeRes( static_cast<RSHEADER_TYPE*>(GetClassRes()) ) );
     }
     else if ( !bSep )
-        InsertItem(nItemId, aText, nStatus, OString(), nPos);
+        InsertItem(nItemId, aText, nStatus);
     if ( bSep )
-        InsertSeparator(OString(), nPos);
+        InsertSeparator();
 
     OUString aHelpText;
     if ( nObjMask & RSC_MENUITEM_HELPTEXT )
@@ -527,8 +527,7 @@ void Menu::InsertItem( const ResId& rResId, sal_uInt16 nPos )
     mpLayoutData = nullptr;
 }
 
-void Menu::InsertItem(const OUString& rCommand, const css::uno::Reference<css::frame::XFrame>& rFrame,
-                      MenuItemBits nBits, const OString &rIdent, sal_uInt16 nPos)
+void Menu::InsertItem(const OUString& rCommand, const css::uno::Reference<css::frame::XFrame>& rFrame)
 {
     OUString aLabel(CommandInfoProvider::Instance().GetPopupLabelForCommand(rCommand, rFrame));
     OUString aTooltip(CommandInfoProvider::Instance().GetTooltipForCommand(rCommand, rFrame));
@@ -536,7 +535,7 @@ void Menu::InsertItem(const OUString& rCommand, const css::uno::Reference<css::f
 
     sal_uInt16 nItemId = GetItemCount() + 1;
 
-    InsertItem(nItemId, aLabel, aImage, nBits, rIdent, nPos);
+    InsertItem(nItemId, aLabel, aImage);
     SetItemCommand(nItemId, rCommand);
     SetHelpText(nItemId, aTooltip);
 }
@@ -649,9 +648,9 @@ void ImplCopyItem( Menu* pThis, const Menu& rMenu, sal_uInt16 nPos, sal_uInt16 n
     }
 }
 
-void Menu::CopyItem( const Menu& rMenu, sal_uInt16 nPos, sal_uInt16 nNewPos )
+void Menu::CopyItem( const Menu& rMenu, sal_uInt16 nPos )
 {
-    ImplCopyItem( this, rMenu, nPos, nNewPos );
+    ImplCopyItem( this, rMenu, nPos, MENU_APPEND );
 }
 
 void Menu::Clear()
@@ -2297,7 +2296,7 @@ void Menu::RemoveDisabledEntries( bool bCheckPopups, bool bRemoveEmptyPopups )
     mpLayoutData = nullptr;
 }
 
-bool Menu::HasValidEntries( bool bCheckPopups )
+bool Menu::HasValidEntries()
 {
     bool bValidEntries = false;
     sal_uInt16 nCount = GetItemCount();
@@ -2306,7 +2305,7 @@ bool Menu::HasValidEntries( bool bCheckPopups )
         MenuItemData* pItem = pItemList->GetDataFromPos( n );
         if ( pItem->bEnabled && ( pItem->eType != MenuItemType::SEPARATOR ) )
         {
-            if ( bCheckPopups && pItem->pSubMenu )
+            if ( pItem->pSubMenu )
                 bValidEntries = pItem->pSubMenu->HasValidEntries();
             else
                 bValidEntries = true;
@@ -2489,14 +2488,15 @@ MenuBarWindow* MenuBar::getMenuBarWindow()
     return pWin;
 }
 
-MenuBar::MenuBar()
+MenuBar::MenuBar(SystemWindow* pAssociatedSystemWindow)
     : Menu(),
       mbCloseBtnVisible(false),
       mbFloatBtnVisible(false),
       mbHideBtnVisible(false),
-      mbDisplayable(true)
+      mbDisplayable(true),
+      mxAssociatedSystemWindow(pAssociatedSystemWindow)
 {
-    mpSalMenu = ImplGetSVData()->mpDefInst->CreateMenu(true, this);
+    mpSalMenu = ImplGetSVData()->mpDefInst->CreateMenu(true, this, mxAssociatedSystemWindow.get());
 }
 
 MenuBar::MenuBar( const MenuBar& rMenu )
@@ -2506,7 +2506,7 @@ MenuBar::MenuBar( const MenuBar& rMenu )
       mbHideBtnVisible(false),
       mbDisplayable(true)
 {
-    mpSalMenu = ImplGetSVData()->mpDefInst->CreateMenu(true, this);
+    mpSalMenu = ImplGetSVData()->mpDefInst->CreateMenu(true, this, mxAssociatedSystemWindow.get());
     *this = rMenu;
 }
 
@@ -2596,7 +2596,7 @@ void MenuBar::ImplDestroy( MenuBar* pMenu, bool bDelete )
     pMenu->pWindow = nullptr;
 }
 
-bool MenuBar::ImplHandleKeyEvent( const KeyEvent& rKEvent, bool bFromMenu )
+bool MenuBar::ImplHandleKeyEvent( const KeyEvent& rKEvent )
 {
     bool bDone = false;
 
@@ -2610,7 +2610,7 @@ bool MenuBar::ImplHandleKeyEvent( const KeyEvent& rKEvent, bool bFromMenu )
     if (pWin && pWin->IsEnabled() && pWin->IsInputEnabled()  && !pWin->IsInModalMode())
     {
         MenuBarWindow* pMenuWin = getMenuBarWindow();
-        bDone = pMenuWin && pMenuWin->HandleKeyEvent(rKEvent, bFromMenu);
+        bDone = pMenuWin && pMenuWin->HandleKeyEvent(rKEvent, false/*bFromMenu*/);
     }
     return bDone;
 }
@@ -2780,13 +2780,13 @@ MenuFloatingWindow * PopupMenu::ImplGetFloatingWindow() const {
 PopupMenu::PopupMenu()
     : pRefAutoSubMenu(nullptr)
 {
-    mpSalMenu = ImplGetSVData()->mpDefInst->CreateMenu(false, this);
+    mpSalMenu = ImplGetSVData()->mpDefInst->CreateMenu(false, this, nullptr);
 }
 
 PopupMenu::PopupMenu( const ResId& rResId )
     : pRefAutoSubMenu(nullptr)
 {
-    mpSalMenu = ImplGetSVData()->mpDefInst->CreateMenu(false, this);
+    mpSalMenu = ImplGetSVData()->mpDefInst->CreateMenu(false, this, nullptr);
 
     ResMgr* pMgr = rResId.GetResMgr();
     if( ! pMgr )
@@ -2820,7 +2820,7 @@ PopupMenu::PopupMenu( const PopupMenu& rMenu )
     : Menu(),
       pRefAutoSubMenu(nullptr)
 {
-    mpSalMenu = ImplGetSVData()->mpDefInst->CreateMenu(false, this);
+    mpSalMenu = ImplGetSVData()->mpDefInst->CreateMenu(false, this, nullptr);
     *this = rMenu;
 }
 
@@ -2849,10 +2849,10 @@ PopupMenu* PopupMenu::GetActivePopupMenu()
     return pSVData->maAppData.mpActivePopupMenu;
 }
 
-void PopupMenu::EndExecute( sal_uInt16 nSelectId )
+void PopupMenu::EndExecute()
 {
     if ( ImplGetWindow() )
-        ImplGetFloatingWindow()->EndExecute( nSelectId );
+        ImplGetFloatingWindow()->EndExecute( 0 );
 }
 
 void PopupMenu::SelectItem(sal_uInt16 nId)

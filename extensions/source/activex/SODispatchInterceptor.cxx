@@ -19,14 +19,25 @@
 
 // SODispatchInterceptor.cpp : Implementation of CHelpApp and DLL registration.
 
+#include <sal/config.h>
+
+#include <cstddef>
+
 #include "stdio.h"
 #include "stdafx2.h"
-#include "so_activex.h"
 #include "SOActiveX.h"
 #include "SODispatchInterceptor.h"
 #include "com_uno_helper.h"
 #include <sal/macros.h>
 
+#if defined __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+#endif
+#include "so_activex.h"
+#if defined __clang__
+#pragma clang diagnostic pop
+#endif
 
 STDMETHODIMP SODispatchInterceptor::InterfaceSupportsErrorInfo(REFIID riid)
 {
@@ -35,7 +46,7 @@ STDMETHODIMP SODispatchInterceptor::InterfaceSupportsErrorInfo(REFIID riid)
         &IID_ISODispatchInterceptor,
     };
 
-    for (int i=0;i<SAL_N_ELEMENTS(arr);i++)
+    for (std::size_t i=0;i<SAL_N_ELEMENTS(arr);i++)
     {
 #ifdef _MSC_VER
         if (InlineIsEqualGUID(*arr[i],riid))
@@ -55,9 +66,9 @@ STDMETHODIMP SODispatchInterceptor::queryDispatch( IDispatch FAR* aURL,
     if ( !aURL || !retVal ) return E_FAIL;
 
     CComVariant aTargetUrl;
-    OLECHAR* sURLMemberName = L"Complete";
+    OLECHAR const * sURLMemberName = L"Complete";
     DISPID nURLID;
-    HRESULT hr = aURL->GetIDsOfNames( IID_NULL, &sURLMemberName, 1, LOCALE_USER_DEFAULT, &nURLID );
+    HRESULT hr = aURL->GetIDsOfNames( IID_NULL, const_cast<OLECHAR **>(&sURLMemberName), 1, LOCALE_USER_DEFAULT, &nURLID );
     if( !SUCCEEDED( hr ) ) return hr;
 
     hr = CComDispatchDriver::GetProperty( aURL, nURLID, &aTargetUrl );
@@ -128,7 +139,7 @@ STDMETHODIMP SODispatchInterceptor::queryDispatches( SAFEARRAY FAR* aDescripts, 
         SafeArrayGetElement( aDescripts, &ind, pElem );
         if( pElem )
         {
-            OLECHAR* pMemberNames[3] = { L"FeatureURL", L"FrameName", L"SearchFlags" };
+            OLECHAR const * pMemberNames[3] = { L"FeatureURL", L"FrameName", L"SearchFlags" };
             CComVariant pValues[3];
             hr = GetPropertiesFromIDisp( pElem, pMemberNames, pValues, 3 );
             if( !SUCCEEDED( hr ) ) return hr;
@@ -149,7 +160,7 @@ STDMETHODIMP SODispatchInterceptor::queryDispatches( SAFEARRAY FAR* aDescripts, 
 STDMETHODIMP SODispatchInterceptor::dispatch( IDispatch FAR* aURL, SAFEARRAY FAR* aArgs)
 {
     // get url from aURL
-    OLECHAR* pUrlName = L"Complete";
+    OLECHAR const * pUrlName = L"Complete";
     CComVariant pValue;
     HRESULT hr = GetPropertiesFromIDisp( aURL, &pUrlName, &pValue, 1 );
     if( !SUCCEEDED( hr ) ) return hr;
@@ -175,14 +186,13 @@ STDMETHODIMP SODispatchInterceptor::dispatch( IDispatch FAR* aURL, SAFEARRAY FAR
             SafeArrayGetElement( aArgs, &ind, &pVarElem );
             if( pVarElem.vt == VT_DISPATCH && pVarElem.pdispVal != NULL )
             {
-                OLECHAR* pMemberNames[2] = { L"Name", L"Value" };
+                OLECHAR const * pMemberNames[2] = { L"Name", L"Value" };
                 CComVariant pValues[2];
                 hr = GetPropertiesFromIDisp( pVarElem.pdispVal, pMemberNames, pValues, 2 );
                 if( !SUCCEEDED( hr ) ) return hr;
 
                 if( pValues[0].vt == VT_BSTR && pValues[1].vt == VT_BSTR )
                 {
-                    USES_CONVERSION;
                     if( !strncmp( OLE2T( pValues[0].bstrVal ), "URL", 3 ) )
                     {
                         EnterCriticalSection( &mMutex );

@@ -453,7 +453,10 @@ Size SwFrame::ChgSize( const Size& aNewSize )
 
     if ( GetUpper() )
     {
-        SWRECTFN2( this )
+        bool bNeighb = IsNeighbourFrame();
+        SwRectFn fnRect = IsVertical() == bNeighb ?
+            fnRectHori : ( IsVertLR() ? fnRectVertL2R : fnRectVert );
+
         SwRect aNew( Point(0,0), aNewSize );
         (maFrame.*fnRect->fnSetWidth)( (aNew.*fnRect->fnGetWidth)() );
         long nNew = (aNew.*fnRect->fnGetHeight)();
@@ -2049,7 +2052,7 @@ void SwContentFrame::_UpdateAttr( const SfxPoolItem* pOld, const SfxPoolItem* pN
                      !GetUpper()->GetFormat()->getIDocumentSettingAccess().get(DocumentSettingId::USE_FORMER_OBJECT_POS) )
                 {
                     // OD 2004-07-01 #i28701# - use new method <InvalidateObjs(..)>
-                    GetIndNext()->InvalidateObjs( true );
+                    GetIndNext()->InvalidateObjs();
                 }
                 Prepare( PREP_UL_SPACE );   //TextFrame has to correct line spacing.
                 rInvFlags |= 0x80;
@@ -3744,7 +3747,7 @@ void SwRootFrame::InvalidateAllObjPos()
                 // #i28701# - special invalidation for anchored
                 // objects, whose wrapping style influence has to be considered.
                 if ( pAnchoredObj->ConsiderObjWrapInfluenceOnObjPos() )
-                    pAnchoredObj->InvalidateObjPosForConsiderWrapInfluence( true );
+                    pAnchoredObj->InvalidateObjPosForConsiderWrapInfluence();
                 else
                     pAnchoredObj->InvalidateObjPos();
             }

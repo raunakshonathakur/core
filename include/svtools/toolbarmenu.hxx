@@ -64,8 +64,8 @@ public:
     virtual void    LoseFocus() override;
 
     void            appendEntry( int nEntryId, const OUString& rStr, MenuItemBits nItemBits = MenuItemBits::NONE );
-    void            appendEntry( int nEntryId, const OUString& rStr, const Image& rImage, MenuItemBits nItemBits = MenuItemBits::NONE );
-    void            appendEntry( int nEntryId, Control* pControl, MenuItemBits nItemBits = MenuItemBits::NONE );
+    void            appendEntry( int nEntryId, const OUString& rStr, const Image& rImage );
+    void            appendEntry( int nEntryId, Control* pControl );
     void            appendSeparator();
 
     /** creates an empty ValueSet that is initialized and can be inserted with appendEntry. */
@@ -118,7 +118,7 @@ private:
 
     void            implPaint(vcl::RenderContext& rRenderContext, ToolbarMenuEntry* pThisOnly = nullptr, bool bHighlight = false);
 
-    void            implHighlightEntry(vcl::RenderContext& rRenderContext, int nHighlightEntry, bool bHighlight);
+    void            implHighlightEntry(vcl::RenderContext& rRenderContext, int nHighlightEntry);
     void            implHighlightAtPosition(const MouseEvent& rMEvt, bool bMBDown);
 
     void            implChangeHighlightEntry( int nEntry );

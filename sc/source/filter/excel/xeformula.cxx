@@ -331,7 +331,7 @@ private:
     // XclExpScToken: pass-by-value and return-by-value is intended
 
     const FormulaToken* GetNextRawToken();
-    const FormulaToken* PeekNextRawToken( bool bSkipSpaces ) const;
+    const FormulaToken* PeekNextRawToken() const;
 
     bool                GetNextToken( XclExpScToken& rTokData );
     XclExpScToken       GetNextToken();
@@ -421,9 +421,9 @@ private:
     void                AppendNameToken( sal_uInt16 nNameIdx, sal_uInt8 nSpaces = 0 );
     void                AppendMissingNameToken( const OUString& rName, sal_uInt8 nSpaces = 0 );
     void                AppendNameXToken( sal_uInt16 nExtSheet, sal_uInt16 nExtName, sal_uInt8 nSpaces = 0 );
-    void                AppendMacroCallToken( const XclExpExtFuncData& rExtFuncData, sal_uInt8 nSpaces = 0 );
-    void                AppendAddInCallToken( const XclExpExtFuncData& rExtFuncData, sal_uInt8 nSpaces = 0 );
-    void                AppendEuroToolCallToken( const XclExpExtFuncData& rExtFuncData, sal_uInt8 nSpaces = 0 );
+    void                AppendMacroCallToken( const XclExpExtFuncData& rExtFuncData );
+    void                AppendAddInCallToken( const XclExpExtFuncData& rExtFuncData );
+    void                AppendEuroToolCallToken( const XclExpExtFuncData& rExtFuncData );
 
     void                AppendOperatorTokenId( sal_uInt8 nTokenId, const XclExpOperandListRef& rxOperands, sal_uInt8 nSpaces = 0 );
     void                AppendUnaryOperatorToken( sal_uInt8 nTokenId, sal_uInt8 nSpaces = 0 );
@@ -796,7 +796,7 @@ const FormulaToken* XclExpFmlaCompImpl::GetNextRawToken()
     return pScToken;
 }
 
-const FormulaToken* XclExpFmlaCompImpl::PeekNextRawToken( bool bSkipSpaces ) const
+const FormulaToken* XclExpFmlaCompImpl::PeekNextRawToken() const
 {
     /*  Returns pointer to next raw token in the token array. The token array
         iterator already points to the next token (A call to GetNextToken()
@@ -805,7 +805,7 @@ const FormulaToken* XclExpFmlaCompImpl::PeekNextRawToken( bool bSkipSpaces ) con
         created and set to the passed skip-spaces mode. If spaces have to be
         skipped, and the iterator currently points to a space token, the
         constructor will move it to the next non-space token. */
-    XclTokenArrayIterator aTempIt( mxData->maTokArrIt, bSkipSpaces );
+    XclTokenArrayIterator aTempIt( mxData->maTokArrIt, true/*bSkipSpaces*/ );
     return aTempIt.Get();
 }
 
@@ -1252,7 +1252,7 @@ void XclExpFmlaCompImpl::ProcessExternal( const XclExpScToken& rTokData )
         names and for external/invalid function calls. This function looks for
         the next token in the token array. If it is an opening parenthesis, the
         token is processed as external function call, otherwise as undefined name. */
-    const FormulaToken* pNextScToken = PeekNextRawToken( true );
+    const FormulaToken* pNextScToken = PeekNextRawToken();
     if( !pNextScToken || (pNextScToken->GetOpCode() != ocOpen) )
         AppendMissingNameToken( rTokData.mpScToken->GetExternal(), rTokData.mnSpaces );
     else
@@ -2352,13 +2352,13 @@ void XclExpFmlaCompImpl::AppendNameXToken( sal_uInt16 nExtSheet, sal_uInt16 nExt
     Append( 0, (meBiff <= EXC_BIFF5) ? 12 : 2 );
 }
 
-void XclExpFmlaCompImpl::AppendMacroCallToken( const XclExpExtFuncData& rExtFuncData, sal_uInt8 nSpaces )
+void XclExpFmlaCompImpl::AppendMacroCallToken( const XclExpExtFuncData& rExtFuncData )
 {
     sal_uInt16 nNameIdx = GetNameManager().InsertMacroCall( rExtFuncData.maFuncName, rExtFuncData.mbVBasic, true, rExtFuncData.mbHidden );
-    AppendNameToken( nNameIdx, nSpaces );
+    AppendNameToken( nNameIdx );
 }
 
-void XclExpFmlaCompImpl::AppendAddInCallToken( const XclExpExtFuncData& rExtFuncData, sal_uInt8 nSpaces )
+void XclExpFmlaCompImpl::AppendAddInCallToken( const XclExpExtFuncData& rExtFuncData )
 {
     OUString aXclFuncName;
     if( mxData->mpLinkMgr && ScGlobal::GetAddInCollection()->GetExcelName( rExtFuncData.maFuncName, GetUILanguage(), aXclFuncName ) )
@@ -2366,20 +2366,20 @@ void XclExpFmlaCompImpl::AppendAddInCallToken( const XclExpExtFuncData& rExtFunc
         sal_uInt16 nExtSheet, nExtName;
         if( mxData->mpLinkMgr->InsertAddIn( nExtSheet, nExtName, aXclFuncName ) )
         {
-            AppendNameXToken( nExtSheet, nExtName, nSpaces );
+            AppendNameXToken( nExtSheet, nExtName );
             return;
         }
     }
-    AppendMacroCallToken( rExtFuncData, nSpaces );
+    AppendMacroCallToken( rExtFuncData );
 }
 
-void XclExpFmlaCompImpl::AppendEuroToolCallToken( const XclExpExtFuncData& rExtFuncData, sal_uInt8 nSpaces )
+void XclExpFmlaCompImpl::AppendEuroToolCallToken( const XclExpExtFuncData& rExtFuncData )
 {
     sal_uInt16 nExtSheet(0), nExtName(0);
     if( mxData->mpLinkMgr && mxData->mpLinkMgr->InsertEuroTool( nExtSheet, nExtName, rExtFuncData.maFuncName ) )
-        AppendNameXToken( nExtSheet, nExtName, nSpaces );
+        AppendNameXToken( nExtSheet, nExtName );
     else
-        AppendMacroCallToken( rExtFuncData, nSpaces );
+        AppendMacroCallToken( rExtFuncData );
 }
 
 void XclExpFmlaCompImpl::AppendOperatorTokenId( sal_uInt8 nTokenId, const XclExpOperandListRef& rxOperands, sal_uInt8 nSpaces )

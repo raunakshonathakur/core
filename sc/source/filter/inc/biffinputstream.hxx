@@ -181,7 +181,7 @@ public:
         Decryption is reenabled automatically, if a new record is started using
         the function startNextRecord().
      */
-    void                enableDecoder( bool bEnable = true );
+    void                enableDecoder();
 
     // stream/record state and info -------------------------------------------
 
@@ -277,7 +277,7 @@ private:
     /** Initializes all members after base stream has been sought to new record. */
     void                setupRecord();
     /** Restarts the current record from the beginning. */
-    void                restartRecord( bool bInvalidateRecSize );
+    void                restartRecord();
     /** Sets stream pointer before specified record and invalidates stream. */
     void                rewindToRecord( sal_Int64 nRecHandle );
     /** Returns true, if stream was able to start a valid record. */

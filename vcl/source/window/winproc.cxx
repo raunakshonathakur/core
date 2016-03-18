@@ -39,7 +39,6 @@
 #include <touch/touch.h>
 
 #include <svdata.hxx>
-#include <dbggui.hxx>
 #include <salwtype.hxx>
 #include <salframe.hxx>
 #include <accmgr.hxx>
@@ -408,7 +407,7 @@ bool ImplHandleMouseEvent( const VclPtr<vcl::Window>& xWindow, MouseNotifyEvent 
         if ( pSVData->maWinData.mpExtTextInputWin &&
              ((nSVEvent == MouseNotifyEvent::MOUSEBUTTONDOWN) ||
               (nSVEvent == MouseNotifyEvent::MOUSEBUTTONUP)) )
-            pSVData->maWinData.mpExtTextInputWin->EndExtTextInput( EndExtTextInputFlags::Complete );
+            pSVData->maWinData.mpExtTextInputWin->EndExtTextInput();
     }
 
     // determine mouse event data
@@ -1787,7 +1786,7 @@ IMPL_LINK_NOARG_TYPED(vcl::Window, ImplAsyncFocusHdl, void*, void)
                 pSVData->maWinData.mpFocusWin = nullptr;
 
                 if ( pFocusWin->ImplGetWindowImpl()->mpCursor )
-                    pFocusWin->ImplGetWindowImpl()->mpCursor->ImplHide( true );
+                    pFocusWin->ImplGetWindowImpl()->mpCursor->ImplHide();
 
                 // Deaktivate rufen
                 vcl::Window* pOldFocusWindow = pFocusWin;
@@ -1808,7 +1807,7 @@ IMPL_LINK_NOARG_TYPED(vcl::Window, ImplAsyncFocusHdl, void*, void)
                 // TrackingMode is ended in ImplHandleLoseFocus
 #ifdef _WIN32
                 // To avoid problems with the Unix IME
-                pFocusWin->EndExtTextInput( EndExtTextInputFlags::Complete );
+                pFocusWin->EndExtTextInput();
 #endif
 
                 // XXX #102010# hack for accessibility: do not close the menu,
@@ -1874,7 +1873,7 @@ static void ImplHandleLoseFocus( vcl::Window* pWindow )
 
     vcl::Window* pFocusWin = pWindow->ImplGetWindowImpl()->mpFrameData->mpFocusWin;
     if ( pFocusWin && pFocusWin->ImplGetWindowImpl()->mpCursor )
-        pFocusWin->ImplGetWindowImpl()->mpCursor->ImplHide( true );
+        pFocusWin->ImplGetWindowImpl()->mpCursor->ImplHide();
 }
 
 struct DelayedCloseEvent

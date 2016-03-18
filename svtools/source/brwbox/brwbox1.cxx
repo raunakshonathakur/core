@@ -322,13 +322,8 @@ void BrowseBox::SetToggledSelectedColumn(sal_uInt16 _nSelectedColumnId)
     }
 }
 
-void BrowseBox::FreezeColumn( sal_uInt16 nItemId, bool bFreeze )
+void BrowseBox::FreezeColumn( sal_uInt16 nItemId )
 {
-
-    // never unfreeze the handle-column
-    if ( nItemId == HandleColumnId && !bFreeze )
-        return;
-
     // get the position in the current array
     size_t nItemPos = GetColumnPos( nItemId );
     if ( nItemPos >= pCols->size() )
@@ -336,57 +331,33 @@ void BrowseBox::FreezeColumn( sal_uInt16 nItemId, bool bFreeze )
         return;
 
     // doesn't the state change?
-    if ( (*pCols)[ nItemPos ]->IsFrozen() == bFreeze )
+    if ( (*pCols)[ nItemPos ]->IsFrozen() )
         return;
 
     // remark the column selection
     sal_uInt16 nSelectedColId = ToggleSelectedColumn();
 
-    // freeze or unfreeze?
-    if ( bFreeze )
+    // to be moved?
+    if ( nItemPos != 0 && !(*pCols)[ nItemPos-1 ]->IsFrozen() )
     {
-        // to be moved?
-        if ( nItemPos != 0 && !(*pCols)[ nItemPos-1 ]->IsFrozen() )
-        {
-            // move to the right of the last frozen column
-            sal_uInt16 nFirstScrollable = FrozenColCount();
-            BrowserColumn *pColumn = (*pCols)[ nItemPos ];
-            BrowserColumns::iterator it = pCols->begin();
-            ::std::advance( it, nItemPos );
-            pCols->erase( it );
-            nItemPos = nFirstScrollable;
-            it = pCols->begin();
-            ::std::advance( it, nItemPos );
-            pCols->insert( it, pColumn );
-        }
-
-        // adjust the number of the first scrollable and visible column
-        if ( nFirstCol <= nItemPos )
-            nFirstCol = nItemPos + 1;
+        // move to the right of the last frozen column
+        sal_uInt16 nFirstScrollable = FrozenColCount();
+        BrowserColumn *pColumn = (*pCols)[ nItemPos ];
+        BrowserColumns::iterator it = pCols->begin();
+        ::std::advance( it, nItemPos );
+        pCols->erase( it );
+        nItemPos = nFirstScrollable;
+        it = pCols->begin();
+        ::std::advance( it, nItemPos );
+        pCols->insert( it, pColumn );
     }
-    else
-    {
-        // to be moved?
-        if ( (sal_Int32)nItemPos != FrozenColCount()-1 )
-        {
-            // move to the leftmost scrollable column
-            sal_uInt16 nFirstScrollable = FrozenColCount();
-            BrowserColumn *pColumn = (*pCols)[ nItemPos ];
-            BrowserColumns::iterator it = pCols->begin();
-            ::std::advance( it, nItemPos );
-            pCols->erase( it );
-            nItemPos = nFirstScrollable;
-            it = pCols->begin();
-            ::std::advance( it, nItemPos );
-            pCols->insert( it, pColumn );
-        }
 
-        // adjust the number of the first scrollable and visible column
-        nFirstCol = nItemPos;
-    }
+    // adjust the number of the first scrollable and visible column
+    if ( nFirstCol <= nItemPos )
+        nFirstCol = nItemPos + 1;
 
     // toggle the freeze-state of the column
-    (*pCols)[ nItemPos ]->Freeze( bFreeze );
+    (*pCols)[ nItemPos ]->Freeze();
 
     // align the scrollbar-range
     UpdateScrollbars();
@@ -1889,10 +1860,10 @@ long BrowseBox::FirstSelectedColumn( ) const
 }
 
 
-long BrowseBox::FirstSelectedRow( bool bInverse )
+long BrowseBox::FirstSelectedRow()
 {
 
-    return bMultiSelection ? uRow.pSel->FirstSelected(bInverse) : uRow.nSel;
+    return bMultiSelection ? uRow.pSel->FirstSelected() : uRow.nSel;
 }
 
 
@@ -1928,15 +1899,13 @@ bool BrowseBox::IsColumnSelected( sal_uInt16 nColumnId ) const
 void BrowseBox::MakeFieldVisible
 (
     long    nRow,       // line number of the field (starting with 0)
-    sal_uInt16  nColId,     // column ID of the field
-    bool    bComplete   // (== false), true => make visible in its entirety
+    sal_uInt16  nColId     // column ID of the field
 )
 
 /*  [Description]
 
     Makes visible the field described in 'nRow' and 'nColId' by scrolling
-    accordingly. If 'bComplete' is set, the field should become visible in its
-    entirety.
+    accordingly.
 
 */
 
@@ -1948,7 +1917,7 @@ void BrowseBox::MakeFieldVisible
         return;
 
     // is it visible already?
-    bool bVisible = IsFieldVisible( nRow, nColId, bComplete );
+    bool bVisible = IsFieldVisible( nRow, nColId, true/*bComplete*/ );
     if ( bVisible )
         return;
 
@@ -1963,9 +1932,7 @@ void BrowseBox::MakeFieldVisible
         ScrollColumns( nColPos - nFirstCol );
 
     // while outside on the right
-    while ( aDataRect.Right() < ( bComplete
-                ? aFieldRect.Right()
-                : aFieldRect.Left()+aFieldRect.GetWidth()/2 ) )
+    while ( aDataRect.Right() < aFieldRect.Right() )
     {
         // => scroll to the left
         if ( ScrollColumns( 1 ) != 1 )
@@ -2039,7 +2006,7 @@ Rectangle BrowseBox::GetFieldRectPixel( long nRow, sal_uInt16 nColumnId,
 }
 
 
-Rectangle BrowseBox::GetRowRectPixel( long nRow, bool bRelToBrowser  ) const
+Rectangle BrowseBox::GetRowRectPixel( long nRow  ) const
 {
 
     // get the rectangle relative to DataWin
@@ -2056,11 +2023,8 @@ Rectangle BrowseBox::GetRowRectPixel( long nRow, bool bRelToBrowser  ) const
 
     // adjust relative to BrowseBox's output area
     Point aTopLeft( aRect.TopLeft() );
-    if ( bRelToBrowser )
-    {
-        aTopLeft = pDataWin->OutputToScreenPixel( aTopLeft );
-        aTopLeft = ScreenToOutputPixel( aTopLeft );
-    }
+    aTopLeft = pDataWin->OutputToScreenPixel( aTopLeft );
+    aTopLeft = ScreenToOutputPixel( aTopLeft );
 
     return Rectangle( aTopLeft, aRect.GetSize() );
 }

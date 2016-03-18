@@ -840,7 +840,7 @@ extern "C" rtl_uString* basicide_choose_macro(void*, sal_Bool, rtl_uString*);
 
 #endif
 
-OUString ChooseMacro( const Reference< XModel >& rxLimitToDocument, bool bChooseOnly, const OUString& rMacroDesc = OUString() )
+OUString ChooseMacro( const Reference< XModel >& rxLimitToDocument, bool bChooseOnly )
 {
 #ifndef DISABLE_DYNLOADING
     osl::Module aMod;
@@ -859,6 +859,7 @@ OUString ChooseMacro( const Reference< XModel >& rxLimitToDocument, bool bChoose
 #endif
 
     // call basicide_choose_macro in basctl
+    OUString rMacroDesc;
     rtl_uString* pScriptURL = pSymbol( rxLimitToDocument.get(), bChooseOnly, rMacroDesc.pData );
     OUString aScriptURL( pScriptURL );
     rtl_uString_release( pScriptURL );
@@ -972,7 +973,7 @@ void SfxApplication::OfaExec_Impl( SfxRequest& rReq )
             if ( pFact )
             {
                 VclAbstractDialog* pDlg =
-                    pFact->CreateFrameDialog( nullptr, xFrame, rReq.GetSlot(), sPageURL );
+                    pFact->CreateFrameDialog( xFrame, rReq.GetSlot(), sPageURL );
                 short nRet = pDlg->Execute();
                 delete pDlg;
                 SfxViewFrame* pView = SfxViewFrame::GetFirst();
@@ -1150,7 +1151,7 @@ void SfxApplication::OfaExec_Impl( SfxRequest& rReq )
             do  // artificial loop for flow control
             {
                 std::unique_ptr<AbstractScriptSelectorDialog> pDlg(pFact->CreateScriptSelectorDialog(
-                    lcl_getDialogParent( xFrame, GetTopWindow() ), false, xFrame ));
+                    lcl_getDialogParent( xFrame, GetTopWindow() ), xFrame ));
                 OSL_ENSURE( pDlg, "SfxApplication::OfaExec_Impl( SID_RUNMACRO ): no dialog!" );
                 if ( !pDlg )
                     break;

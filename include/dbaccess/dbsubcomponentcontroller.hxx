@@ -105,11 +105,7 @@ namespace dbaui
 
         /** appends an error in the current environment.
         */
-        void appendError(
-                        const OUString& _rErrorMessage,
-                        const ::dbtools::StandardSQLState _eSQLState = ::dbtools::SQL_GENERAL_ERROR,
-                        const sal_Int32 _nErrorCode = 1000
-                     );
+        void appendError( const OUString& _rErrorMessage );
 
         /** clears the error state.
         */
@@ -167,8 +163,8 @@ namespace dbaui
 
         void                disconnect();
         virtual void        reconnect( bool _bUI );
-                bool        ensureConnected( bool _bUI ) {
-                    if ( !isConnected() ) reconnect( _bUI );
+                bool        ensureConnected() {
+                    if ( !isConnected() ) reconnect( false );
                     return isConnected();
                 }
 

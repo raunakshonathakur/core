@@ -171,6 +171,9 @@ class GtkSalFrame : public SalFrame
 
     SalX11Screen                    m_nXScreen;
     GtkWidget*                      m_pWindow;
+#if GTK_CHECK_VERSION(3,0,0)
+    GtkGrid*                        m_pTopLevelGrid;
+#endif
     GtkEventBox*                    m_pEventBox;
     GtkFixed*                       m_pFixedContainer;
     GdkWindow*                      m_pForeignParent;
@@ -329,10 +332,7 @@ class GtkSalFrame : public SalFrame
     void widget_set_size_request(long nWidth, long nHeight);
 
     void resizeWindow( long nWidth, long nHeight );
-    void moveWindow(long nX, long nY);
-#if GTK_CHECK_VERSION(3,0,0)
-    void dragWindowTo(long nX, long nY);
-#endif
+    void moveWindow( long nX, long nY );
 
     Size calcDefaultSize();
 
@@ -373,6 +373,9 @@ public:
     GtkWidget*  getWindow() const { return m_pWindow; }
     GtkFixed*   getFixedContainer() const { return m_pFixedContainer; }
     GtkWidget*  getMouseEventWidget() const;
+#if GTK_CHECK_VERSION(3,0,0)
+    GtkGrid*    getTopLevelGridWidget() const { return m_pTopLevelGrid; }
+#endif
     GdkWindow*  getForeignParent() const { return m_pForeignParent; }
     GdkNativeWindow getForeignParentWindow() const { return m_aForeignParentWindow; }
     GdkWindow*  getForeignTopLevel() const { return m_pForeignTopLevel; }
@@ -523,6 +526,8 @@ public:
     virtual sal_uIntPtr         ShowPopover(const OUString& rHelpText, const Rectangle& rHelpArea, QuickHelpFlags nFlags) override;
     virtual bool                UpdatePopover(sal_uIntPtr nId, const OUString& rHelpText, const Rectangle& rHelpArea) override;
     virtual bool                HidePopover(sal_uIntPtr nId) override;
+
+    virtual void                StartToolKitMoveBy() override;
 #endif
 
     static GtkSalFrame         *getFromWindow( GtkWindow *pWindow );

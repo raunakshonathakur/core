@@ -1092,9 +1092,7 @@ long OutputDevice::GetTextArray( const OUString& rStr, long* pDXAry,
 }
 
 bool OutputDevice::GetCaretPositions( const OUString& rStr, long* pCaretXArray,
-                                      sal_Int32 nIndex, sal_Int32 nLen,
-                                      long* pDXAry, long nLayoutWidth,
-                                      bool bCellBreaking ) const
+                                      sal_Int32 nIndex, sal_Int32 nLen ) const
 {
 
     if( nIndex >= rStr.getLength() )
@@ -1103,8 +1101,7 @@ bool OutputDevice::GetCaretPositions( const OUString& rStr, long* pCaretXArray,
         nLen = rStr.getLength() - nIndex;
 
     // layout complex text
-    SalLayout* pSalLayout = ImplLayout( rStr, nIndex, nLen,
-                                        Point(0,0), nLayoutWidth, pDXAry );
+    SalLayout* pSalLayout = ImplLayout( rStr, nIndex, nLen, Point(0,0) );
     if( !pSalLayout )
         return false;
 
@@ -1145,12 +1142,6 @@ bool OutputDevice::GetCaretPositions( const OUString& rStr, long* pCaretXArray,
     {
         for( i = 0; i < 2*nLen; ++i )
             pCaretXArray[i] /= nWidthFactor;
-    }
-
-    // if requested move caret position to cell limits
-    if( bCellBreaking )
-    {
-        ; // FIXME
     }
 
     return true;
@@ -2289,36 +2280,21 @@ void OutputDevice::DrawCtrlText( const Point& rPos, const OUString& rStr,
         mpAlphaVDev->DrawCtrlText( rPos, rStr, nIndex, nLen, nStyle, pVector, pDisplayText );
 }
 
-long OutputDevice::GetCtrlTextWidth( const OUString& rStr,
-                                     sal_Int32 nIndex, sal_Int32 nLen,
-                                     DrawTextFlags nStyle ) const
+long OutputDevice::GetCtrlTextWidth( const OUString& rStr ) const
 {
-    if(nLen == 0x0FFFF)
-    {
-        SAL_INFO("sal.rtl.xub",
-                 "GetCtrlTextWidth Suspicious arguments nLen:" << nLen);
-    }
-    /* defensive code */
-    if( (nLen < 0) || (nIndex + nLen >= rStr.getLength()))
-    {
-        nLen = rStr.getLength() - nIndex;
-    }
+    sal_Int32 nLen = rStr.getLength();
+    sal_Int32 nIndex = 0;
 
-    if ( nStyle & DrawTextFlags::Mnemonic )
+    sal_Int32  nMnemonicPos;
+    OUString   aStr = GetNonMnemonicString( rStr, nMnemonicPos );
+    if ( nMnemonicPos != -1 )
     {
-        sal_Int32  nMnemonicPos;
-        OUString   aStr = GetNonMnemonicString( rStr, nMnemonicPos );
-        if ( nMnemonicPos != -1 )
-        {
-            if ( nMnemonicPos < nIndex )
-                nIndex--;
-            else if ( (nMnemonicPos >= nIndex) && ((sal_uLong)nMnemonicPos < (sal_uLong)(nIndex+nLen)) )
-                nLen--;
-        }
-        return GetTextWidth( aStr, nIndex, nLen );
+        if ( nMnemonicPos < nIndex )
+            nIndex--;
+        else if ( (nMnemonicPos >= nIndex) && ((sal_uLong)nMnemonicPos < (sal_uLong)(nIndex+nLen)) )
+            nLen--;
     }
-    else
-        return GetTextWidth( rStr, nIndex, nLen );
+    return GetTextWidth( aStr, nIndex, nLen );
 }
 
 OUString OutputDevice::GetNonMnemonicString( const OUString& rStr, sal_Int32& rMnemonicPos )
@@ -2851,7 +2827,7 @@ bool OutputDevice::GetTextOutlines( basegfx::B2DPolyPolygonVector& rVector,
 
 bool OutputDevice::GetTextOutlines( PolyPolyVector& rResultVector,
                                         const OUString& rStr, sal_Int32 nBase,
-                                        sal_Int32 nIndex, sal_Int32 nLen, bool bOptimize,
+                                        sal_Int32 nIndex, sal_Int32 nLen,
                                         sal_uLong nTWidth, const long* pDXArray ) const
 {
     if(nLen == 0x0FFFF)
@@ -2865,7 +2841,7 @@ bool OutputDevice::GetTextOutlines( PolyPolyVector& rResultVector,
     // get the basegfx polypolygon vector
     basegfx::B2DPolyPolygonVector aB2DPolyPolyVector;
     if( !GetTextOutlines( aB2DPolyPolyVector, rStr, nBase, nIndex, nLen,
-                         bOptimize, nTWidth, pDXArray ) )
+                         true/*bOptimize*/, nTWidth, pDXArray ) )
         return false;
 
     // convert to a tool polypolygon vector
@@ -2878,8 +2854,8 @@ bool OutputDevice::GetTextOutlines( PolyPolyVector& rResultVector,
 }
 
 bool OutputDevice::GetTextOutline( tools::PolyPolygon& rPolyPoly, const OUString& rStr,
-                                       sal_Int32 nBase, sal_Int32 nIndex, sal_Int32 nLen,
-                                       bool bOptimize, sal_uLong nTWidth, const long* pDXArray ) const
+                                       sal_Int32 nLen,
+                                       sal_uLong nTWidth, const long* pDXArray ) const
 {
     if(nLen == 0x0FFFF)
     {
@@ -2890,8 +2866,8 @@ bool OutputDevice::GetTextOutline( tools::PolyPolygon& rPolyPoly, const OUString
 
     // get the basegfx polypolygon vector
     basegfx::B2DPolyPolygonVector aB2DPolyPolyVector;
-    if( !GetTextOutlines( aB2DPolyPolyVector, rStr, nBase, nIndex, nLen,
-                         bOptimize, nTWidth, pDXArray ) )
+    if( !GetTextOutlines( aB2DPolyPolyVector, rStr, 0/*nBase*/, 0/*nIndex*/, nLen,
+                         true/*bOptimize*/, nTWidth, pDXArray ) )
         return false;
 
     // convert and merge into a tool polypolygon

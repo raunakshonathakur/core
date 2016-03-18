@@ -61,7 +61,7 @@ void ModuleElement::ignorableWhitespace(
 void ModuleElement::characters( OUString const & rChars )
     throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    _StrBuffer.append( rChars );
+    _strBuffer.append( rChars );
 }
 
 void ModuleElement::processingInstruction(
@@ -73,7 +73,7 @@ void ModuleElement::processingInstruction(
 void ModuleElement::endElement()
     throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    _pImport->mrModuleDesc.aCode = _StrBuffer.makeStringAndClear();
+    _pImport->mrModuleDesc.aCode = _strBuffer.makeStringAndClear();
 }
 
 Reference< xml::input::XElement > ModuleElement::startChildElement(
@@ -110,10 +110,7 @@ ModuleElement::~ModuleElement()
         _pParent->release();
     }
 
-#if OSL_DEBUG_LEVEL > 1
-    OString aStr( OUStringToOString( _aLocalName, RTL_TEXTENCODING_ASCII_US ) );
-    SAL_INFO("xmlscript.xmlmod", "ModuleElement::~ModuleElement(): " << aStr.getStr() );
-#endif
+    SAL_INFO("xmlscript.xmlmod", "ModuleElement::~ModuleElement(): " << _aLocalName );
 }
 
 // XRoot
@@ -171,9 +168,7 @@ Reference< xml::input::XElement > ModuleImport::startRootElement(
 
 ModuleImport::~ModuleImport()
 {
-#if OSL_DEBUG_LEVEL > 1
     SAL_INFO("xmlscript.xmlmod", "ModuleImport::~ModuleImport()." );
-#endif
 }
 
 Reference< xml::sax::XDocumentHandler >

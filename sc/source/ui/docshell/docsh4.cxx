@@ -98,6 +98,7 @@ using namespace ::com::sun::star;
 #include "sharedocdlg.hxx"
 #include "conditio.hxx"
 #include "sheetevents.hxx"
+#include "formulacell.hxx"
 #include <documentlinkmgr.hxx>
 #include <memory>
 
@@ -199,7 +200,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                     if ( !pDBColl || !pDBColl->getNamedDBs().findByUpperName(ScGlobal::pCharClass->uppercase(sTarget)) )
                     {
                         ScAddress aPos;
-                        if ( aPos.Parse( sTarget, &aDocument, aDocument.GetAddressConvention() ) & SCA_VALID )
+                        if ( aPos.Parse( sTarget, &aDocument, aDocument.GetAddressConvention() ) & ScRefFlags::VALID )
                         {
                             bMakeArea = true;
                             if (bUndo)
@@ -284,7 +285,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                 }
 
                 ScAddress::Details aDetails(rDoc.GetAddressConvention(), 0, 0);
-                bool bValid = ( aSingleRange.ParseAny( aRangeName, &rDoc, aDetails ) & SCA_VALID ) != 0;
+                bool bValid = (aSingleRange.ParseAny(aRangeName, &rDoc, aDetails) & ScRefFlags::VALID) == ScRefFlags::ZERO;
                 if (!bValid)
                 {
                     aRangeListRef = new ScRangeList;
@@ -718,7 +719,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                     //  GetFilter needs name without the prefix.
                     ScDocumentLoader::RemoveAppPrefix( aFilterName );
 
-                    const SfxFilter* pFilter = ScDocShell::Factory().GetFilterContainer()->GetFilter4FilterName( aFilterName );
+                    std::shared_ptr<const SfxFilter> pFilter = ScDocShell::Factory().GetFilterContainer()->GetFilter4FilterName( aFilterName );
                     SfxItemSet* pSet = new SfxAllItemSet( pApp->GetPool() );
                     if (!aOptions.isEmpty())
                         pSet->Put( SfxStringItem( SID_FILE_FILTEROPTIONS, aOptions ) );
@@ -1205,9 +1206,9 @@ void ScDocShell::DoRecalc( bool bApi )
 {
     bool bDone = false;
     ScTabViewShell* pSh = GetBestViewShell();
+    ScInputHandler* pHdl = ( pSh ? SC_MOD()->GetInputHdl( pSh ) : nullptr );
     if ( pSh )
     {
-        ScInputHandler* pHdl = SC_MOD()->GetInputHdl(pSh);
         if ( pHdl && pHdl->IsInputMode() && pHdl->IsFormulaMode() && !bApi )
         {
             pHdl->FormulaPreview();     // Teilergebnis als QuickHelp
@@ -1222,6 +1223,13 @@ void ScDocShell::DoRecalc( bool bApi )
     if (!bDone)                         // sonst Dokument neu berechnen
     {
         WaitObject aWaitObj( GetActiveDialogParent() );
+        if ( pHdl )
+        {
+            // tdf97897 set current cell to Dirty to force recalculation of cell
+            ScFormulaCell* pFC = aDocument.GetFormulaCell( pHdl->GetCursorPos());
+            if (pFC)
+                pFC->SetDirty();
+        }
         aDocument.CalcFormulaTree();
         if ( pSh )
             pSh->UpdateCharts(true);
@@ -2202,8 +2210,8 @@ bool ScDocShell::DdeSetData( const OUString& rItem,
     // because the address item in a DDE entry is *not* normalized when saved
     // into ODF.
     ScRange aRange;
-    bool bValid = ( (aRange.Parse(aPos, &aDocument, formula::FormulaGrammar::CONV_OOO ) & SCA_VALID) ||
-                    (aRange.aStart.Parse(aPos, &aDocument, formula::FormulaGrammar::CONV_OOO) & SCA_VALID) );
+    bool bValid = ( (aRange.Parse(aPos, &aDocument, formula::FormulaGrammar::CONV_OOO ) & ScRefFlags::VALID) ||
+                    (aRange.aStart.Parse(aPos, &aDocument, formula::FormulaGrammar::CONV_OOO) & ScRefFlags::VALID) );
 
     ScServerObject* pObj = nullptr;            // NULL = error
     if ( bValid )

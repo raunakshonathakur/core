@@ -62,7 +62,7 @@ static const char g_aDirPath[] = "/writerperfect/qa/unit/data/stream/test.dir";
 static const char g_aNondirPath[] = "/writerperfect/qa/unit/data/stream/test.dir/mimetype";
 static const char g_aNonexistentPath[] = "/writerperfect/qa/unit/data/stream/foo/bar";
 
-static DirectoryStream *createForParent(const css::uno::Reference<css::ucb::XContent> &xContent)
+DirectoryStream *createForParent(const css::uno::Reference<css::ucb::XContent> &xContent)
 {
     try
     {
@@ -101,9 +101,9 @@ DirectoryStreamTest::DirectoryStreamTest()
 
     using ucbhelper::Content;
 
-    m_xDir = Content(getURLFromSrc(g_aDirPath), xCmdEnv, xContext).get();
-    m_xFile = Content(getURLFromSrc(g_aNondirPath), xCmdEnv, xContext).get();
-    m_xNonexistent = Content(getURLFromSrc(g_aNonexistentPath), xCmdEnv, xContext).get();
+    m_xDir = Content(m_directories.getURLFromSrc(g_aDirPath), xCmdEnv, xContext).get();
+    m_xFile = Content(m_directories.getURLFromSrc(g_aNondirPath), xCmdEnv, xContext).get();
+    m_xNonexistent = Content(m_directories.getURLFromSrc(g_aNonexistentPath), xCmdEnv, xContext).get();
 }
 
 void DirectoryStreamTest::testConstruction()

@@ -70,13 +70,8 @@ public:
                             XclStrFlags nFlags = EXC_STR_DEFAULT,
                             sal_uInt16 nMaxLen = EXC_STR_MAXLEN );
 
-    /** Assigns a Unicode character, converts this object to a BIFF8 Unicode string.
-        @param nFlags  Modifiers for string export.
-        @param nMaxLen  The maximum number of characters to store in this string (for appending). */
-    void                Assign(
-                            sal_Unicode cChar,
-                            XclStrFlags nFlags = EXC_STR_DEFAULT,
-                            sal_uInt16 nMaxLen = EXC_STR_MAXLEN );
+    /** Assigns a Unicode character, converts this object to a BIFF8 Unicode string. */
+    void                Assign( sal_Unicode cChar );
 
     /** Assigns an unformatted string, converts this object to a BIFF2-BIFF7 byte string.
         @param nFlags  Modifiers for string export.
@@ -108,7 +103,9 @@ public:
     void                AppendTrailingFormat( sal_uInt16 nFontIdx );
     /** Removes formatting runs at the end, if the string contains too much. */
     void                LimitFormatCount( sal_uInt16 nMaxCount );
-    /** Removes and returns the font index for the first char from the formatting runs, otherwise EXC_FONT_NOTFOUND. */
+    /** Returns the font index of the first char in the formatting run, or EXC_FONT_NOTFOUND. */
+    sal_uInt16          GetLeadingFont();
+    /** The same as above + additionally remove the given font from the formatting run*/
     sal_uInt16          RemoveLeadingFont();
 
     // get data ---------------------------------------------------------------

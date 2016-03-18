@@ -144,7 +144,7 @@ bool SystemWindow::Notify( NotifyEvent& rNEvt )
             if (rNEvt.GetType() == MouseNotifyEvent::COMMAND)
                 bDone = pMBar->ImplHandleCmdEvent(*rNEvt.GetCommandEvent());
             else
-                bDone = pMBar->ImplHandleKeyEvent(*rNEvt.GetKeyEvent(), false);
+                bDone = pMBar->ImplHandleKeyEvent(*rNEvt.GetKeyEvent());
         }
         if (bDone)
             return true;
@@ -641,6 +641,14 @@ void SystemWindow::SetWindowStateData( const WindowStateData& rData )
         aState.mnWidth              = rData.GetWidth();
         aState.mnHeight             = rData.GetHeight();
 
+        if ( (aState.mnMask & SAL_FRAME_POSSIZE_X) &&
+             (aState.mnMask & SAL_FRAME_POSSIZE_Y) &&
+             (aState.mnMask & SAL_FRAME_POSSIZE_WIDTH) &&
+             (aState.mnMask & SAL_FRAME_POSSIZE_HEIGHT) )
+        {
+            mbInitialLayoutDone = true;
+        }
+
         if( rData.GetMask() & (WINDOWSTATE_MASK_WIDTH|WINDOWSTATE_MASK_HEIGHT) )
         {
             // #i43799# adjust window state sizes if a minimal output size was set
@@ -1100,11 +1108,14 @@ void SystemWindow::DoInitialLayout()
 
     if (isLayoutEnabled())
     {
-        mbIsCalculatingInitialLayoutSize = true;
-        setDeferredProperties();
-        setOptimalLayoutSize();
-        mbIsCalculatingInitialLayoutSize = false;
-        mbInitialLayoutDone = true;
+        if (!mbInitialLayoutDone)
+        {
+            mbIsCalculatingInitialLayoutSize = true;
+            setDeferredProperties();
+            setOptimalLayoutSize();
+            mbIsCalculatingInitialLayoutSize = false;
+            mbInitialLayoutDone = true;
+        }
     }
     else if (IsDialog() && !(GetStyle() & WB_SIZEABLE))
     {

@@ -256,6 +256,10 @@ void  SwDocShell::StateStyleSheet(SfxItemSet& rSet, SwWrtShell* pSh)
                 }
                 break;
 
+            case SID_CLASSIFICATION_APPLY:
+                // Just trigger ClassificationCategoriesController::statusChanged().
+                rSet.InvalidateItem(nWhich);
+                break;
             default:
                 OSL_FAIL("Invalid SlotId");
         }
@@ -415,7 +419,7 @@ void SwDocShell::ExecStyleSheet( SfxRequest& rReq )
                     false, &pItem ))
                     pActShell = pShell = static_cast<SwWrtShell*>(static_cast<const SwPtrItem*>(pItem)->GetValue());
 
-                if( nSlot == SID_STYLE_UPDATE_BY_EXAMPLE )
+                if( nSlot == SID_STYLE_UPDATE_BY_EXAMPLE && aParam.isEmpty() )
                 {
                     switch( nFamily )
                     {
@@ -788,7 +792,7 @@ sal_uInt16 SwDocShell::Edit(
         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
         assert( pFact );
         std::unique_ptr<SfxAbstractApplyTabDialog> pDlg(pFact->CreateTemplateDialog(
-                                                    nullptr, *(xTmp.get()), nFamily, sPage,
+                                                    *(xTmp.get()), nFamily, sPage,
                                                     pActShell ? pActShell : m_pWrtShell, bNew));
         assert( pDlg );
         ApplyStyle aApplyStyleHelper(*this, bNew, pStyle, nRet, xTmp, nFamily, pDlg.get(), m_xBasePool, bModified);
@@ -1280,7 +1284,7 @@ void SwDocShell::_LoadStyles( SfxObjectShell& rSource, bool bPreserveCurrentDocu
         // of the template, update all the Source's
         // FixFields once.
         if(!bPreserveCurrentDocument)
-            static_cast<SwDocShell&>(rSource).m_pDoc->getIDocumentFieldsAccess().SetFixFields(false, nullptr);
+            static_cast<SwDocShell&>(rSource).m_pDoc->getIDocumentFieldsAccess().SetFixFields(nullptr);
         if (m_pWrtShell)
         {
             // rhbz#818557, fdo#58893: EndAllAction will call SelectShell(),

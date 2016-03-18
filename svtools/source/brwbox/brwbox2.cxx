@@ -236,14 +236,13 @@ void BrowseBox::EndScroll()
 }
 
 
-void BrowseBox::ToggleSelection( bool bForce )
+void BrowseBox::ToggleSelection()
 {
 
     // selection highlight-toggling allowed?
     if ( bHideSelect )
         return;
-    if ( !bForce &&
-         ( bNotToggleSel || !IsUpdateMode() || !bSelectionIsVisible ) )
+    if ( bNotToggleSel || !IsUpdateMode() || !bSelectionIsVisible )
         return;
 
     // only highlight painted areas!
@@ -1916,7 +1915,7 @@ void BrowseBox::Dispatch( sal_uInt16 nId )
                     {
                         SetColumnPos( nColId, nNewPos );
                         ColumnMoved( nColId );
-                        MakeFieldVisible(GetCurRow(), nColId, true);
+                        MakeFieldVisible(GetCurRow(), nColId);
                         if ( bColumnSelected )
                             SelectColumnId(nColId);
                     }

@@ -52,7 +52,7 @@ SvRTFParser::~SvRTFParser()
 }
 
 
-int SvRTFParser::_GetNextToken()
+int SvRTFParser::GetNextToken_()
 {
     int nRet = 0;
     do {
@@ -173,10 +173,10 @@ int SvRTFParser::_GetNextToken()
                             if (!_inSkipGroup) {
                             // UPR - overread the group with the ansi
                             //       information
-                            while( '{' != _GetNextToken() )
+                            while( '{' != GetNextToken_() )
                                 ;
                             SkipGroup();
-                            _GetNextToken();  // overread the last bracket
+                            GetNextToken_();  // overread the last bracket
                             nRet = 0;
                             }
                             break;
@@ -304,8 +304,9 @@ sal_Unicode SvRTFParser::GetHexValue()
     return nHexVal;
 }
 
-void SvRTFParser::ScanText( const sal_Unicode cBreak )
+void SvRTFParser::ScanText()
 {
+     const sal_Unicode cBreak = 0;
     OUStringBuffer aStrBuffer;
     bool bContinue = true;
     while( bContinue && IsParserWorking() && aStrBuffer.getLength() < MAX_STRING_LEN)
@@ -336,16 +337,16 @@ void SvRTFParser::ScanText( const sal_Unicode cBreak )
                             sal_Char nSlash = '\\';
                             while (!bBreak)
                             {
-                                wchar_t __next=GetNextChar();
-                                if (__next>0xFF) // fix for #i43933# and #i35653#
+                                wchar_t next=GetNextChar();
+                                if (next>0xFF) // fix for #i43933# and #i35653#
                                 {
                                     if (!aByteString.isEmpty())
                                         aStrBuffer.append( OStringToOUString(aByteString.makeStringAndClear(), GetSrcEncoding()) );
-                                    aStrBuffer.append((sal_Unicode)__next);
+                                    aStrBuffer.append((sal_Unicode)next);
 
                                     continue;
                                 }
-                                nSlash = (sal_Char)__next;
+                                nSlash = (sal_Char)next;
                                 while (nSlash == 0xD || nSlash == 0xA)
                                     nSlash = (sal_Char)GetNextChar();
 
@@ -406,7 +407,7 @@ void SvRTFParser::ScanText( const sal_Unicode cBreak )
 
                             OUString sSave( aToken );
                             nNextCh = '\\';
-                            int nToken = _GetNextToken();
+                            int nToken = GetNextToken_();
                             DBG_ASSERT( RTF_U == nToken, "doch kein UNI-Code Zeichen" );
                             // don't convert symbol chars
                             aStrBuffer.append(static_cast< sal_Unicode >(nTokenValue));
@@ -533,7 +534,7 @@ _inSkipGroup++;
                 }
                 break;
         }
-        int nToken = _GetNextToken();
+        int nToken = GetNextToken_();
         if (nToken == RTF_BIN)
         {
             rInput.SeekRel(-1);

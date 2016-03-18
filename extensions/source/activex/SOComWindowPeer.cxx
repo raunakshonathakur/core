@@ -19,11 +19,22 @@
 
 // SOComWindowPeer.cpp : Implementation of CHelpApp and DLL registration.
 
+#include <sal/config.h>
+
+#include <cstddef>
+
 #include "stdafx2.h"
-#include "so_activex.h"
 #include "SOComWindowPeer.h"
 #include <sal/macros.h>
 
+#if defined __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+#endif
+#include "so_activex.h"
+#if defined __clang__
+#pragma clang diagnostic pop
+#endif
 
 STDMETHODIMP SOComWindowPeer::InterfaceSupportsErrorInfo(REFIID riid)
 {
@@ -32,7 +43,7 @@ STDMETHODIMP SOComWindowPeer::InterfaceSupportsErrorInfo(REFIID riid)
         &IID_ISOComWindowPeer,
     };
 
-    for (int i=0;i<SAL_N_ELEMENTS(arr);i++)
+    for (std::size_t i=0;i<SAL_N_ELEMENTS(arr);i++)
     {
 #ifdef _MSC_VER
         if (InlineIsEqualGUID(*arr[i],riid))

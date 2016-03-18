@@ -82,7 +82,7 @@ public:
     void                Init();
 
     void                ShowReference(const OUString& rStr);
-    void                ReleaseFocus( formula::RefEdit* pEdit, formula::RefButton* pButton = nullptr );
+    void                ReleaseFocus( formula::RefEdit* pEdit );
     void                HideReference( bool bDoneRefMode = true );
     void                RefInputStart( formula::RefEdit* pEdit, formula::RefButton* pButton = nullptr );
     void                RefInputDone( bool bForced = false );
@@ -91,7 +91,7 @@ public:
     inline void         SetWindow(vcl::Window* _pWindow) { m_pWindow = _pWindow; }
     void                DoClose( sal_uInt16 nId );
     static void         SetDispatcherLock( bool bLock );
-    static void         EnableSpreadsheets( bool bFlag = true, bool bChildren = true );
+    static void         EnableSpreadsheets( bool bFlag = true );
     static void         ViewShellChanged();
 
     static              void enableInput(bool _bInput);
@@ -149,7 +149,7 @@ public:
     virtual void        HideReference( bool bDoneRefMode = true ) override;
 
     virtual void        ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton* pButton = nullptr ) override;
-    virtual void        ReleaseFocus( formula::RefEdit* pEdit, formula::RefButton* pButton = nullptr ) override;
+    virtual void        ReleaseFocus( formula::RefEdit* pEdit ) override;
 
     virtual void        ViewShellChanged() override;
     void                SwitchToDocument();

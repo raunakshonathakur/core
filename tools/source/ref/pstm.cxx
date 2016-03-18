@@ -51,11 +51,11 @@ SvCreateInstancePersist SvClassManager::Get( sal_Int32 nClassId )
              (cf. <SvPersistStream::SetStream>).
     @see SvPersistStream::SetStream
 */
-SvPersistStream::SvPersistStream( SvClassManager & rMgr, SvStream * pStream, sal_uInt32 nStartIdxP )
+SvPersistStream::SvPersistStream( SvClassManager & rMgr, SvStream * pStream )
     : rClassMgr( rMgr )
     , pStm( pStream )
-    , aPUIdx( nStartIdxP )
-    , nStartIdx( nStartIdxP )
+    , aPUIdx( 1 )
+    , nStartIdx( 1 )
     , pRefStm( nullptr )
 {
     DBG_ASSERT( nStartIdx != 0, "zero index not allowed" );
@@ -70,33 +70,16 @@ SvPersistStream::SvPersistStream( SvClassManager & rMgr, SvStream * pStream, sal
 
 SvPersistStream::~SvPersistStream()
 {
-    SetStream( nullptr );
+    ClearStream();
 }
 
-/**
-
-    @param pStream    This stream is used as the medium for PersistStream
-
-    @warning pStream is used as the medium for PersistStream.
-             It must not be manipulated while used in SvPersistStream.
-             An Exception to this is pvStream (cf. <SvPersistStream::SetStream>).
-*/
-void SvPersistStream::SetStream( SvStream * pStream )
+void SvPersistStream::ClearStream()
 {
-    if( pStm != pStream )
+    if( pStm != nullptr )
     {
-        if( pStm )
-        {
-            SyncSysStream();
-            pStm->SetError( GetError() );
-        }
-        pStm = pStream;
-    }
-    if( pStm )
-    {
-        SetVersion( pStm->GetVersion() );
-        SetError( pStm->GetError() );
-        SyncSvStream( pStm->Tell() );
+        SyncSysStream();
+        pStm->SetError( GetError() );
+        pStm = nullptr;
     }
 }
 
@@ -135,7 +118,7 @@ void SvPersistStream::FlushData()
 {
 }
 
-sal_uIntPtr SvPersistStream::GetIndex( SvPersistBase * pObj ) const
+SvPersistStream::Index SvPersistStream::GetIndex( SvPersistBase * pObj ) const
 {
     PersistBaseMap::const_iterator it = aPTable.find( pObj );
     if( it == aPTable.end() )
@@ -148,7 +131,7 @@ sal_uIntPtr SvPersistStream::GetIndex( SvPersistBase * pObj ) const
     return it->second;
 }
 
-SvPersistBase * SvPersistStream::GetObject( sal_uIntPtr nIdx ) const
+SvPersistBase * SvPersistStream::GetObject( Index nIdx ) const
 {
     if( nIdx >= nStartIdx )
         return aPUIdx.Get( nIdx );
@@ -388,7 +371,7 @@ static void ReadId
 (
     SvStream & rStm,
     sal_uInt8 & nHdr,
-    sal_uInt32 & nId,
+    SvPersistStream::Index & nId,
     sal_uInt16 & nClassId
 )
 {
@@ -441,7 +424,7 @@ SvPersistStream& SvPersistStream::WritePointer
 
     if( pObj )
     {
-        sal_uIntPtr nId = GetIndex( pObj );
+        Index nId = GetIndex( pObj );
         if( nId )
             nP |= P_ID;
         else
@@ -463,12 +446,11 @@ SvPersistStream& SvPersistStream::WritePointer
 
 void SvPersistStream::ReadObj
 (
-    SvPersistBase * &   rpObj,
-    bool                bRegister
+    SvPersistBase * &   rpObj
 )
 {
     sal_uInt8   nHdr;
-    sal_uInt32  nId = 0;
+    Index       nId = 0;
     sal_uInt16  nClassId;
 
     rpObj = nullptr; // specification: 0 in case of error
@@ -509,15 +491,12 @@ void SvPersistStream::ReadObj
             // Save reference
             rpObj->AddFirstRef();
 
-            if( bRegister )
-            {
-                // insert into table
-                sal_uIntPtr nNewId = aPUIdx.Insert( rpObj );
-                // in order to restore state after saving
-                aPTable[ rpObj ] = nNewId;
-                DBG_ASSERT( !(nHdr & P_DBGUTIL) || nId == nNewId,
-                            "read write id conflict: not the same" );
-            }
+            // insert into table
+            const Index nNewId = aPUIdx.Insert( rpObj );
+            // in order to restore state after saving
+            aPTable[ rpObj ] = nNewId;
+            DBG_ASSERT( !(nHdr & P_DBGUTIL) || nId == nNewId,
+                        "read write id conflict: not the same" );
             rpObj->Load( *this );
 #ifdef DBG_UTIL
             if( nObjLen + nObjPos != Tell() )
@@ -546,7 +525,7 @@ SvPersistStream& SvPersistStream::ReadPointer
     SvPersistBase * & rpObj
 )
 {
-    ReadObj( rpObj, true );
+    ReadObj( rpObj );
     return *this;
 }
 

@@ -360,7 +360,7 @@ OTasksWindow::OTasksWindow(vcl::Window* _pParent,OApplicationDetailView* _pDetai
     m_aCreation->SetDefaultCollapsedEntryBmp( aFolderImage );
     m_aCreation->SetDefaultExpandedEntryBmp( aFolderImage );
 
-    ImplInitSettings(true,true,true);
+    ImplInitSettings();
 }
 
 OTasksWindow::~OTasksWindow()
@@ -386,42 +386,33 @@ void OTasksWindow::DataChanged( const DataChangedEvent& rDCEvt )
     if ( (rDCEvt.GetType() == DataChangedEventType::SETTINGS) &&
          (rDCEvt.GetFlags() & AllSettingsFlags::STYLE) )
     {
-        ImplInitSettings( true, true, true );
+        ImplInitSettings();
         Invalidate();
     }
 }
 
-void OTasksWindow::ImplInitSettings( bool bFont, bool bForeground, bool bBackground )
+void OTasksWindow::ImplInitSettings()
 {
     // FIXME RenderContext
     const StyleSettings& rStyleSettings = GetSettings().GetStyleSettings();
-    if( bFont )
-    {
-        vcl::Font aFont;
-        aFont = rStyleSettings.GetFieldFont();
-        aFont.SetColor( rStyleSettings.GetWindowTextColor() );
-        SetPointFont(*this, aFont);
-    }
+    vcl::Font aFont;
+    aFont = rStyleSettings.GetFieldFont();
+    aFont.SetColor( rStyleSettings.GetWindowTextColor() );
+    SetPointFont(*this, aFont);
 
-    if( bForeground || bFont )
-    {
-        SetTextColor( rStyleSettings.GetFieldTextColor() );
-        SetTextFillColor();
-        m_aHelpText->SetTextColor( rStyleSettings.GetFieldTextColor() );
-        m_aHelpText->SetTextFillColor();
-        m_aDescription->SetTextColor( rStyleSettings.GetFieldTextColor() );
-        m_aDescription->SetTextFillColor();
-    }
+    SetTextColor( rStyleSettings.GetFieldTextColor() );
+    SetTextFillColor();
+    m_aHelpText->SetTextColor( rStyleSettings.GetFieldTextColor() );
+    m_aHelpText->SetTextFillColor();
+    m_aDescription->SetTextColor( rStyleSettings.GetFieldTextColor() );
+    m_aDescription->SetTextFillColor();
 
-    if( bBackground )
-    {
-        SetBackground( rStyleSettings.GetFieldColor() );
-        m_aHelpText->SetBackground( rStyleSettings.GetFieldColor() );
-        m_aDescription->SetBackground( rStyleSettings.GetFieldColor() );
-        m_aFL->SetBackground( rStyleSettings.GetFieldColor() );
-    }
+    SetBackground( rStyleSettings.GetFieldColor() );
+    m_aHelpText->SetBackground( rStyleSettings.GetFieldColor() );
+    m_aDescription->SetBackground( rStyleSettings.GetFieldColor() );
+    m_aFL->SetBackground( rStyleSettings.GetFieldColor() );
 
-    vcl::Font aFont = m_aDescription->GetControlFont();
+    aFont = m_aDescription->GetControlFont();
     aFont.SetWeight(WEIGHT_BOLD);
     m_aDescription->SetControlFont(aFont);
 }
@@ -539,7 +530,7 @@ OApplicationDetailView::OApplicationDetailView(OAppBorderWindow& _rParent,Previe
     ,m_rBorderWin(_rParent)
 {
     SetUniqueId(UID_APP_DETAIL_VIEW);
-    ImplInitSettings( true, true, true );
+    ImplInitSettings();
 
     m_pControlHelper = VclPtr<OAppDetailPageHelper>::Create(m_aContainer.get(),m_rBorderWin,_ePreviewMode);
     m_pControlHelper->Show();
@@ -581,26 +572,19 @@ void OApplicationDetailView::dispose()
     OSplitterView::dispose();
 }
 
-void OApplicationDetailView::ImplInitSettings( bool bFont, bool bForeground, bool bBackground )
+void OApplicationDetailView::ImplInitSettings()
 {
     // FIXME RenderContext
     const StyleSettings& rStyleSettings = GetSettings().GetStyleSettings();
-    if( bFont )
-    {
-        vcl::Font aFont;
-        aFont = rStyleSettings.GetFieldFont();
-        aFont.SetColor( rStyleSettings.GetWindowTextColor() );
-        SetPointFont(*this, aFont);
-    }
+    vcl::Font aFont;
+    aFont = rStyleSettings.GetFieldFont();
+    aFont.SetColor( rStyleSettings.GetWindowTextColor() );
+    SetPointFont(*this, aFont);
 
-    if( bForeground || bFont )
-    {
-        SetTextColor( rStyleSettings.GetFieldTextColor() );
-        SetTextFillColor();
-    }
+    SetTextColor( rStyleSettings.GetFieldTextColor() );
+    SetTextFillColor();
 
-    if( bBackground )
-        SetBackground( rStyleSettings.GetFieldColor() );
+    SetBackground( rStyleSettings.GetFieldColor() );
 
     m_aHorzSplitter->SetBackground( rStyleSettings.GetDialogColor() );
     m_aHorzSplitter->SetFillColor( rStyleSettings.GetDialogColor() );
@@ -617,7 +601,7 @@ void OApplicationDetailView::DataChanged( const DataChangedEvent& rDCEvt )
         ((rDCEvt.GetType() == DataChangedEventType::SETTINGS) &&
         (rDCEvt.GetFlags() & AllSettingsFlags::STYLE)) )
     {
-        ImplInitSettings( true, true, true );
+        ImplInitSettings();
         Invalidate();
     }
 }

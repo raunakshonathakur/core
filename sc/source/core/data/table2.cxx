@@ -1081,9 +1081,13 @@ void ScTable::CopyToTable(
         return;
 
     if (nFlags != InsertDeleteFlags::NONE)
+    {
+        InsertDeleteFlags nTempFlags( nFlags &
+                ~InsertDeleteFlags( InsertDeleteFlags::NOTE | InsertDeleteFlags::ADDNOTES));
         for (SCCOL i = nCol1; i <= nCol2; i++)
-            aCol[i].CopyToColumn(rCxt, nRow1, nRow2, nFlags, bMarked,
+            aCol[i].CopyToColumn(rCxt, nRow1, nRow2, nTempFlags, bMarked,
                                 pDestTab->aCol[i], pMarkData, bAsLink);
+    }
 
     if (!bColRowFlags)      // Column widths/Row heights/Flags
         return;
@@ -1190,11 +1194,21 @@ void ScTable::CopyToTable(
 
     if(nFlags & InsertDeleteFlags::OUTLINE) // also only when bColRowFlags
         pDestTab->SetOutlineTable( pOutlineTable );
+
+    if (nFlags & (InsertDeleteFlags::NOTE|InsertDeleteFlags::ADDNOTES))
+    {
+        bool bCloneCaption = (nFlags & InsertDeleteFlags::NOCAPTIONS) == InsertDeleteFlags::NONE;
+        for (SCCOL i = nCol1; i <= nCol2; i++)
+        {
+            aCol[i].CopyCellNotesToDocument(nRow1, nRow2, pDestTab->aCol[i], bCloneCaption);
+            pDestTab->aCol[i].UpdateNoteCaptions(nRow1, nRow2);
+        }
+    }
 }
 
 void ScTable::UndoToTable(
     sc::CopyToDocContext& rCxt, SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
-    InsertDeleteFlags nFlags, bool bMarked, ScTable* pDestTab, const ScMarkData* pMarkData )
+    InsertDeleteFlags nFlags, bool bMarked, ScTable* pDestTab )
 {
     if (ValidColRow(nCol1, nRow1) && ValidColRow(nCol2, nRow2))
     {
@@ -1204,7 +1218,7 @@ void ScTable::UndoToTable(
         for ( SCCOL i = 0; i <= MAXCOL; i++)
         {
             if ( i >= nCol1 && i <= nCol2 )
-                aCol[i].UndoToColumn(rCxt, nRow1, nRow2, nFlags, bMarked, pDestTab->aCol[i], pMarkData);
+                aCol[i].UndoToColumn(rCxt, nRow1, nRow2, nFlags, bMarked, pDestTab->aCol[i]);
             else
                 aCol[i].CopyToColumn(rCxt, 0, MAXROW, InsertDeleteFlags::FORMULA, false, pDestTab->aCol[i]);
         }
@@ -2834,7 +2848,7 @@ sal_uInt16 ScTable::GetColWidth( SCCOL nCol, bool bHiddenAsZero ) const
         return (sal_uInt16) STD_COL_WIDTH;
 }
 
-sal_uLong ScTable::GetColWidth( SCCOL nStartCol, SCCOL nEndCol, bool bHiddenAsZero ) const
+sal_uLong ScTable::GetColWidth( SCCOL nStartCol, SCCOL nEndCol ) const
 {
     if (!ValidCol(nStartCol) || !ValidCol(nEndCol) || nStartCol > nEndCol)
         return 0;
@@ -2844,7 +2858,7 @@ sal_uLong ScTable::GetColWidth( SCCOL nStartCol, SCCOL nEndCol, bool bHiddenAsZe
     SCCOL nLastHiddenCol = -1;
     for (SCCOL nCol = nStartCol; nCol <= nEndCol; ++nCol)
     {
-        if (bHiddenAsZero && nCol > nLastHiddenCol)
+        if (nCol > nLastHiddenCol)
             bHidden = ColHidden(nCol, nullptr, &nLastHiddenCol);
 
         if (bHidden)
@@ -3249,7 +3263,7 @@ SCROW ScTable::GetLastFlaggedRow() const
     SCROW nLastFound = 0;
     if (pRowFlags)
     {
-        SCROW nRow = pRowFlags->GetLastAnyBitAccess( 0, sal::static_int_cast<sal_uInt8>(CR_ALL) );
+        SCROW nRow = pRowFlags->GetLastAnyBitAccess( sal::static_int_cast<sal_uInt8>(CR_ALL) );
         if (ValidRow(nRow))
             nLastFound = nRow;
     }
@@ -3259,14 +3273,14 @@ SCROW ScTable::GetLastFlaggedRow() const
 
     if (mpHiddenRows)
     {
-        SCROW nRow = mpHiddenRows->findLastNotOf(false);
+        SCROW nRow = mpHiddenRows->findLastTrue();
         if (ValidRow(nRow))
             nLastFound = ::std::max(nLastFound, nRow);
     }
 
     if (mpFilteredRows)
     {
-        SCROW nRow = mpFilteredRows->findLastNotOf(false);
+        SCROW nRow = mpFilteredRows->findLastTrue();
         if (ValidRow(nRow))
             nLastFound = ::std::max(nLastFound, nRow);
     }
@@ -3297,7 +3311,7 @@ SCROW ScTable::GetLastChangedRow() const
     // Find the last row position where the height is NOT the standard row
     // height.
     // KOHEI: Test this to make sure it does what it's supposed to.
-    SCROW nLastHeight = mpRowHeights->findLastNotOf(ScGlobal::nStdRowHeight);
+    SCROW nLastHeight = mpRowHeights->findLastTrue(ScGlobal::nStdRowHeight);
     if (!ValidRow(nLastHeight))
         nLastHeight = 0;
 

@@ -65,10 +65,6 @@ namespace {
 
         ~Test();
 
-        virtual void setUp();
-
-        virtual void tearDown();
-
         void test_Others();
 
         void test_RFC822();
@@ -164,19 +160,13 @@ namespace {
     }
 
 
-    void Test::setUp() {
-    }
-
-    void Test::tearDown() {
-    }
-
     void Test::test_Others() {
         CPPUNIT_ASSERT_ASSERTION_PASS( CPPUNIT_ASSERT( altNames.getLength() > 0 ) );
         for(int n = 1; n < altNames.getLength(); n++)
         {
             if (altNames[n].Type ==  security::ExtAltNameType_OTHER_NAME)
             {
-                ::com::sun::star::beans::NamedValue otherNameProp;
+                css::beans::NamedValue otherNameProp;
                 if (altNames[n].Value >>= otherNameProp)
                 {
                     CPPUNIT_ASSERT_EQUAL( OUString("1.2.3.4"), otherNameProp.Name);

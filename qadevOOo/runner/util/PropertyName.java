@@ -93,12 +93,6 @@ public interface PropertyName {
      */
     String THREAD_TIME_OUT = "ThreadTimeOut";
     /**
-     * parameter name: "OfficeCloseTimeOut"
-     * This parameter contains the time which the office could use to close for
-     * itself before it is destroyed. Default is 15000 ms
-     */
-    String OFFICE_CLOSE_TIME_OUT = "OfficeCloseTimeOut";
-    /**
      * parameter name: "OperatingSystem"
      */
     String OPERATING_SYSTEM = "OperatingSystem";
@@ -120,25 +114,7 @@ public interface PropertyName {
      * path to the source root of OpenOffice.org
      */
     String SRC_ROOT = "SRC_ROOT";
-    /**
-     * parameter name: "Version"<p>
-     * the name of the version to test
-     */
-    String VERSION = "Version";
 
-    /**
-     * parameter name "Shell"<p>
-     * Path to a shell.
-     * This shell is used to run some commands outside of Java
-     * example: /bin/tcsh c:\\myShell\\myShell.exe
-     */
-    String SHELL = "Shell";
-    /**
-     * parameter name "Cygwin"<p>
-     * If Cygwin is set to TRUE it indicates if the runner runs in a Cygwin
-     * environment
-     */
-    String CYGWIN = "Cygwin";
     /**
      * internal only, no parameter
      */

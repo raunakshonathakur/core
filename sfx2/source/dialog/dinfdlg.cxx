@@ -867,7 +867,7 @@ IMPL_STATIC_LINK_NOARG_TYPED(SfxDocumentPage, ChangePassHdl, Button*, void)
         SfxItemSet* pMedSet = pShell->GetMedium()->GetItemSet();
         if (!pMedSet)
             break;
-        const SfxFilter* pFilter = pShell->GetMedium()->GetFilter();
+        std::shared_ptr<const SfxFilter> pFilter = pShell->GetMedium()->GetFilter();
         if (!pFilter)
             break;
 
@@ -2669,6 +2669,17 @@ SfxCmisPropertiesPage::SfxCmisPropertiesPage( vcl::Window* pParent, const SfxIte
     : SfxTabPage(pParent, "CmisInfoPage", "sfx/ui/cmisinfopage.ui", &rItemSet)
     , m_pPropertiesCtrl( this )
 {
+}
+
+SfxCmisPropertiesPage::~SfxCmisPropertiesPage()
+{
+    disposeOnce();
+}
+
+void SfxCmisPropertiesPage::dispose()
+{
+    m_pPropertiesCtrl.ClearAllLines();
+    SfxTabPage::dispose();
 }
 
 bool SfxCmisPropertiesPage::FillItemSet( SfxItemSet* rSet )

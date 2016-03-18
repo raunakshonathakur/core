@@ -62,7 +62,6 @@
 #include "salinst.hxx"
 #include "salgdi.hxx"
 #include "svdata.hxx"
-#include "dbggui.hxx"
 #include "fontinstance.hxx"
 #include "window.h"
 #include "toolbox.h"
@@ -178,44 +177,6 @@ bool Window::ImplIsAccessibleNativeFrame() const
             return false;
     else
         return false;
-}
-
-sal_uInt16 Window::ImplGetAccessibleCandidateChildWindowCount( GetWindowType nFirstWindowType ) const
-{
-    sal_uInt16  nChildren = 0;
-    vcl::Window* pChild = GetWindow( nFirstWindowType );
-    while ( pChild )
-    {
-        if( pChild->ImplIsAccessibleCandidate() )
-            nChildren++;
-        else
-            nChildren = sal::static_int_cast<sal_uInt16>(nChildren + pChild->ImplGetAccessibleCandidateChildWindowCount( GetWindowType::FirstChild ));
-        pChild = pChild->mpWindowImpl->mpNext;
-    }
-    return nChildren;
-}
-
-vcl::Window* Window::ImplGetAccessibleCandidateChild( sal_uInt16 nChild, sal_uInt16& rChildCount, GetWindowType nFirstWindowType, bool bTopLevel ) const
-{
-
-    if( bTopLevel )
-        rChildCount = 0;
-
-    vcl::Window* pChild = GetWindow( nFirstWindowType );
-    while ( pChild )
-    {
-        vcl::Window *pTmpChild = pChild;
-
-        if( !pChild->ImplIsAccessibleCandidate() )
-            pTmpChild = pChild->ImplGetAccessibleCandidateChild( nChild, rChildCount, GetWindowType::FirstChild, false );
-
-        if ( nChild == rChildCount )
-            return pTmpChild;
-        pChild = pChild->mpWindowImpl->mpNext;
-        rChildCount++;
-    }
-
-    return nullptr;
 }
 
 vcl::Window* Window::GetAccessibleParentWindow() const

@@ -63,15 +63,15 @@ bool SdFiltersTest::load(const OUString &rFilter, const OUString &rURL,
     const OUString &rUserData, SfxFilterFlags nFilterFlags, SotClipboardFormatId nClipboardID,
     unsigned int nFilterVersion)
 {
-    SfxFilter aFilter(
+    std::shared_ptr<const SfxFilter> pFilter(new SfxFilter(
         rFilter,
         OUString(), nFilterFlags, nClipboardID, OUString(), 0, OUString(),
-        rUserData, OUString() );
-    aFilter.SetVersion(nFilterVersion);
+        rUserData, OUString() ));
+    const_cast<SfxFilter*>(pFilter.get())->SetVersion(nFilterVersion);
 
     ::sd::DrawDocShellRef xDocShRef = new ::sd::DrawDocShell();
     SfxMedium* pSrcMed = new SfxMedium(rURL, STREAM_STD_READ);
-    pSrcMed->SetFilter(&aFilter);
+    pSrcMed->SetFilter(pFilter);
     bool bLoaded = xDocShRef->DoLoad(pSrcMed);
     xDocShRef->DoClose();
     return bLoaded;
@@ -81,23 +81,23 @@ void SdFiltersTest::testCVEs()
 {
 #ifndef DISABLE_CVE_TESTS
     testDir("MS PowerPoint 97",
-            getURLFromSrc("/sd/qa/unit/data/ppt/"),
+            m_directories.getURLFromSrc("/sd/qa/unit/data/ppt/"),
             "sdfilt");
 
     testDir("Impress Office Open XML",
-            getURLFromSrc("/sd/qa/unit/data/pptx/"),
+            m_directories.getURLFromSrc("/sd/qa/unit/data/pptx/"),
             "",  (SfxFilterFlags::IMPORT | SfxFilterFlags::ALIEN | SfxFilterFlags::STARONEFILTER));
 
     testDir("impress8",
-            getURLFromSrc("/sd/qa/unit/data/odp/"),
+            m_directories.getURLFromSrc("/sd/qa/unit/data/odp/"),
             "sdfilt");
 
     testDir("draw8",
-            getURLFromSrc("/sd/qa/unit/data/odg/"),
+            m_directories.getURLFromSrc("/sd/qa/unit/data/odg/"),
             "sdfilt");
 
     testDir("CGM - Computer Graphics Metafile",
-            getURLFromSrc("/sd/qa/unit/data/cgm/"),
+            m_directories.getURLFromSrc("/sd/qa/unit/data/cgm/"),
             "icg");
 #endif
 }

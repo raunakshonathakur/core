@@ -65,7 +65,7 @@ SalInstance::~SalInstance()
 {
 }
 
-SalMenu* SalInstance::CreateMenu( bool, Menu* )
+SalMenu* SalInstance::CreateMenu( bool, Menu*, SystemWindow* )
 {
     // default: no native menus
     return nullptr;
@@ -133,6 +133,10 @@ SalMenu::~SalMenu()
 bool SalMenu::ShowNativePopupMenu(FloatingWindow *, const Rectangle&, FloatWinPopupFlags )
 {
     return false;
+}
+
+void SalMenu::ShowCloseButton(bool)
+{
 }
 
 bool SalMenu::AddMenuBarButton( const SalMenuButtonItem& )

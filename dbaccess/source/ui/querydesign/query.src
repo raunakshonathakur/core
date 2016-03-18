@@ -18,11 +18,9 @@
  */
 #include "dbu_qry.hrc"
 #include "Query.hrc"
-#include <svx/globlmn.hrc>
 #include <sfx2/cntids.hrc>
 #include "browserids.hxx"
 #include "dbaccess_helpid.hrc"
-#include "toolbox.hrc"
 
 Menu RID_MENU_JOINVIEW_CONNECTION
 {
@@ -30,11 +28,15 @@ Menu RID_MENU_JOINVIEW_CONNECTION
     {
         MenuItem
         {
-            ITEM_EDIT_DELETE
+            Identifier = SID_DELETE ;
+            Command = ".uno:Delete" ;
+            Text [ en-US ] = "~Delete" ;
         };
         MenuItem
         {
-            MID_DBUI_QUERY_EDIT_JOINCONNECTION
+            Identifier = ID_QUERY_EDIT_JOINCONNECTION;
+            HelpId = HID_QUERY_EDIT_JOINCONNECTION ;
+            Text [ en-US ] = "Edit...";
         };
     };
 };
@@ -45,7 +47,9 @@ Menu RID_MENU_JOINVIEW_TABLE
     {
         MenuItem
         {
-            ITEM_EDIT_DELETE
+            Identifier = SID_DELETE ;
+            Command = ".uno:Delete" ;
+            Text [ en-US ] = "~Delete" ;
         };
      };
 };
@@ -56,7 +60,9 @@ Menu RID_QUERYCOLPOPUPMENU
     {
         MenuItem
         {
-            MID_COLUMN_WIDTH
+            Identifier = ID_BROWSER_COLWIDTH ;
+            HelpID = HID_BROWSER_COLUMNWIDTH ;
+            Text [ en-US ] = "Column ~Width..." ;
         };
         MenuItem
         {
@@ -64,7 +70,9 @@ Menu RID_QUERYCOLPOPUPMENU
         };
         MenuItem
         {
-            ITEM_EDIT_DELETE
+            Identifier = SID_DELETE ;
+            Command = ".uno:Delete" ;
+            Text [ en-US ] = "~Delete" ;
         };
     };
 };

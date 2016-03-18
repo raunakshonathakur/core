@@ -432,8 +432,7 @@ uno::Reference < embed::XStorage > SvXMLGraphicHelper::ImplGetGraphicStorage( co
 }
 
 SvxGraphicHelperStream_Impl SvXMLGraphicHelper::ImplGetGraphicStream( const OUString& rPictureStorageName,
-                                                              const OUString& rPictureStreamName,
-                                                              bool bTruncate )
+                                                              const OUString& rPictureStreamName )
 {
     SvxGraphicHelperStream_Impl aRet;
     aRet.xStorage = ImplGetGraphicStorage( rPictureStorageName );
@@ -444,8 +443,6 @@ SvxGraphicHelperStream_Impl SvXMLGraphicHelper::ImplGetGraphicStream( const OUSt
         if ( GRAPHICHELPER_MODE_WRITE == meCreateMode )
         {
             nMode = embed::ElementModes::READWRITE;
-            if ( bTruncate )
-                nMode |= embed::ElementModes::TRUNCATE;
         }
 
         aRet.xStream = aRet.xStorage->openStreamElement( rPictureStreamName, nMode );
@@ -500,7 +497,7 @@ Graphic SvXMLGraphicHelper::ImplReadGraphic( const OUString& rPictureStorageName
                                              const OUString& rPictureStreamName )
 {
     Graphic             aGraphic;
-    SvxGraphicHelperStream_Impl aStream( ImplGetGraphicStream( rPictureStorageName, rPictureStreamName, false ) );
+    SvxGraphicHelperStream_Impl aStream( ImplGetGraphicStream( rPictureStorageName, rPictureStreamName ) );
     if( aStream.xStream.is() )
     {
         std::unique_ptr<SvStream> pStream(utl::UcbStreamHelper::CreateStream( aStream.xStream ));
@@ -520,7 +517,7 @@ bool SvXMLGraphicHelper::ImplWriteGraphic( const OUString& rPictureStorageName,
 
     if( aGrfObject.GetType() != GRAPHIC_NONE )
     {
-        SvxGraphicHelperStream_Impl aStream( ImplGetGraphicStream( rPictureStorageName, rPictureStreamName, false ) );
+        SvxGraphicHelperStream_Impl aStream( ImplGetGraphicStream( rPictureStorageName, rPictureStreamName ) );
         if( aStream.xStream.is() )
         {
             Graphic         aGraphic( (Graphic&) aGrfObject.GetGraphic() );
@@ -674,17 +671,17 @@ void SvXMLGraphicHelper::ImplInsertGraphicURL( const OUString& rURLStr, sal_uInt
                 {
                     switch( aGfxLink.GetType() )
                     {
-                        case( GFX_LINK_TYPE_EPS_BUFFER ): aExtension = ".eps"; break;
-                        case( GFX_LINK_TYPE_NATIVE_GIF ): aExtension = ".gif"; break;
+                        case GFX_LINK_TYPE_EPS_BUFFER: aExtension = ".eps"; break;
+                        case GFX_LINK_TYPE_NATIVE_GIF: aExtension = ".gif"; break;
                         // #i15508# added BMP type for better exports (checked, works)
-                        case( GFX_LINK_TYPE_NATIVE_BMP ): aExtension = ".bmp"; break;
-                        case( GFX_LINK_TYPE_NATIVE_JPG ): aExtension = ".jpg"; break;
-                        case( GFX_LINK_TYPE_NATIVE_PNG ): aExtension = ".png"; break;
-                        case( GFX_LINK_TYPE_NATIVE_TIF ): aExtension = ".tif"; break;
-                        case( GFX_LINK_TYPE_NATIVE_WMF ): aExtension = ".wmf"; break;
-                        case( GFX_LINK_TYPE_NATIVE_MET ): aExtension = ".met"; break;
-                        case( GFX_LINK_TYPE_NATIVE_PCT ): aExtension = ".pct"; break;
-                        case( GFX_LINK_TYPE_NATIVE_SVG ):
+                        case GFX_LINK_TYPE_NATIVE_BMP: aExtension = ".bmp"; break;
+                        case GFX_LINK_TYPE_NATIVE_JPG: aExtension = ".jpg"; break;
+                        case GFX_LINK_TYPE_NATIVE_PNG: aExtension = ".png"; break;
+                        case GFX_LINK_TYPE_NATIVE_TIF: aExtension = ".tif"; break;
+                        case GFX_LINK_TYPE_NATIVE_WMF: aExtension = ".wmf"; break;
+                        case GFX_LINK_TYPE_NATIVE_MET: aExtension = ".met"; break;
+                        case GFX_LINK_TYPE_NATIVE_PCT: aExtension = ".pct"; break;
+                        case GFX_LINK_TYPE_NATIVE_SVG:
                             // backward-compat kludge: since no released OOo
                             // version to date can handle svg properly, wrap it up
                             // into an svm. slight catch22 here, since strict ODF

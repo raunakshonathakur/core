@@ -347,7 +347,7 @@ public:
     void            CalcAnchorPoint();
     void            RecalcOutputArea();
 
-    void            ShowCursor( bool bGotoCursor, bool bForceVisCursor, sal_uInt16 nShowCursorFlags = 0 );
+    void            ShowCursor( bool bGotoCursor, bool bForceVisCursor );
     Pair            Scroll( long ndX, long ndY, ScrollRangeCheck nRangeCheck = ScrollRangeCheck::NoNegative );
 
     void        SetInsertMode( bool bInsert );
@@ -373,7 +373,7 @@ public:
     void libreOfficeKitCallback(int nType, const char* pPayload) const;
 
     bool            IsWrongSpelledWord( const EditPaM& rPaM, bool bMarkIfWrong );
-    OUString        SpellIgnoreOrAddWord( bool bAdd );
+    OUString        SpellIgnoreWord();
 
     const SvxFieldItem* GetField( const Point& rPos, sal_Int32* pPara, sal_Int32* pPos ) const;
     void            DeleteSelected();
@@ -563,10 +563,10 @@ private:
     EditPaM             ImpConnectParagraphs( ContentNode* pLeft, ContentNode* pRight, bool bBackward = false );
     EditPaM             ImpDeleteSelection(const EditSelection& rCurSel);
     EditPaM             ImpInsertParaBreak( EditPaM& rPaM, bool bKeepEndingAttribs = true );
-    EditPaM             ImpInsertParaBreak( const EditSelection& rEditSelection, bool bKeepEndingAttribs = true );
+    EditPaM             ImpInsertParaBreak( const EditSelection& rEditSelection );
     EditPaM             ImpInsertText(const EditSelection& aCurEditSelection, const OUString& rStr);
     EditPaM             ImpInsertFeature(const EditSelection& rCurSel, const SfxPoolItem& rItem);
-    void                ImpRemoveChars( const EditPaM& rPaM, sal_Int32 nChars, EditUndoRemoveChars* pCurUndo = nullptr );
+    void                ImpRemoveChars( const EditPaM& rPaM, sal_Int32 nChars );
     void                ImpRemoveParagraph( sal_Int32 nPara );
     EditSelection       ImpMoveParagraphs( Range aParagraphs, sal_Int32 nNewPos );
 
@@ -597,10 +597,10 @@ private:
     static EditPaM      CursorEndOfParagraph( const EditPaM& rPaM );
     EditPaM             CursorStartOfDoc();
     EditPaM             CursorEndOfDoc();
-    EditPaM             WordLeft( const EditPaM& rPaM, sal_Int16 nWordType = css::i18n::WordType::ANYWORD_IGNOREWHITESPACES );
+    EditPaM             WordLeft( const EditPaM& rPaM );
     EditPaM             WordRight( const EditPaM& rPaM, sal_Int16 nWordType = css::i18n::WordType::ANYWORD_IGNOREWHITESPACES );
-    EditPaM             StartOfWord( const EditPaM& rPaM, sal_Int16 nWordType = css::i18n::WordType::ANYWORD_IGNOREWHITESPACES );
-    EditPaM             EndOfWord( const EditPaM& rPaM, sal_Int16 nWordType = css::i18n::WordType::ANYWORD_IGNOREWHITESPACES );
+    EditPaM             StartOfWord( const EditPaM& rPaM );
+    EditPaM             EndOfWord( const EditPaM& rPaM );
     EditSelection       SelectWord( const EditSelection& rCurSelection, sal_Int16 nWordType = css::i18n::WordType::ANYWORD_IGNOREWHITESPACES, bool bAcceptStartOfWord = true );
     EditSelection       SelectSentence( const EditSelection& rCurSel ) const;
     EditPaM             CursorVisualLeftRight( EditView* pEditView, const EditPaM& rPaM, sal_uInt16 nCharacterIteratorMode, bool bToLeft );
@@ -752,7 +752,7 @@ public:
     void                    Command( const CommandEvent& rCEvt, EditView* pView );
 
     EditSelectionEngine&    GetSelEngine() { return aSelEngine; }
-    OUString                GetSelected( const EditSelection& rSel, const LineEnd eParaSep = LINEEND_LF ) const;
+    OUString                GetSelected( const EditSelection& rSel ) const;
 
     const SfxItemSet&       GetEmptyItemSet();
 
@@ -1006,7 +1006,7 @@ public:
     void                SetAddExtLeading( bool b );
     bool                IsAddExtLeading() const { return bAddExtLeading; }
 
-    rtl::Reference<SvxForbiddenCharactersTable> GetForbiddenCharsTable( bool bGetInternal = true ) const;
+    rtl::Reference<SvxForbiddenCharactersTable> GetForbiddenCharsTable() const;
     static void         SetForbiddenCharsTable( rtl::Reference<SvxForbiddenCharactersTable> xForbiddenChars );
 
     /** sets a link that is called at the beginning of a drag operation at an edit view */

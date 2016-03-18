@@ -380,7 +380,7 @@ void SAL_CALL OApplicationController::disposing()
                 {
                     OUString     aFilter;
                     INetURLObject       aURL( m_xModel->getURL() );
-                    const SfxFilter* pFilter = getStandardDatabaseFilter();
+                    std::shared_ptr<const SfxFilter> pFilter = getStandardDatabaseFilter();
                     if ( pFilter )
                         aFilter = pFilter->GetFilterName();
 
@@ -1126,7 +1126,7 @@ void OApplicationController::Execute(sal_uInt16 _nId, const Sequence< PropertyVa
                         0, getView());
                     aFileDlg.SetDisplayDirectory( sUrl );
 
-                    const SfxFilter* pFilter = getStandardDatabaseFilter();
+                    std::shared_ptr<const SfxFilter> pFilter = getStandardDatabaseFilter();
                     if ( pFilter )
                     {
                         aFileDlg.AddFilter(pFilter->GetUIName(),pFilter->GetDefaultExtension());
@@ -1595,7 +1595,7 @@ void SAL_CALL OApplicationController::elementReplaced( const ContainerEvent& _rE
                 {
                     ensureConnection();
                     if ( xProp.is() && m_xMetaData.is() )
-                        sNewName = ::dbaui::composeTableName( m_xMetaData, xProp, ::dbtools::eInDataManipulation, false, false, false );
+                        sNewName = ::dbaui::composeTableName( m_xMetaData, xProp, ::dbtools::EComposeRule::InDataManipulation, false, false, false );
                 }
                 break;
                 case E_FORM:
@@ -1765,9 +1765,9 @@ bool OApplicationController::impl_isAlterableView_nothrow( const OUString& _rTab
 }
 
 Reference< XComponent > OApplicationController::openElement(const OUString& _sName, ElementType _eType,
-    ElementOpenMode _eOpenMode, sal_uInt16 _nInstigatorCommand )
+    ElementOpenMode _eOpenMode )
 {
-    return openElementWithArguments( _sName, _eType, _eOpenMode, _nInstigatorCommand, ::comphelper::NamedValueCollection() );
+    return openElementWithArguments( _sName, _eType, _eOpenMode, 0, ::comphelper::NamedValueCollection() );
 }
 
 Reference< XComponent > OApplicationController::openElementWithArguments( const OUString& _sName, ElementType _eType,
@@ -2111,7 +2111,7 @@ void OApplicationController::renameEntry()
                                 OUString sCatalog = aDialog->getCatalog();
                                 OUString sSchema  = aDialog->getSchema();
 
-                                sNewName = ::dbtools::composeTableName( m_xMetaData, sCatalog, sSchema, sName, false, ::dbtools::eInDataManipulation );
+                                sNewName = ::dbtools::composeTableName( m_xMetaData, sCatalog, sSchema, sName, false, ::dbtools::EComposeRule::InDataManipulation );
                             }
                             else
                                 sNewName = aDialog->getName();
@@ -2131,7 +2131,7 @@ void OApplicationController::renameEntry()
                             if ( eType == E_TABLE )
                             {
                                 Reference<XPropertySet> xProp(xRename,UNO_QUERY);
-                                sNewName = ::dbaui::composeTableName( m_xMetaData, xProp, ::dbtools::eInDataManipulation, false, false, false );
+                                sNewName = ::dbaui::composeTableName( m_xMetaData, xProp, ::dbtools::EComposeRule::InDataManipulation, false, false, false );
                             }
                             getContainer()->elementReplaced( eType , sOldName, sNewName );
 

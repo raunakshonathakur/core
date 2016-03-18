@@ -284,7 +284,7 @@ public:
     ScMatrix::IterateResult Sum(bool bTextAsZero) const;
     ScMatrix::IterateResult SumSquare(bool bTextAsZero) const;
     ScMatrix::IterateResult Product(bool bTextAsZero) const;
-    size_t Count(bool bCountStrings) const;
+    size_t Count(bool bCountStrings, bool bCountErrors) const;
     size_t MatchDoubleInColumns(double fValue, size_t nCol1, size_t nCol2) const;
     size_t MatchStringInColumns(const svl::SharedString& rStr, size_t nCol1, size_t nCol2) const;
 
@@ -337,14 +337,32 @@ void ScMatrixImpl::Clear()
 
 void ScMatrixImpl::Resize(SCSIZE nC, SCSIZE nR)
 {
-    maMat.resize(nR, nC);
-    maMatFlag.resize(nR, nC);
+    if (ScMatrix::IsSizeAllocatable( nC, nR))
+    {
+        maMat.resize(nR, nC);
+        maMatFlag.resize(nR, nC);
+    }
+    else
+    {
+        // Invalid matrix size, allocate 1x1 matrix with error value.
+        maMat.resize(1, 1, CreateDoubleError( errMatrixSize));
+        maMatFlag.resize(1, 1);
+    }
 }
 
 void ScMatrixImpl::Resize(SCSIZE nC, SCSIZE nR, double fVal)
 {
-    maMat.resize(nR, nC, fVal);
-    maMatFlag.resize(nR, nC);
+    if (ScMatrix::IsSizeAllocatable( nC, nR))
+    {
+        maMat.resize(nR, nC, fVal);
+        maMatFlag.resize(nR, nC);
+    }
+    else
+    {
+        // Invalid matrix size, allocate 1x1 matrix with error value.
+        maMat.resize(1, 1, CreateDoubleError( errStackOverflow));
+        maMatFlag.resize(1, 1);
+    }
 }
 
 void ScMatrixImpl::SetErrorInterpreter( ScInterpreter* p)
@@ -1163,8 +1181,10 @@ class CountElements : public std::unary_function<MatrixImplType::element_block_n
 {
     size_t mnCount;
     bool mbCountString;
+    bool mbCountErrors;
 public:
-    explicit CountElements(bool bCountString) : mnCount(0), mbCountString(bCountString) {}
+    explicit CountElements(bool bCountString, bool bCountErrors) :
+        mnCount(0), mbCountString(bCountString), mbCountErrors(bCountErrors) {}
 
     size_t getCount() const { return mnCount; }
 
@@ -1173,6 +1193,20 @@ public:
         switch (node.type)
         {
             case mdds::mtm::element_numeric:
+                mnCount += node.size;
+                if (!mbCountErrors)
+                {
+                    typedef MatrixImplType::numeric_block_type block_type;
+
+                    block_type::const_iterator it = block_type::begin(*node.data);
+                    block_type::const_iterator itEnd = block_type::end(*node.data);
+                    for (; it != itEnd; ++it)
+                    {
+                        if (!::rtl::math::isFinite(*it))
+                            --mnCount;
+                    }
+                }
+            break;
             case mdds::mtm::element_boolean:
                 mnCount += node.size;
             break;
@@ -1782,9 +1816,9 @@ ScMatrix::IterateResult ScMatrixImpl::Product(bool bTextAsZero) const
     return GetValueWithCount<sc::op::Product>(bTextAsZero, maMat);
 }
 
-size_t ScMatrixImpl::Count(bool bCountStrings) const
+size_t ScMatrixImpl::Count(bool bCountStrings, bool bCountErrors) const
 {
-    CountElements aFunc(bCountStrings);
+    CountElements aFunc(bCountStrings, bCountErrors);
     maMat.walk(aFunc);
     return aFunc.getCount();
 }
@@ -2340,28 +2374,52 @@ void ScMatrix::DecRef() const
         delete this;
 }
 
-ScFullMatrix::ScFullMatrix( SCSIZE nC, SCSIZE nR) :
-    ScMatrix(),
-    pImpl(new ScMatrixImpl(nC, nR))
+bool ScMatrix::IsSizeAllocatable( SCSIZE nC, SCSIZE nR )
 {
     SAL_WARN_IF( !nC, "sc", "ScMatrix with 0 columns!");
     SAL_WARN_IF( !nR, "sc", "ScMatrix with 0 rows!");
+    // 0-size matrix is valid, it could be resized later.
+    if ((nC && !nR) || (!nC && nR))
+    {
+        SAL_WARN( "sc", "ScMatrix one-dimensional zero: " << nC << " columns * " << nR << " rows");
+        return false;
+    }
+    if (nC && nR && (nC > (ScMatrix::GetElementsMax() / nR)))
+    {
+        SAL_WARN( "sc", "ScMatrix overflow: " << nC << " columns * " << nR << " rows");
+        return false;
+    }
+    return true;
+}
+
+ScFullMatrix::ScFullMatrix( SCSIZE nC, SCSIZE nR) :
+    ScMatrix()
+{
+    if (ScMatrix::IsSizeAllocatable( nC, nR))
+        pImpl.reset( new ScMatrixImpl( nC, nR));
+    else
+        // Invalid matrix size, allocate 1x1 matrix with error value.
+        pImpl.reset( new ScMatrixImpl( 1,1, CreateDoubleError( errMatrixSize)));
 }
 
 ScFullMatrix::ScFullMatrix(SCSIZE nC, SCSIZE nR, double fInitVal) :
-    ScMatrix(),
-    pImpl(new ScMatrixImpl(nC, nR, fInitVal))
+    ScMatrix()
 {
-    SAL_WARN_IF( !nC, "sc", "ScMatrix with 0 columns!");
-    SAL_WARN_IF( !nR, "sc", "ScMatrix with 0 rows!");
+    if (ScMatrix::IsSizeAllocatable( nC, nR))
+        pImpl.reset( new ScMatrixImpl( nC, nR, fInitVal));
+    else
+        // Invalid matrix size, allocate 1x1 matrix with error value.
+        pImpl.reset( new ScMatrixImpl( 1,1, CreateDoubleError( errMatrixSize)));
 }
 
 ScFullMatrix::ScFullMatrix( size_t nC, size_t nR, const std::vector<double>& rInitVals ) :
-    ScMatrix(),
-    pImpl(new ScMatrixImpl(nC, nR, rInitVals))
+    ScMatrix()
 {
-    SAL_WARN_IF( !nC, "sc", "ScMatrix with 0 columns!");
-    SAL_WARN_IF( !nR, "sc", "ScMatrix with 0 rows!");
+    if (ScMatrix::IsSizeAllocatable( nC, nR))
+        pImpl.reset( new ScMatrixImpl( nC, nR, rInitVals));
+    else
+        // Invalid matrix size, allocate 1x1 matrix with error value.
+        pImpl.reset( new ScMatrixImpl( 1,1, CreateDoubleError( errMatrixSize)));
 }
 
 ScFullMatrix::~ScFullMatrix()
@@ -2682,9 +2740,9 @@ ScMatrix::IterateResult ScFullMatrix::Product(bool bTextAsZero) const
     return pImpl->Product(bTextAsZero);
 }
 
-size_t ScFullMatrix::Count(bool bCountStrings) const
+size_t ScFullMatrix::Count(bool bCountStrings, bool bCountErrors) const
 {
-    return pImpl->Count(bCountStrings);
+    return pImpl->Count(bCountStrings, bCountErrors);
 }
 
 size_t ScFullMatrix::MatchDoubleInColumns(double fValue, size_t nCol1, size_t nCol2) const
@@ -3524,7 +3582,7 @@ ScMatrix::IterateResult ScVectorRefMatrix::Sum(bool bTextAsZero) const
     {
         return ScMatrix::IterateResult(0.0, 0.0, 0);
     }
-    else if (nDataSize > mpToken->GetArrayLength() + mnRowStart)
+    else if (nDataSize > mpToken->GetArrayLength() - mnRowStart)
     {
         nDataSize = mpToken->GetArrayLength() - mnRowStart;
     }
@@ -3581,10 +3639,10 @@ ScMatrix::IterateResult ScVectorRefMatrix::Product(bool bTextAsZero) const
     return mpFullMatrix->Product(bTextAsZero);
 }
 
-size_t ScVectorRefMatrix::Count(bool bCountStrings) const
+size_t ScVectorRefMatrix::Count(bool bCountStrings, bool bCountErrors) const
 {
     const_cast<ScVectorRefMatrix*>(this)->ensureFullMatrix();
-    return mpFullMatrix->Count(bCountStrings);
+    return mpFullMatrix->Count(bCountStrings, bCountErrors);
 }
 
 size_t ScVectorRefMatrix::MatchDoubleInColumns(double fValue, size_t nCol1, size_t nCol2) const

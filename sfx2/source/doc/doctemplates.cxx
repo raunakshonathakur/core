@@ -148,7 +148,6 @@ struct NamePair_Impl
     OUString maLongName;
 };
 
-class Updater_Impl;
 class DocTemplates_EntryData_Impl;
 class GroupData_Impl;
 
@@ -186,7 +185,6 @@ class SfxDocTplService_Impl
     std::vector< NamePair_Impl* > maNames;
     lang::Locale                maLocale;
     Content                     maRootContent;
-    Updater_Impl*               mpUpdater;
     bool                        mbIsInitialized : 1;
     bool                        mbLocaleSet     : 1;
 
@@ -302,23 +300,8 @@ public:
     bool                        renameGroup( const OUString& rOldName,
                                              const OUString& rNewName );
 
-    void                        update( bool bUpdateNow );
+    void                        update();
     void                        doUpdate();
-    void                        finished() { mpUpdater = nullptr; }
-};
-
-
-class Updater_Impl : public ::osl::Thread
-{
-private:
-    SfxDocTplService_Impl   *mpDocTemplates;
-
-public:
-    explicit                Updater_Impl( SfxDocTplService_Impl* pTemplates );
-    virtual                 ~Updater_Impl();
-
-    virtual void SAL_CALL   run() override;
-    virtual void SAL_CALL   onTerminated() override;
 };
 
 
@@ -465,7 +448,7 @@ void SfxDocTplService_Impl::init_Impl()
             aSolarGuard.clear();
             ::osl::ClearableMutexGuard anotherGuard( maMutex );
 
-            update( true );
+            update();
 
             anotherGuard.clear();
             SolarMutexGuard aSecondSolarGuard;
@@ -474,7 +457,7 @@ void SfxDocTplService_Impl::init_Impl()
         }
         else if ( needsUpdate() )
             // the UI should be shown only on the first update
-            update( true );
+            update();
     }
     else
     {
@@ -707,7 +690,7 @@ bool SfxDocTplService_Impl::addEntry( Content& rParentFolder,
 
     INetURLObject aLinkObj( rParentFolder.getURL() );
     aLinkObj.insertName( rTitle, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     OUString aLinkURL = aLinkObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -851,7 +834,7 @@ bool SfxDocTplService_Impl::CreateNewUniqueFolderWithPrefix( const OUString& aPa
             {
                 INetURLObject aObjPath( aDirPath );
                 aObjPath.insertName( aTryName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
                 // if there is already an element, retry
                 // if there was another error, do not try any more
@@ -917,7 +900,7 @@ OUString SfxDocTplService_Impl::CreateNewUniqueFileWithPrefix( const OUString& a
             {
                 INetURLObject aObjPath( aPath );
                 aObjPath.insertName( aTryName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
                 // if there is already an element, retry
                 // if there was another error, do not try any more
@@ -1097,7 +1080,6 @@ SfxDocTplService_Impl::SfxDocTplService_Impl( const uno::Reference< XComponentCo
     : maRelocator(xContext)
 {
     mxContext       = xContext;
-    mpUpdater       = nullptr;
     mbIsInitialized = false;
     mbLocaleSet     = false;
 }
@@ -1106,13 +1088,6 @@ SfxDocTplService_Impl::SfxDocTplService_Impl( const uno::Reference< XComponentCo
 SfxDocTplService_Impl::~SfxDocTplService_Impl()
 {
     ::osl::MutexGuard aGuard( maMutex );
-
-    if ( mpUpdater )
-    {
-        mpUpdater->terminate();
-        mpUpdater->join();
-        delete mpUpdater;
-    }
 
     for ( size_t i = 0, n = maNames.size(); i < n; ++i )
         delete maNames[ i ];
@@ -1146,17 +1121,11 @@ void SfxDocTplService_Impl::setLocale( const lang::Locale &rLocale )
 }
 
 
-void SfxDocTplService_Impl::update( bool bUpdateNow )
+void SfxDocTplService_Impl::update()
 {
     ::osl::MutexGuard aGuard( maMutex );
 
-    if ( bUpdateNow )
-        doUpdate();
-    else
-    {
-        mpUpdater = new Updater_Impl( this );
-        mpUpdater->create();
-    }
+    doUpdate();
 }
 
 
@@ -1250,7 +1219,7 @@ uno::Sequence< beans::StringPair > SfxDocTplService_Impl::ReadUINamesForTemplate
 {
     INetURLObject aLocObj( aUserPath );
     aLocObj.insertName( "groupuinames.xml", false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     Content aLocContent;
 
@@ -1444,7 +1413,7 @@ bool SfxDocTplService_Impl::addGroup( const OUString& rGroupName )
     INetURLObject   aNewGroupObj( maRootURL );
 
     aNewGroupObj.insertName( rGroupName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
 
     aNewGroupURL = aNewGroupObj.GetMainURL( INetURLObject::NO_DECODE );
@@ -1529,7 +1498,7 @@ bool SfxDocTplService_Impl::removeGroup( const OUString& rGroupName )
     // create the group url
     INetURLObject aGroupObj( maRootURL );
     aGroupObj.insertName( rGroupName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
 
     // Get the target url
@@ -1633,7 +1602,7 @@ bool SfxDocTplService_Impl::renameGroup( const OUString& rOldName,
     Content         aGroup;
     INetURLObject   aGroupObj( maRootURL );
                     aGroupObj.insertName( rNewName, false,
-                                          INetURLObject::LAST_SEGMENT, true,
+                                          INetURLObject::LAST_SEGMENT,
                                           INetURLObject::ENCODE_ALL );
     OUString        aGroupURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -1644,7 +1613,7 @@ bool SfxDocTplService_Impl::renameGroup( const OUString& rOldName,
 
     aGroupObj.removeSegment();
     aGroupObj.insertName( rOldName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     aGroupURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -1740,7 +1709,7 @@ bool SfxDocTplService_Impl::storeTemplate( const OUString& rGroupName,
     OUString sDocServiceName;
 
     aGroupObj.insertName( rGroupName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     aGroupURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -1759,7 +1728,7 @@ bool SfxDocTplService_Impl::storeTemplate( const OUString& rGroupName,
     // in case the template is installed by office installation of by an add-in
     // it can not be replaced
     aGroupObj.insertName( rTemplateName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     aTemplateURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -1924,7 +1893,7 @@ bool SfxDocTplService_Impl::addTemplate( const OUString& rGroupName,
     INetURLObject   aGroupObj( maRootURL );
 
     aGroupObj.insertName( rGroupName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     aGroupURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -1934,7 +1903,7 @@ bool SfxDocTplService_Impl::addTemplate( const OUString& rGroupName,
     // Check, if there's a template with the given name in this group
     // Return false, if there already is a template
     aGroupObj.insertName( rTemplateName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     aTemplateURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -1975,7 +1944,7 @@ bool SfxDocTplService_Impl::addTemplate( const OUString& rGroupName,
         INetURLObject   aTargetObj( aTargetURL );
 
         aTargetObj.insertName( rTemplateName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
         aTargetObj.setExtension( aSourceObj.getExtension() );
 
@@ -2097,7 +2066,7 @@ bool SfxDocTplService_Impl::removeTemplate( const OUString& rGroupName,
     INetURLObject   aGroupObj( maRootURL );
 
     aGroupObj.insertName( rGroupName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     aGroupURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -2107,7 +2076,7 @@ bool SfxDocTplService_Impl::removeTemplate( const OUString& rGroupName,
     // Check, if there's a template with the given name in this group
     // Return false, if there is no template
     aGroupObj.insertName( rTemplateName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     aTemplateURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -2149,7 +2118,7 @@ bool SfxDocTplService_Impl::renameTemplate( const OUString& rGroupName,
     INetURLObject   aGroupObj( maRootURL );
 
     aGroupObj.insertName( rGroupName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     aGroupURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -2159,7 +2128,7 @@ bool SfxDocTplService_Impl::renameTemplate( const OUString& rGroupName,
     // Check, if there's a template with the new name in this group
     // Return false, if there is one
     aGroupObj.insertName( rNewName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     aTemplateURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -2170,7 +2139,7 @@ bool SfxDocTplService_Impl::renameTemplate( const OUString& rGroupName,
     // Return false, if there is no template
     aGroupObj.removeSegment();
     aGroupObj.insertName( rOldName, false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
     aTemplateURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -2378,35 +2347,8 @@ void SAL_CALL SfxDocTplService::update()
     throw( uno::RuntimeException, std::exception )
 {
     if ( pImp->init() )
-        pImp->update( true );
+        pImp->update();
 }
-
-
-Updater_Impl::Updater_Impl( SfxDocTplService_Impl* pTemplates )
-{
-    mpDocTemplates = pTemplates;
-}
-
-
-Updater_Impl::~Updater_Impl()
-{
-}
-
-
-void SAL_CALL Updater_Impl::run()
-{
-    osl_setThreadName("Updater_Impl");
-
-    mpDocTemplates->doUpdate();
-}
-
-
-void SAL_CALL Updater_Impl::onTerminated()
-{
-    mpDocTemplates->finished();
-    delete this;
-}
-
 
 WaitWindow_Impl::WaitWindow_Impl() : WorkWindow(nullptr, WB_BORDER | WB_3DLOOK)
 {
@@ -2694,7 +2636,7 @@ void SfxDocTplService_Impl::addToHierarchy( GroupData_Impl *pGroup,
     INetURLObject aGroupObj( pGroup->getHierarchyURL() );
 
     aGroupObj.insertName( pData->getTitle(), false,
-                      INetURLObject::LAST_SEGMENT, true,
+                      INetURLObject::LAST_SEGMENT,
                       INetURLObject::ENCODE_ALL );
 
     OUString aTemplateURL = aGroupObj.GetMainURL( INetURLObject::NO_DECODE );
@@ -2738,7 +2680,7 @@ void SfxDocTplService_Impl::addGroupToHierarchy( GroupData_Impl *pGroup )
 
     INetURLObject aNewGroupObj( maRootURL );
     aNewGroupObj.insertName( pGroup->getTitle(), false,
-          INetURLObject::LAST_SEGMENT, true,
+          INetURLObject::LAST_SEGMENT,
           INetURLObject::ENCODE_ALL );
 
     OUString aNewGroupURL = aNewGroupObj.GetMainURL( INetURLObject::NO_DECODE );

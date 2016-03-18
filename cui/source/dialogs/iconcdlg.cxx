@@ -277,19 +277,16 @@ SvxIconChoiceCtrlEntry* IconChoiceDialog::AddTabPage(
     sal_uInt16          nId,
     const OUString&   rIconText,
     const Image&    rChoiceIcon,
-    CreatePage      pCreateFunc /* != 0 */,
-    GetPageRanges   pRangesFunc /* darf 0 sein */,
-    bool            bItemsOnDemand,
-    sal_uLong           /*nPos*/
+    CreatePage      pCreateFunc /* != 0 */
 )
 {
     IconChoicePageData* pData = new IconChoicePageData ( nId, pCreateFunc,
-                                                         pRangesFunc,
-                                                         bItemsOnDemand );
+                                                         nullptr,
+                                                         false/*bItemsOnDemand*/ );
     maPageList.push_back( pData );
 
-    pData->fnGetRanges = pRangesFunc;
-    pData->bOnDemand = bItemsOnDemand;
+    pData->fnGetRanges = nullptr;
+    pData->bOnDemand = false;
 
     sal_uInt16 *pId = new sal_uInt16 ( nId );
     SvxIconChoiceCtrlEntry* pEntry = m_pIconCtrl->InsertEntry( rIconText, rChoiceIcon );
@@ -660,17 +657,12 @@ short IconChoiceDialog::Execute()
 }
 
 
-void IconChoiceDialog::Start( bool bShow )
+void IconChoiceDialog::Start()
 {
-
     m_pCancelBtn->SetClickHdl( LINK( this, IconChoiceDialog, CancelHdl ) );
     bModal = false;
 
     Start_Impl();
-
-    if ( bShow )
-        Window::Show();
-
 }
 
 

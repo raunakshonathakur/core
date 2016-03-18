@@ -702,8 +702,7 @@ public:
     bool IsInHeaderFooter( const SwNodeIndex& rIdx ) const;
     short GetTextDirection( const SwPosition& rPos,
                             const Point* pPt = nullptr ) const;
-    bool IsInVerticalText( const SwPosition& rPos,
-                               const Point* pPt = nullptr ) const;
+    bool IsInVerticalText( const SwPosition& rPos ) const;
 
     // Database  and DB-Manager
     void SetDBManager( SwDBManager* pNewMgr )     { mpDBManager = pNewMgr; }
@@ -1339,7 +1338,7 @@ public:
     static SwSection* GetCurrSection( const SwPosition& rPos );
     SwSectionFormats& GetSections() { return *mpSectionFormatTable; }
     const SwSectionFormats& GetSections() const { return *mpSectionFormatTable; }
-    SwSectionFormat *MakeSectionFormat( SwSectionFormat *pDerivedFrom );
+    SwSectionFormat *MakeSectionFormat();
     void DelSectionFormat( SwSectionFormat *pFormat, bool bDelNodes = false );
     void UpdateSection(size_t const nSect, SwSectionData &,
             SfxItemSet const*const = nullptr, bool const bPreventLinkUpdate = false);

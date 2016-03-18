@@ -207,9 +207,9 @@ void BiffInputStream::setDecoder( const BiffDecoderRef& rxDecoder )
     maRecBuffer.setDecoder( rxDecoder );
 }
 
-void BiffInputStream::enableDecoder( bool bEnable )
+void BiffInputStream::enableDecoder()
 {
-    maRecBuffer.enableDecoder( bEnable );
+    maRecBuffer.enableDecoder( true );
 }
 
 // stream/record state and info -----------------------------------------------
@@ -247,7 +247,7 @@ void BiffInputStream::seek( sal_Int64 nRecPos )
     if( isInRecord() )
     {
         if( mbEof || (nRecPos < tell()) )
-            restartRecord( false );
+            restartRecord();
         if( !mbEof && (nRecPos > tell()) )
             skip( static_cast< sal_Int32 >( nRecPos - tell() ) );
     }
@@ -389,17 +389,12 @@ void BiffInputStream::setupRecord()
     enableDecoder();
 }
 
-void BiffInputStream::restartRecord( bool bInvalidateRecSize )
+void BiffInputStream::restartRecord()
 {
     if( isInRecord() )
     {
         maRecBuffer.startRecord( getRecHandle() );
         mnCurrRecSize = maRecBuffer.getRecSize();
-        if( bInvalidateRecSize )
-        {
-            mnComplRecSize = mnCurrRecSize;
-            mbHasComplRec = !mbCont;
-        }
         mbEof = false;
     }
 }

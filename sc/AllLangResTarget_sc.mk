@@ -16,10 +16,6 @@ $(eval $(call gb_AllLangResTarget_add_srs,sc,\
 
 $(eval $(call gb_SrsTarget_SrsTarget,sc/res))
 
-$(eval $(call gb_SrsTarget_use_srstargets,sc/res,\
-	svx/res \
-))
-
 $(eval $(call gb_SrsTarget_set_include,sc/res,\
 	$$(INCLUDE) \
 	-I$(SRCDIR)/sc/inc \
@@ -29,7 +25,6 @@ $(eval $(call gb_SrsTarget_set_include,sc/res,\
 	-I$(SRCDIR)/sc/source/ui/pagedlg \
 	-I$(SRCDIR)/sc/source/ui/dbgui \
 	-I$(SRCDIR)/sc/source/ui/formdlg \
-    -I$(call gb_SrsTemplateTarget_get_include_dir,) \
 ))
 
 $(eval $(call gb_SrsTarget_add_files,sc/res,\

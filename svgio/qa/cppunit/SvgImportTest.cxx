@@ -52,6 +52,7 @@ class Test : public test::BootstrapFixture, public XmlTestTools
     void testTdf97543();
     void testRGBColor();
     void testRGBAColor();
+    void testTdf97936();
 
     Primitive2DSequence parseSvg(const char* aSource);
 
@@ -74,6 +75,7 @@ public:
     CPPUNIT_TEST(testTdf97543);
     CPPUNIT_TEST(testRGBColor);
     CPPUNIT_TEST(testRGBAColor);
+    CPPUNIT_TEST(testTdf97936);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -81,8 +83,8 @@ Primitive2DSequence Test::parseSvg(const char* aSource)
 {
     const Reference<XSvgParser> xSvgParser = SvgTools::create(m_xContext);
 
-    OUString aUrl  = getURLFromSrc(aSource);
-    OUString aPath = getPathFromSrc(aSource);
+    OUString aUrl  = m_directories.getURLFromSrc(aSource);
+    OUString aPath = m_directories.getPathFromSrc(aSource);
 
     SvFileStream aFileStream(aUrl, StreamMode::READ);
     sal_Size nSize = aFileStream.remainingSize();
@@ -114,8 +116,15 @@ void Test::checkRectPrimitive(Primitive2DSequence& rPrimitive)
     CPPUNIT_ASSERT (pDocument);
 
     assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "color", "#00cc00"); // rect background color
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "height", "100"); // rect background height
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "width", "100"); // rect background width
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "minx", "10");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "miny", "10");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "maxx", "110");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "maxy", "110");
     assertXPath(pDocument, "/primitive2D/transform/polypolygonstroke/line", "color", "#ff0000"); // rect stroke color
     assertXPath(pDocument, "/primitive2D/transform/polypolygonstroke/line", "width", "3"); // rect stroke width
+
 
 }
 
@@ -172,6 +181,12 @@ void Test::testTdf87309()
     CPPUNIT_ASSERT (pDocument);
 
     assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "color", "#000000");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "height", "100");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "width", "100");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "minx", "10");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "miny", "10");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "maxx", "110");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "maxy", "110");
 }
 
 void Test::testFontsizeKeywords()
@@ -322,6 +337,12 @@ void Test::testTdf97543()
     CPPUNIT_ASSERT (pDocument);
 
     assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "color", "#00cc00");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "height", "100");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "width", "100");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "minx", "10");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "miny", "10");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "maxx", "110");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "maxy", "110");
 }
 
 void Test::testRGBColor()
@@ -335,6 +356,12 @@ void Test::testRGBColor()
     CPPUNIT_ASSERT (pDocument);
 
     assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "color", "#646464");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "height", "100");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "width", "100");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "minx", "10");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "miny", "10");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "maxx", "110");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "maxy", "110");
 }
 
 void Test::testRGBAColor()
@@ -350,6 +377,32 @@ void Test::testRGBAColor()
     assertXPath(pDocument, "/primitive2D/transform/unifiedtransparence", "transparence", "0");
 }
 
+void Test::testTdf97936()
+{
+    // check that both rectangles are rendered in the viewBox
+    Primitive2DSequence aSequenceTdf97936 = parseSvg("/svgio/qa/cppunit/data/tdf97936.svg");
+    CPPUNIT_ASSERT_EQUAL(1, (int)aSequenceTdf97936.getLength());
+
+    Primitive2dXmlDump dumper;
+    xmlDocPtr pDocument = dumper.dumpAndParse(comphelper::sequenceToContainer<Primitive2DContainer>(aSequenceTdf97936));
+
+    CPPUNIT_ASSERT (pDocument);
+
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[1]");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[1]", "height", "50");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[1]", "width", "50");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[1]", "minx", "70");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[1]", "miny", "50");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[1]", "maxx", "120");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[1]", "maxy", "100");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[2]");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[2]", "height", "50");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[2]", "width", "50");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[2]", "minx", "10");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[2]", "miny", "50");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[2]", "maxx", "60");
+    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor[2]", "maxy", "100");
+}
 CPPUNIT_TEST_SUITE_REGISTRATION(Test);
 
 }

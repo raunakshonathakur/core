@@ -890,7 +890,8 @@ ResultMembers* ScDPResultData::GetDimResultMembers(long nDim, ScDPDimension* pDi
     if (nDim < static_cast<long>(maDimMembers.size()) && maDimMembers[nDim])
         return maDimMembers[nDim];
 
-    maDimMembers.resize(nDim+1, nullptr);
+    if (nDim >= static_cast<long>(maDimMembers.size()))
+        maDimMembers.resize(nDim+1, nullptr);
 
     ResultMembers* pResultMembers = new ResultMembers();
     // global order is used to initialize aMembers, so it doesn't have to be looked at later
@@ -2880,11 +2881,9 @@ void ScDPResultDimension::LateInitFrom(
     {
         ResultMembers* pMembers = pResultData->GetDimResultMembers(nDimSource, pThisDim, pThisLevel);
         bLateInitAllMembers = pMembers->IsHasHideDetailsMembers();
-#if OSL_DEBUG_LEVEL > 1
-        OSL_TRACE( "%s", OUStringToOString(aDimensionName, RTL_TEXTENCODING_UTF8).getStr() );
-        if ( pMembers->IsHasHideDetailsMembers() )
-            OSL_TRACE( "HasHideDetailsMembers" );
-#endif
+
+        SAL_INFO("sc.core", aDimensionName << (pMembers->IsHasHideDetailsMembers() ? " HasHideDetailsMembers" : ""));
+
         pMembers->SetHasHideDetailsMembers( false );
     }
 
@@ -2979,10 +2978,8 @@ bool ScDPResultDimension::IsValidEntry( const vector< SCROW >& aMembers ) const
     const ScDPResultMember* pMember = FindMember( aMembers[0] );
     if ( nullptr != pMember )
         return pMember->IsValidEntry( aMembers );
-#if OSL_DEBUG_LEVEL > 1
-    OStringBuffer strTemp("IsValidEntry: Member not found, DimName = ");
-    strTemp.append(OUStringToOString(GetName(), RTL_TEXTENCODING_UTF8));
-    OSL_TRACE("%s", strTemp.getStr());
+#if OSL_DEBUG_LEVEL > 0
+    SAL_INFO("sc.core", "IsValidEntry: Member not found, DimNam = "  << GetName());
 #endif
     return false;
 }

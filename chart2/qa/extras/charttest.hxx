@@ -113,7 +113,7 @@ void ChartTest::load( const OUString& aDir, const OUString& aName )
         maServiceName = "com.sun.star.drawing.DrawingDocument";
     }
 
-    mxComponent = loadFromDesktop(getURLFromSrc(aDir) + aName, maServiceName);
+    mxComponent = loadFromDesktop(m_directories.getURLFromSrc(aDir) + aName, maServiceName);
     CPPUNIT_ASSERT(mxComponent.is());
 }
 
@@ -261,10 +261,10 @@ Reference< chart2::XDataSeries > getDataSeriesFromDoc( uno::Reference< chart2::X
 
 Reference< chart2::data::XDataSequence > getLabelDataSequenceFromDoc(
         Reference< chart2::XChartDocument > xChartDoc,
-        sal_Int32 nDataSeries = 0, sal_Int32 nChartType = 0, sal_Int32 nCooSys = 0 )
+        sal_Int32 nDataSeries = 0, sal_Int32 nChartType = 0 )
 {
     Reference< chart2::XDataSeries > xDataSeries =
-        getDataSeriesFromDoc( xChartDoc, nDataSeries, nChartType, nCooSys );
+        getDataSeriesFromDoc( xChartDoc, nDataSeries, nChartType );
     CPPUNIT_ASSERT(xDataSeries.is());
     Reference< chart2::data::XDataSource > xDataSource( xDataSeries, uno::UNO_QUERY_THROW );
     Sequence< Reference< chart2::data::XLabeledDataSequence > > xDataSequences =
@@ -284,10 +284,10 @@ Reference< chart2::data::XDataSequence > getLabelDataSequenceFromDoc(
 
 Reference< chart2::data::XDataSequence > getDataSequenceFromDocByRole(
         Reference< chart2::XChartDocument > xChartDoc, const OUString& rRole,
-        sal_Int32 nDataSeries = 0, sal_Int32 nChartType = 0, sal_Int32 nCooSys = 0 )
+        sal_Int32 nDataSeries = 0, sal_Int32 nChartType = 0 )
 {
     Reference< chart2::XDataSeries > xDataSeries =
-        getDataSeriesFromDoc( xChartDoc, nDataSeries, nChartType, nCooSys );
+        getDataSeriesFromDoc( xChartDoc, nDataSeries, nChartType );
     CPPUNIT_ASSERT(xDataSeries.is());
     Reference< chart2::data::XDataSource > xDataSource( xDataSeries, uno::UNO_QUERY_THROW );
     Sequence< Reference< chart2::data::XLabeledDataSequence > > xDataSequences =
@@ -414,7 +414,7 @@ std::vector<uno::Sequence<uno::Any> > getDataSeriesLabelsFromChartType( const Re
 
 uno::Reference< chart::XChartDocument > ChartTest::getChartDocFromImpress( const char* pDir, const char* pName )
 {
-    mxComponent = loadFromDesktop(getURLFromSrc(pDir) + OUString::createFromAscii(pName), "com.sun.star.comp.Draw.PresentationDocument");
+    mxComponent = loadFromDesktop(m_directories.getURLFromSrc(pDir) + OUString::createFromAscii(pName), "com.sun.star.comp.Draw.PresentationDocument");
     uno::Reference< drawing::XDrawPagesSupplier > xDoc(mxComponent, uno::UNO_QUERY_THROW );
     uno::Reference< drawing::XDrawPage > xPage(
         xDoc->getDrawPages()->getByIndex(0), uno::UNO_QUERY_THROW );

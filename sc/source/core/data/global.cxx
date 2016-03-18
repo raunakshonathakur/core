@@ -426,8 +426,10 @@ OUString ScGlobal::GetLongErrorString(sal_uInt16 nErrNumber)
             nErrNumber = STR_LONG_ERR_STR_OVF;
         break;
         case errStackOverflow:
-        case errInterpOverflow:
             nErrNumber = STR_LONG_ERR_STACK_OVF;
+        break;
+        case errMatrixSize:
+            nErrNumber = STR_LONG_ERR_MATRIX_SIZE;
         break;
         case errIllegalJump:
         case errUnknownState:
@@ -819,8 +821,9 @@ sal_Int32 ScGlobal::FindUnquoted( const OUString& rString, sal_Unicode cChar)
     return -1;
 }
 
-const sal_Unicode* ScGlobal::FindUnquoted( const sal_Unicode* pString, sal_Unicode cChar, sal_Unicode cQuote )
+const sal_Unicode* ScGlobal::FindUnquoted( const sal_Unicode* pString, sal_Unicode cChar )
 {
+    sal_Unicode cQuote = '\'';
     const sal_Unicode* p = pString;
     bool bQuoted = false;
     while (*p)
@@ -923,7 +926,7 @@ void ScGlobal::OpenURL(const OUString& rURL, const OUString& rTarget, const SdrM
                                     &aUrl, &aTarget,
                                     &aFrm, &aReferer,
                                     &aNewView, &aBrowsing,
-                                    0L );
+                                    0 );
 }
 
 bool ScGlobal::IsSystemRTL()

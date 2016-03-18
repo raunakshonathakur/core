@@ -775,9 +775,9 @@ void SwEditShell::SetCurNumRule( const SwNumRule& rRule,
     EndAllAction();
 }
 
-OUString SwEditShell::GetUniqueNumRuleName( const OUString* pChkStr, bool bAutoNum ) const
+OUString SwEditShell::GetUniqueNumRuleName() const
 {
-    return GetDoc()->GetUniqueNumRuleName( pChkStr, bAutoNum );
+    return GetDoc()->GetUniqueNumRuleName();
 }
 
 void SwEditShell::ChgNumRuleFormats( const SwNumRule& rRule )
@@ -821,11 +821,11 @@ bool SwEditShell::IsNumRuleStart( SwPaM* pPaM ) const
     return pTextNd && pTextNd->IsListRestart();
 }
 
-void SwEditShell::SetNodeNumStart( sal_uInt16 nStt, SwPaM* pPaM )
+void SwEditShell::SetNodeNumStart( sal_uInt16 nStt )
 {
     StartAllAction();
 
-    SwPaM* pCursor = pPaM ? pPaM : GetCursor();
+    SwPaM* pCursor = GetCursor();
     if( pCursor->IsMultiSelection() )         // multiple selection ?
     {
         GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
@@ -855,14 +855,13 @@ sal_uInt16 SwEditShell::GetNodeNumStart( SwPaM* pPaM ) const
     return USHRT_MAX;
 }
 
-const SwNumRule * SwEditShell::SearchNumRule( const bool bForward,
-                                              const bool bNum,
+const SwNumRule * SwEditShell::SearchNumRule( const bool bNum,
                                               const bool bOutline,
                                               int nNonEmptyAllowed,
                                               OUString& sListId )
 {
-    return GetDoc()->SearchNumRule( *(bForward ? GetCursor()->End() : GetCursor()->Start()),
-                                    bForward, bNum, bOutline, nNonEmptyAllowed,
+    return GetDoc()->SearchNumRule( *(GetCursor()->Start()),
+                                    false/*bForward*/, bNum, bOutline, nNonEmptyAllowed,
                                     sListId );
 }
 

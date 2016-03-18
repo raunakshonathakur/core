@@ -520,13 +520,12 @@ void SfxTabDialog::StartExecuteModal( const Link<Dialog&,void>& rEndDialogHdl )
 }
 
 
-void SfxTabDialog::Start( bool bShow )
+void SfxTabDialog::Start()
 {
     pImpl->bModal = false;
     Start_Impl();
 
-    if ( bShow )
-        Show();
+    Show();
 
     if ( IsVisible() && ( !HasChildPathFocus() || HasFocus() ) )
         GrabFocusToFirstControl();
@@ -575,9 +574,9 @@ void SfxTabDialog::Start_Impl()
     ActivatePageHdl( m_pTabCtrl );
 }
 
-void SfxTabDialog::AddTabPage( sal_uInt16 nId, const OUString &rRiderText, bool bItemsOnDemand, sal_uInt16 nPos )
+void SfxTabDialog::AddTabPage( sal_uInt16 nId, const OUString &rRiderText )
 {
-    AddTabPage( nId, rRiderText, nullptr, nullptr, bItemsOnDemand, nPos );
+    AddTabPage( nId, rRiderText, nullptr, nullptr );
 }
 
 /*
@@ -588,15 +587,13 @@ sal_uInt16 SfxTabDialog::AddTabPage
 (
     const OString &rName,          // Page ID
     CreateTabPage pCreateFunc,     // Pointer to the Factory Method
-    GetTabPageRanges pRangesFunc,  // Pointer to the Method for quering
+    GetTabPageRanges pRangesFunc   // Pointer to the Method for quering
                                    // Ranges onDemand
-    bool bItemsOnDemand            // indicates whether the set of this page is
-                                   // requested when created
 )
 {
     sal_uInt16 nId = m_pTabCtrl->GetPageId(rName);
     pImpl->aData.push_back(
-        new Data_Impl( nId, pCreateFunc, pRangesFunc, bItemsOnDemand ) );
+        new Data_Impl( nId, pCreateFunc, pRangesFunc, false/*bItemsOnDemand*/ ) );
     return nId;
 }
 

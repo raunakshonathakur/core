@@ -131,7 +131,7 @@ IMPL_LINK_NOARG_TYPED( OCopyTable, AppendDataClickHdl, Button*, void )
 
 void OCopyTable::SetAppendDataRadio()
 {
-    m_pParent->EnableButton(OCopyTableWizard::WIZARD_NEXT,true);
+    m_pParent->EnableNextButton(true);
     m_pFT_KeyName->Enable(false);
     m_pCB_PrimaryColumn->Enable(false);
     m_pEdKeyName->Enable(false);
@@ -140,7 +140,7 @@ void OCopyTable::SetAppendDataRadio()
 
 IMPL_LINK_TYPED( OCopyTable, RadioChangeHdl, Button*, pButton, void )
 {
-    m_pParent->EnableButton(OCopyTableWizard::WIZARD_NEXT,pButton != m_pRB_View);
+    m_pParent->EnableNextButton(pButton != m_pRB_View);
     bool bKey = m_bPKeyAllowed && pButton != m_pRB_View;
     m_pFT_KeyName->Enable(bKey && m_pCB_PrimaryColumn->IsChecked());
     m_pEdKeyName->Enable(bKey && m_pCB_PrimaryColumn->IsChecked());
@@ -176,7 +176,7 @@ bool OCopyTable::LeavePage()
         SQLExceptionInfo aErrorInfo;
         if ( !aNameCheck.isNameValid( m_pEdTableName->GetText(), aErrorInfo ) )
         {
-            aErrorInfo.append( SQLExceptionInfo::SQL_CONTEXT, ModuleRes( STR_SUGGEST_APPEND_TABLE_DATA ) );
+            aErrorInfo.append( SQLExceptionInfo::TYPE::SQLContext, ModuleRes( STR_SUGGEST_APPEND_TABLE_DATA ) );
             m_pParent->showError(aErrorInfo.get());
 
             return false;
@@ -192,7 +192,7 @@ bool OCopyTable::LeavePage()
                                             sCatalog,
                                             sSchema,
                                             sTable,
-                                            ::dbtools::eInDataManipulation);
+                                            ::dbtools::EComposeRule::InDataManipulation);
         sal_Int32 nMaxLength = xMeta->getMaxTableNameLength();
         if ( nMaxLength && sTable.getLength() > nMaxLength )
         {

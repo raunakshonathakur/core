@@ -47,7 +47,7 @@ struct Cell
 
     inline bool         IsMerged() const { return mbMergeOrig || mbOverlapX || mbOverlapY; }
 
-    void                MirrorSelfX( bool bMirrorStyles, bool bSwapDiag );
+    void                MirrorSelfX();
 };
 
 typedef std::vector< long >     LongVec;
@@ -64,24 +64,12 @@ Cell::Cell() :
 {
 }
 
-void Cell::MirrorSelfX( bool bMirrorStyles, bool bSwapDiag )
+void Cell::MirrorSelfX()
 {
     std::swap( maLeft, maRight );
     std::swap( mnAddLeft, mnAddRight );
-    if( bMirrorStyles )
-    {
-        maLeft.MirrorSelf();
-        maRight.MirrorSelf();
-    }
-    if( bSwapDiag )
-    {
-        std::swap( maTLBR, maBLTR );
-        if( bMirrorStyles )
-        {
-            maTLBR.MirrorSelf();
-            maBLTR.MirrorSelf();
-        }
-    }
+    maLeft.MirrorSelf();
+    maRight.MirrorSelf();
 }
 
 
@@ -166,8 +154,8 @@ struct ArrayImpl
     long                GetColWidth( size_t nFirstCol, size_t nLastCol ) const;
     long                GetRowHeight( size_t nFirstRow, size_t nLastRow ) const;
 
-    double              GetHorDiagAngle( size_t nCol, size_t nRow, bool bSimple = false ) const;
-    double              GetVerDiagAngle( size_t nCol, size_t nRow, bool bSimple = false ) const;
+    double              GetHorDiagAngle( size_t nCol, size_t nRow ) const;
+    double              GetVerDiagAngle( size_t nCol, size_t nRow ) const;
 };
 
 ArrayImpl::ArrayImpl( size_t nWidth, size_t nHeight, bool bDiagDblClip ) :
@@ -300,12 +288,12 @@ long ArrayImpl::GetRowHeight( size_t nFirstRow, size_t nLastRow ) const
     return GetRowPosition( nLastRow + 1 ) - GetRowPosition( nFirstRow );
 }
 
-double ArrayImpl::GetHorDiagAngle( size_t nCol, size_t nRow, bool bSimple ) const
+double ArrayImpl::GetHorDiagAngle( size_t nCol, size_t nRow ) const
 {
     double fAngle = 0.0;
     if( IsValidPos( nCol, nRow ) )
     {
-        if( bSimple || !GetCell( nCol, nRow ).IsMerged() )
+        if( !GetCell( nCol, nRow ).IsMerged() )
         {
             fAngle = frame::GetHorDiagAngle( maWidths[ nCol ] + 1, maHeights[ nRow ] + 1 );
         }
@@ -323,9 +311,9 @@ double ArrayImpl::GetHorDiagAngle( size_t nCol, size_t nRow, bool bSimple ) cons
     return fAngle;
 }
 
-double ArrayImpl::GetVerDiagAngle( size_t nCol, size_t nRow, bool bSimple ) const
+double ArrayImpl::GetVerDiagAngle( size_t nCol, size_t nRow ) const
 {
-    double fAngle = GetHorDiagAngle( nCol, nRow, bSimple );
+    double fAngle = GetHorDiagAngle( nCol, nRow );
     return (fAngle > 0.0) ? (F_PI2 - fAngle) : 0.0;
 }
 
@@ -496,11 +484,8 @@ void Array::SetRowStyleBottom( size_t nRow, const Style& rStyle )
         SetCellStyleBottom( nCol, nRow, rStyle );
 }
 
-const Style& Array::GetCellStyleLeft( size_t nCol, size_t nRow, bool bSimple ) const
+const Style& Array::GetCellStyleLeft( size_t nCol, size_t nRow ) const
 {
-    // simple: always return own left style
-    if( bSimple )
-        return CELL( nCol, nRow ).maLeft;
     // outside clipping rows or overlapped in merged cells: invisible
     if( !mxImpl->IsRowInClipRange( nRow ) || mxImpl->IsMergedOverlappedLeft( nCol, nRow ) )
         return OBJ_STYLE_NONE;
@@ -517,11 +502,8 @@ const Style& Array::GetCellStyleLeft( size_t nCol, size_t nRow, bool bSimple ) c
     return std::max( ORIGCELL( nCol, nRow ).maLeft, ORIGCELL( nCol - 1, nRow ).maRight );
 }
 
-const Style& Array::GetCellStyleRight( size_t nCol, size_t nRow, bool bSimple ) const
+const Style& Array::GetCellStyleRight( size_t nCol, size_t nRow ) const
 {
-    // simple: always return own right style
-    if( bSimple )
-        return CELL( nCol, nRow ).maRight;
     // outside clipping rows or overlapped in merged cells: invisible
     if( !mxImpl->IsRowInClipRange( nRow ) || mxImpl->IsMergedOverlappedRight( nCol, nRow ) )
         return OBJ_STYLE_NONE;
@@ -538,11 +520,8 @@ const Style& Array::GetCellStyleRight( size_t nCol, size_t nRow, bool bSimple ) 
     return std::max( ORIGCELL( nCol, nRow ).maRight, ORIGCELL( nCol + 1, nRow ).maLeft );
 }
 
-const Style& Array::GetCellStyleTop( size_t nCol, size_t nRow, bool bSimple ) const
+const Style& Array::GetCellStyleTop( size_t nCol, size_t nRow ) const
 {
-    // simple: always return own top style
-    if( bSimple )
-        return CELL( nCol, nRow ).maTop;
     // outside clipping columns or overlapped in merged cells: invisible
     if( !mxImpl->IsColInClipRange( nCol ) || mxImpl->IsMergedOverlappedTop( nCol, nRow ) )
         return OBJ_STYLE_NONE;
@@ -559,11 +538,8 @@ const Style& Array::GetCellStyleTop( size_t nCol, size_t nRow, bool bSimple ) co
     return std::max( ORIGCELL( nCol, nRow ).maTop, ORIGCELL( nCol, nRow - 1 ).maBottom );
 }
 
-const Style& Array::GetCellStyleBottom( size_t nCol, size_t nRow, bool bSimple ) const
+const Style& Array::GetCellStyleBottom( size_t nCol, size_t nRow ) const
 {
-    // simple: always return own bottom style
-    if( bSimple )
-        return CELL( nCol, nRow ).maBottom;
     // outside clipping columns or overlapped in merged cells: invisible
     if( !mxImpl->IsColInClipRange( nCol ) || mxImpl->IsMergedOverlappedBottom( nCol, nRow ) )
         return OBJ_STYLE_NONE;
@@ -580,16 +556,14 @@ const Style& Array::GetCellStyleBottom( size_t nCol, size_t nRow, bool bSimple )
     return std::max( ORIGCELL( nCol, nRow ).maBottom, ORIGCELL( nCol, nRow + 1 ).maTop );
 }
 
-const Style& Array::GetCellStyleTLBR( size_t nCol, size_t nRow, bool bSimple ) const
+const Style& Array::GetCellStyleTLBR( size_t nCol, size_t nRow ) const
 {
-    return bSimple ? CELL( nCol, nRow ).maTLBR :
-        (mxImpl->IsInClipRange( nCol, nRow ) ? ORIGCELL( nCol, nRow ).maTLBR : OBJ_STYLE_NONE);
+    return CELL( nCol, nRow ).maTLBR;
 }
 
-const Style& Array::GetCellStyleBLTR( size_t nCol, size_t nRow, bool bSimple ) const
+const Style& Array::GetCellStyleBLTR( size_t nCol, size_t nRow ) const
 {
-    return bSimple ? CELL( nCol, nRow ).maBLTR :
-        (mxImpl->IsInClipRange( nCol, nRow ) ? ORIGCELL( nCol, nRow ).maBLTR : OBJ_STYLE_NONE);
+    return CELL( nCol, nRow ).maBLTR;
 }
 
 const Style& Array::GetCellStyleTL( size_t nCol, size_t nRow ) const
@@ -818,29 +792,29 @@ long Array::GetHeight() const
     return GetRowPosition( mxImpl->mnHeight ) - GetRowPosition( 0 );
 }
 
-Point Array::GetCellPosition( size_t nCol, size_t nRow, bool bSimple ) const
+Point Array::GetCellPosition( size_t nCol, size_t nRow ) const
 {
-    size_t nFirstCol = bSimple ? nCol : mxImpl->GetMergedFirstCol( nCol, nRow );
-    size_t nFirstRow = bSimple ? nRow : mxImpl->GetMergedFirstRow( nCol, nRow );
+    size_t nFirstCol = mxImpl->GetMergedFirstCol( nCol, nRow );
+    size_t nFirstRow = mxImpl->GetMergedFirstRow( nCol, nRow );
     return Point( GetColPosition( nFirstCol ), GetRowPosition( nFirstRow ) );
 }
 
-Size Array::GetCellSize( size_t nCol, size_t nRow, bool bSimple ) const
+Size Array::GetCellSize( size_t nCol, size_t nRow ) const
 {
-    size_t nFirstCol = bSimple ? nCol : mxImpl->GetMergedFirstCol( nCol, nRow );
-    size_t nFirstRow = bSimple ? nRow : mxImpl->GetMergedFirstRow( nCol, nRow );
-    size_t nLastCol = bSimple ? nCol : mxImpl->GetMergedLastCol( nCol, nRow );
-    size_t nLastRow = bSimple ? nRow : mxImpl->GetMergedLastRow( nCol, nRow );
+    size_t nFirstCol =  mxImpl->GetMergedFirstCol( nCol, nRow );
+    size_t nFirstRow = mxImpl->GetMergedFirstRow( nCol, nRow );
+    size_t nLastCol = mxImpl->GetMergedLastCol( nCol, nRow );
+    size_t nLastRow = mxImpl->GetMergedLastRow( nCol, nRow );
     return Size( GetColWidth( nFirstCol, nLastCol ) + 1, GetRowHeight( nFirstRow, nLastRow ) + 1 );
 }
 
-Rectangle Array::GetCellRect( size_t nCol, size_t nRow, bool bSimple ) const
+Rectangle Array::GetCellRect( size_t nCol, size_t nRow ) const
 {
-    Rectangle aRect( GetCellPosition( nCol, nRow, bSimple ), GetCellSize( nCol, nRow, bSimple ) );
+    Rectangle aRect( GetCellPosition( nCol, nRow ), GetCellSize( nCol, nRow ) );
 
     // adjust rectangle for partly visible merged cells
     const Cell& rCell = CELL( nCol, nRow );
-    if( !bSimple && rCell.IsMerged() )
+    if( rCell.IsMerged() )
     {
         aRect.Left() -= rCell.mnAddLeft;
         aRect.Right() += rCell.mnAddRight;
@@ -851,16 +825,16 @@ Rectangle Array::GetCellRect( size_t nCol, size_t nRow, bool bSimple ) const
 }
 
 // diagonal frame borders
-double Array::GetHorDiagAngle( size_t nCol, size_t nRow, bool bSimple ) const
+double Array::GetHorDiagAngle( size_t nCol, size_t nRow ) const
 {
     DBG_FRAME_CHECK_COLROW( nCol, nRow, "GetHorDiagAngle" );
-    return mxImpl->GetHorDiagAngle( nCol, nRow, bSimple );
+    return mxImpl->GetHorDiagAngle( nCol, nRow );
 }
 
-double Array::GetVerDiagAngle( size_t nCol, size_t nRow, bool bSimple ) const
+double Array::GetVerDiagAngle( size_t nCol, size_t nRow ) const
 {
     DBG_FRAME_CHECK_COLROW( nCol, nRow, "GetVerDiagAngle" );
-    return mxImpl->GetVerDiagAngle( nCol, nRow, bSimple );
+    return mxImpl->GetVerDiagAngle( nCol, nRow );
 }
 
 void Array::SetUseDiagDoubleClipping( bool bSet )
@@ -869,7 +843,7 @@ void Array::SetUseDiagDoubleClipping( bool bSet )
 }
 
 // mirroring
-void Array::MirrorSelfX( bool bMirrorStyles, bool bSwapDiag )
+void Array::MirrorSelfX()
 {
     CellVec aNewCells;
     aNewCells.reserve( GetCellCount() );
@@ -880,7 +854,7 @@ void Array::MirrorSelfX( bool bMirrorStyles, bool bSwapDiag )
         for( nCol = 0; nCol < mxImpl->mnWidth; ++nCol )
         {
             aNewCells.push_back( CELL( mxImpl->GetMirrorCol( nCol ), nRow ) );
-            aNewCells.back().MirrorSelfX( bMirrorStyles, bSwapDiag );
+            aNewCells.back().MirrorSelfX();
         }
     }
     for( nRow = 0; nRow < mxImpl->mnHeight; ++nRow )
@@ -932,13 +906,13 @@ void Array::DrawRange( drawinglayer::processor2d::BaseProcessor2D* pProcessor,
                     size_t _nFirstCol = mxImpl->GetMergedFirstCol( nCol, nRow );
                     size_t _nFirstRow = mxImpl->GetMergedFirstRow( nCol, nRow );
 
-                    const Style aTlbrStyle = GetCellStyleTLBR( _nFirstCol, _nFirstRow, true );
+                    const Style aTlbrStyle = GetCellStyleTLBR( _nFirstCol, _nFirstRow );
                     if ( aTlbrStyle.GetWidth( ) )
                         pProcessor->process( CreateClippedBorderPrimitives(
                                     aRect.TopLeft(), aRect.BottomRight(),
                                     aTlbrStyle, aRect ) );
 
-                    const Style aBltrStyle = GetCellStyleBLTR( _nFirstCol, _nFirstRow, true );
+                    const Style aBltrStyle = GetCellStyleBLTR( _nFirstCol, _nFirstRow );
                     if ( aBltrStyle.GetWidth( ) )
                         pProcessor->process( CreateClippedBorderPrimitives(
                                     aRect.BottomLeft(), aRect.TopRight(),
@@ -1107,8 +1081,7 @@ void Array::DrawRange( drawinglayer::processor2d::BaseProcessor2D* pProcessor,
 }
 
 void Array::DrawRange( OutputDevice& rDev,
-        size_t nFirstCol, size_t nFirstRow, size_t nLastCol, size_t nLastRow,
-        const Color* pForceColor ) const
+        size_t nFirstCol, size_t nFirstRow, size_t nLastCol, size_t nLastRow ) const
 {
     DBG_FRAME_CHECK_COLROW( nFirstCol, nFirstRow, "DrawRange" );
     DBG_FRAME_CHECK_COLROW( nLastCol, nLastRow, "DrawRange" );
@@ -1141,12 +1114,12 @@ void Array::DrawRange( OutputDevice& rDev,
                     size_t _nLastRow = mxImpl->GetMergedLastRow( nCol, nRow );
 
                     DrawDiagFrameBorders( rDev, aRect,
-                        GetCellStyleTLBR( _nFirstCol, _nFirstRow, true ), GetCellStyleBLTR( _nFirstCol, _nFirstRow, true ),
+                        GetCellStyleTLBR( _nFirstCol, _nFirstRow ), GetCellStyleBLTR( _nFirstCol, _nFirstRow ),
                         GetCellStyleLeft( _nFirstCol, _nFirstRow ), GetCellStyleTop( _nFirstCol, _nFirstRow ),
                         GetCellStyleRight( _nLastCol, _nLastRow ), GetCellStyleBottom( _nLastCol, _nLastRow ),
                         GetCellStyleLeft( _nFirstCol, _nLastRow ), GetCellStyleBottom( _nFirstCol, _nLastRow ),
                         GetCellStyleRight( _nLastCol, _nFirstRow ), GetCellStyleTop( _nLastCol, _nFirstRow ),
-                        pForceColor, mxImpl->mbDiagDblClip );
+                        nullptr, mxImpl->mbDiagDblClip );
                 }
             }
         }
@@ -1204,7 +1177,7 @@ void Array::DrawRange( OutputDevice& rDev,
                 if( pStart->Prim() && (aStartPos.X() <= aEndPos.X()) )
                     DrawHorFrameBorder( rDev, aStartPos, aEndPos, *pStart,
                         aStartLFromTR, *pStartLFromT, *pStartLFromL, *pStartLFromB, aStartLFromBR,
-                        aEndRFromTL, *pEndRFromT, *pEndRFromR, *pEndRFromB, aEndRFromBL, pForceColor );
+                        aEndRFromTL, *pEndRFromT, *pEndRFromR, *pEndRFromB, aEndRFromBL );
 
                 // re-init "*Start***" variables
                 aStartPos = aEndPos;
@@ -1229,7 +1202,7 @@ void Array::DrawRange( OutputDevice& rDev,
         if( pStart->Prim() && (aStartPos.X() <= aEndPos.X()) )
             DrawHorFrameBorder( rDev, aStartPos, aEndPos, *pStart,
                 aStartLFromTR, *pStartLFromT, *pStartLFromL, *pStartLFromB, aStartLFromBR,
-                aEndRFromTL, *pEndRFromT, *pEndRFromR, *pEndRFromB, aEndRFromBL, pForceColor );
+                aEndRFromTL, *pEndRFromT, *pEndRFromR, *pEndRFromB, aEndRFromBL );
     }
 
     // *** vertical frame borders ***
@@ -1283,7 +1256,7 @@ void Array::DrawRange( OutputDevice& rDev,
                 if( pStart->Prim() && (aStartPos.Y() <= aEndPos.Y()) )
                     DrawVerFrameBorder( rDev, aStartPos, aEndPos, *pStart,
                         aStartTFromBL, *pStartTFromL, *pStartTFromT, *pStartTFromR, aStartTFromBR,
-                        aEndBFromTL, *pEndBFromL, *pEndBFromB, *pEndBFromR, aEndBFromTR, pForceColor );
+                        aEndBFromTL, *pEndBFromL, *pEndBFromB, *pEndBFromR, aEndBFromTR );
 
                 // re-init "*Start***" variables
                 aStartPos = aEndPos;
@@ -1308,14 +1281,14 @@ void Array::DrawRange( OutputDevice& rDev,
         if( pStart->Prim() && (aStartPos.Y() <= aEndPos.Y()) )
             DrawVerFrameBorder( rDev, aStartPos, aEndPos, *pStart,
                 aStartTFromBL, *pStartTFromL, *pStartTFromT, *pStartTFromR, aStartTFromBR,
-                aEndBFromTL, *pEndBFromL, *pEndBFromB, *pEndBFromR, aEndBFromTR, pForceColor );
+                aEndBFromTL, *pEndBFromL, *pEndBFromB, *pEndBFromR, aEndBFromTR );
     }
 }
 
-void Array::DrawArray( OutputDevice& rDev, const Color* pForceColor ) const
+void Array::DrawArray( OutputDevice& rDev ) const
 {
     if( mxImpl->mnWidth && mxImpl->mnHeight )
-        DrawRange( rDev, 0, 0, mxImpl->mnWidth - 1, mxImpl->mnHeight - 1, pForceColor );
+        DrawRange( rDev, 0, 0, mxImpl->mnWidth - 1, mxImpl->mnHeight - 1 );
 }
 
 

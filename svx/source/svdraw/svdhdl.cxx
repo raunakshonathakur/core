@@ -2171,44 +2171,26 @@ size_t SdrHdlList::GetHdlNum(const SdrHdl* pHdl) const
     return it - aList.begin();
 }
 
-void SdrHdlList::AddHdl(SdrHdl* pHdl, bool bAtBegin)
+void SdrHdlList::AddHdl(SdrHdl* pHdl)
 {
     if (pHdl!=nullptr)
     {
-        if (bAtBegin)
-        {
-            aList.push_front(pHdl);
-        }
-        else
-        {
-            aList.push_back(pHdl);
-        }
+        aList.push_back(pHdl);
         pHdl->SetHdlList(this);
     }
 }
 
-SdrHdl* SdrHdlList::IsHdlListHit(const Point& rPnt, bool bBack, bool bNext, SdrHdl* pHdl0) const
+SdrHdl* SdrHdlList::IsHdlListHit(const Point& rPnt) const
 {
     SdrHdl* pRet=nullptr;
     const size_t nCount=GetHdlCount();
-    size_t nNum=bBack ? 0 : nCount;
-    while ((bBack ? nNum<nCount : nNum>0) && pRet==nullptr)
+    size_t nNum=nCount;
+    while (nNum>0 && pRet==nullptr)
     {
-        if (!bBack)
-            nNum--;
+        nNum--;
         SdrHdl* pHdl=GetHdl(nNum);
-        if (bNext)
-        {
-            if (pHdl==pHdl0)
-                bNext=false;
-        }
-        else
-        {
-            if (pHdl->IsHdlHit(rPnt))
-                pRet=pHdl;
-        }
-        if (bBack)
-            nNum++;
+        if (pHdl->IsHdlHit(rPnt))
+            pRet=pHdl;
     }
     return pRet;
 }

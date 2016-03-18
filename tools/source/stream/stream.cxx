@@ -1740,7 +1740,7 @@ sal_uInt64 SvMemoryStream::GetSize()
 }
 
 void SvMemoryStream::SetBuffer( void* pNewBuf, sal_Size nCount,
-                                 bool bOwnsDat, sal_Size nEOF )
+                                 sal_Size nEOF )
 {
     SetBufferSize( 0 ); // Buffering in der Basisklasse initialisieren
     Seek( 0 );
@@ -1754,7 +1754,7 @@ void SvMemoryStream::SetBuffer( void* pNewBuf, sal_Size nCount,
     nPos        = 0;
     nSize       = nCount;
     nResize     = 0;
-    bOwnsData   = bOwnsDat;
+    bOwnsData   = false;
 
     if( nEOF > nCount )
         nEOF = nCount;
@@ -1937,7 +1937,7 @@ void SvMemoryStream::FreeMemory()
     delete[] pBuf;
 }
 
-void* SvMemoryStream::SwitchBuffer( sal_Size nInitSize, sal_Size nResizeOffset)
+void* SvMemoryStream::SwitchBuffer()
 {
     Flush();
     if( !bOwnsData )
@@ -1947,7 +1947,7 @@ void* SvMemoryStream::SwitchBuffer( sal_Size nInitSize, sal_Size nResizeOffset)
     void* pRetVal = pBuf;
     pBuf          = nullptr;
     nEndOfData    = 0L;
-    nResize       = nResizeOffset;
+    nResize       = 64;
     nPos          = 0;
 
     if( nResize != 0 && nResize < 16 )
@@ -1955,7 +1955,8 @@ void* SvMemoryStream::SwitchBuffer( sal_Size nInitSize, sal_Size nResizeOffset)
 
     ResetError();
 
-    if( nInitSize && !AllocateMemory(nInitSize) )
+    sal_Size nInitSize = 512;
+    if( !AllocateMemory(nInitSize) )
     {
         SetError( SVSTREAM_OUTOFMEMORY );
         nSize = 0;

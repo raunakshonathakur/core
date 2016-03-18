@@ -1112,13 +1112,13 @@ public:
     Rectangle                   ImplGetTextBoundRect( const SalLayout& );
 
     bool                        GetTextOutline( tools::PolyPolygon&,
-                                                const OUString& rStr, sal_Int32 nBase = 0, sal_Int32 nIndex = 0,
-                                                sal_Int32 nLen = -1, bool bOptimize = true,
+                                                const OUString& rStr,
+                                                sal_Int32 nLen = -1,
                                                 sal_uLong nLayoutWidth = 0, const long* pDXArray = nullptr ) const;
 
     bool                        GetTextOutlines( PolyPolyVector&,
                                                  const OUString& rStr, sal_Int32 nBase = 0, sal_Int32 nIndex = 0,
-                                                 sal_Int32 nLen = -1, bool bOptimize = true,
+                                                 sal_Int32 nLen = -1,
                                                  sal_uLong nLayoutWidth = 0, const long* pDXArray = nullptr ) const;
 
     bool                        GetTextOutlines( basegfx::B2DPolyPolygonVector &rVector,
@@ -1130,9 +1130,7 @@ public:
     OUString                    GetEllipsisString( const OUString& rStr, long nMaxWidth,
                                                    DrawTextFlags nStyle = DrawTextFlags::EndEllipsis ) const;
 
-    long                        GetCtrlTextWidth( const OUString& rStr, sal_Int32 nIndex = 0,
-                                                  sal_Int32 nLen = -1,
-                                                  DrawTextFlags nStyle = DrawTextFlags::Mnemonic ) const;
+    long                        GetCtrlTextWidth( const OUString& rStr ) const;
 
     static OUString             GetNonMnemonicString( const OUString& rStr, sal_Int32& rMnemonicPos );
 
@@ -1197,9 +1195,7 @@ public:
                                               vcl::TextLayoutCache const* = nullptr) const;
 
     bool                        GetCaretPositions( const OUString&, long* pCaretXArray,
-                                              sal_Int32 nIndex, sal_Int32 nLen,
-                                              long* pDXAry = nullptr, long nWidth = 0,
-                                              bool bCellBreaking = true ) const;
+                                              sal_Int32 nIndex, sal_Int32 nLen ) const;
     void                        DrawStretchText( const Point& rStartPt, sal_uLong nWidth,
                                                  const OUString& rStr,
                                                  sal_Int32 nIndex = 0, sal_Int32 nLen = -1);
@@ -1307,7 +1303,7 @@ public:
                                                 const OutputDevice* pOutDev = nullptr );
 
     SAL_DLLPRIVATE void         ImplInitFontList() const;
-    SAL_DLLPRIVATE void         ImplUpdateFontData( bool bNewFontLists );
+    SAL_DLLPRIVATE void         ImplUpdateFontData();
 
     //drop font data for all outputdevices.
     //If bNewFontLists is true then empty lists of system fonts

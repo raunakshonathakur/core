@@ -53,8 +53,12 @@ public:
     SignatureStreamHelper ImplOpenSignatureStream(sal_Int32 eStreamMode, bool bTempStream);
     /// Add a new signature, using xCert as a signing certificate, and rDescription as description.
     bool add(const css::uno::Reference<css::security::XCertificate>& xCert, const OUString& rDescription, sal_Int32& nSecurityId);
+    /// Remove signature at nPosition.
+    void remove(sal_uInt16 nPosition);
     /// Read signatures from either a temp stream or the real storage.
-    void read(bool bUseTempStream);
+    void read(bool bUseTempStream, bool bCacheLastSignature = true);
+    /// Write signatures back to the persistent storage.
+    void write();
 };
 
 #endif // INCLUDED_XMLSECURITY_INC_XMLSECURITY_DOCUMENTSIGNATUREMANAGER_HXX

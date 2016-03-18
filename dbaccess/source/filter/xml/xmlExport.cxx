@@ -54,6 +54,7 @@
 
 #include <boost/optional.hpp>
 #include <memory>
+#include <iterator>
 
 namespace dbaxml
 {
@@ -220,7 +221,7 @@ ODBExport::ODBExport(const Reference< XComponentContext >& _rxContext, OUString 
     m_xColumnExportHelper = new OSpecialHandleXMLExportPropertyMapper(GetColumnStylesPropertySetMapper());
 
     m_xCellExportHelper = new OSpecialHandleXMLExportPropertyMapper(GetCellStylesPropertySetMapper());
-    m_xRowExportHelper = new OSpecialHandleXMLExportPropertyMapper(OXMLHelper::GetRowStylesPropertySetMapper( true));
+    m_xRowExportHelper = new OSpecialHandleXMLExportPropertyMapper(OXMLHelper::GetRowStylesPropertySetMapper());
 
     GetAutoStylePool()->AddFamily(
         XML_STYLE_FAMILY_TABLE_TABLE,

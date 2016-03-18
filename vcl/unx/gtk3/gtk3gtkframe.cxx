@@ -734,7 +734,7 @@ void on_registrar_available( GDBusConnection * /*connection*/,
     if ( pSalMenu != nullptr )
     {
         GtkSalMenu* pGtkSalMenu = static_cast<GtkSalMenu*>(pSalMenu);
-        pGtkSalMenu->Display( true );
+        pGtkSalMenu->EnableUnity(true);
         pGtkSalMenu->UpdateFull();
     }
 }
@@ -755,7 +755,7 @@ void on_registrar_unavailable( GDBusConnection * /*connection*/,
 
     if ( pSalMenu ) {
         GtkSalMenu* pGtkSalMenu = static_cast< GtkSalMenu* >( pSalMenu );
-        pGtkSalMenu->Display( false );
+        pGtkSalMenu->EnableUnity(false);
     }
 }
 #endif
@@ -833,6 +833,8 @@ GtkSalFrame::~GtkSalFrame()
         gtk_widget_destroy( GTK_WIDGET( m_pFixedContainer ) );
     if( m_pEventBox )
         gtk_widget_destroy( GTK_WIDGET(m_pEventBox) );
+    if( m_pTopLevelGrid )
+        gtk_widget_destroy( GTK_WIDGET(m_pTopLevelGrid) );
     {
         SolarMutexGuard aGuard;
 #if defined ENABLE_GMENU_INTEGRATION
@@ -884,14 +886,6 @@ void GtkSalFrame::moveWindow( long nX, long nY )
     }
     else
         gtk_window_move( GTK_WINDOW(m_pWindow), nX, nY );
-}
-
-void GtkSalFrame::dragWindowTo(long nX, long nY)
-{
-    if (isChild(false))
-        moveWindow(nX, nY);
-    else
-        gtk_window_begin_move_drag(GTK_WINDOW(m_pWindow), 1, nX, nY, GDK_CURRENT_TIME);
 }
 
 void GtkSalFrame::widget_set_size_request(long nWidth, long nHeight)
@@ -986,10 +980,15 @@ void GtkSalFrame::InitCommon()
     m_aDamageHandler.handle = this;
     m_aDamageHandler.damaged = ::damaged;
 
+    m_pTopLevelGrid = GTK_GRID(gtk_grid_new());
+    gtk_container_add(GTK_CONTAINER(m_pWindow), GTK_WIDGET(m_pTopLevelGrid));
+
     m_pEventBox = GTK_EVENT_BOX(gtk_event_box_new());
     gtk_widget_add_events( GTK_WIDGET(m_pEventBox),
                            GDK_ALL_EVENTS_MASK );
-    gtk_container_add( GTK_CONTAINER(m_pWindow), GTK_WIDGET(m_pEventBox) );
+    gtk_widget_set_vexpand(GTK_WIDGET(m_pEventBox), true);
+    gtk_widget_set_hexpand(GTK_WIDGET(m_pEventBox), true);
+    gtk_grid_attach(m_pTopLevelGrid, GTK_WIDGET(m_pEventBox), 0, 0, 1, 1);
 
     // add the fixed container child,
     // fixed is needed since we have to position plugin windows
@@ -1092,7 +1091,7 @@ void GtkSalFrame::InitCommon()
                            );
 
     // show the widgets
-    gtk_widget_show_all( GTK_WIDGET(m_pEventBox) );
+    gtk_widget_show_all(GTK_WIDGET(m_pTopLevelGrid));
 
     // realize the window, we need an XWindow id
     gtk_widget_realize( m_pWindow );
@@ -1188,10 +1187,12 @@ void GtkSalFrame::Init( SalFrame* pParent, SalFrameStyleFlags nStyle )
     g_object_set_data( G_OBJECT( m_pWindow ), "libo-version", const_cast<char *>(LIBO_VERSION_DOTTED));
 
     // force wm class hint
-    m_nExtStyle = ~0;
-    if (m_pParent)
-        m_sWMClass = m_pParent->m_sWMClass;
-    SetExtendedFrameStyle( 0 );
+    if (!isChild())
+    {
+        if (m_pParent)
+            m_sWMClass = m_pParent->m_sWMClass;
+        updateWMClass();
+    }
 
     if( m_pParent && m_pParent->m_pWindow && ! isChild() )
         gtk_window_set_screen( GTK_WINDOW(m_pWindow), gtk_window_get_screen( GTK_WINDOW(m_pParent->m_pWindow) ) );
@@ -1202,8 +1203,6 @@ void GtkSalFrame::Init( SalFrame* pParent, SalFrameStyleFlags nStyle )
             gtk_window_set_transient_for( GTK_WINDOW(m_pWindow), GTK_WINDOW(m_pParent->m_pWindow) );
         m_pParent->m_aChildren.push_back( this );
     }
-
-    InitCommon();
 
     // set window type
     bool bDecoHandling =
@@ -1234,9 +1233,12 @@ void GtkSalFrame::Init( SalFrame* pParent, SalFrameStyleFlags nStyle )
         }
         gtk_window_set_type_hint( GTK_WINDOW(m_pWindow), eType );
         gtk_window_set_gravity( GTK_WINDOW(m_pWindow), GDK_GRAVITY_STATIC );
+        gtk_window_set_resizable( GTK_WINDOW(m_pWindow), bool(nStyle & SalFrameStyleFlags::SIZEABLE) );
     }
     else if( (nStyle & SalFrameStyleFlags::FLOAT) )
         gtk_window_set_type_hint( GTK_WINDOW(m_pWindow), GDK_WINDOW_TYPE_HINT_POPUP_MENU );
+
+    InitCommon();
 
     if( eWinType == GTK_WINDOW_TOPLEVEL )
     {
@@ -1245,13 +1247,6 @@ void GtkSalFrame::Init( SalFrame* pParent, SalFrameStyleFlags nStyle )
         ensure_dbus_setup( this );
 #endif
 
-    }
-
-    if( bDecoHandling )
-    {
-        gtk_window_set_resizable( GTK_WINDOW(m_pWindow), bool(nStyle & SalFrameStyleFlags::SIZEABLE) );
-        if( ( (nStyle & (SalFrameStyleFlags::OWNERDRAWDECORATION)) ) )
-            gtk_window_set_accept_focus(GTK_WINDOW(m_pWindow), false);
     }
 }
 
@@ -1369,7 +1364,7 @@ void GtkSalFrame::SetIcon( sal_uInt16 nIcon )
     else if (nIcon == SV_ICON_ID_FORMULA)
         appicon = g_strdup ("libreoffice-math");
     else
-        appicon = g_strdup ("libreoffice-main");
+        appicon = g_strdup ("libreoffice-startcenter");
 
     gtk_window_set_icon_name (GTK_WINDOW (m_pWindow), appicon);
     g_free (appicon);
@@ -1637,10 +1632,7 @@ void GtkSalFrame::SetPosSize( long nX, long nY, long nWidth, long nHeight, sal_u
 
         m_bDefaultPos = false;
 
-        if (nFlags & SAL_FRAME_POSSIZE_BYDRAG)
-            dragWindowTo(nX, nY);
-        else
-            moveWindow(nX, nY);
+        moveWindow(nX, nY);
 
         updateScreenNumber();
     }
@@ -2086,9 +2078,9 @@ void GtkSalFrame::grabPointer( bool bGrab, bool bOwnerEvents )
     GdkDeviceManager* pDeviceManager = gdk_display_get_device_manager(getGdkDisplay());
     GdkDevice* pPointer = gdk_device_manager_get_client_pointer(pDeviceManager);
     if (bGrab)
-        gdk_device_grab(pPointer, widget_get_window(getMouseEventWidget()), GDK_OWNERSHIP_NONE, bOwnerEvents, (GdkEventMask) nMask, m_pCurrentCursor, GDK_CURRENT_TIME);
+        gdk_device_grab(pPointer, widget_get_window(getMouseEventWidget()), GDK_OWNERSHIP_NONE, bOwnerEvents, (GdkEventMask) nMask, m_pCurrentCursor, gtk_get_current_event_time());
     else
-        gdk_device_ungrab(pPointer, GDK_CURRENT_TIME);
+        gdk_device_ungrab(pPointer, gtk_get_current_event_time());
 }
 
 void GtkSalFrame::grabKeyboard( bool bGrab )
@@ -2106,11 +2098,11 @@ void GtkSalFrame::grabKeyboard( bool bGrab )
     if (bGrab)
     {
         gdk_device_grab(pKeyboard, widget_get_window(m_pWindow), GDK_OWNERSHIP_NONE,
-                        true, (GdkEventMask)(GDK_KEY_PRESS | GDK_KEY_RELEASE), nullptr, GDK_CURRENT_TIME);
+                        true, (GdkEventMask)(GDK_KEY_PRESS | GDK_KEY_RELEASE), nullptr, gtk_get_current_event_time());
     }
     else
     {
-        gdk_device_ungrab(pKeyboard, GDK_CURRENT_TIME);
+        gdk_device_ungrab(pKeyboard, gtk_get_current_event_time());
     }
 }
 
@@ -2459,6 +2451,35 @@ bool GtkSalFrame::ShowTooltip(const OUString& rHelpText, const Rectangle& rHelpA
     return true;
 }
 
+#if GTK_CHECK_VERSION(3,12,0)
+namespace
+{
+    void set_pointing_to(GtkPopover *pPopOver, const Rectangle& rHelpArea)
+    {
+        GdkRectangle aRect;
+        aRect.x = rHelpArea.Left();
+        aRect.y = rHelpArea.Top();
+        aRect.width = 1;
+        aRect.height = 1;
+
+        GtkPositionType ePos = gtk_popover_get_position(pPopOver);
+        switch (ePos)
+        {
+            case GTK_POS_BOTTOM:
+            case GTK_POS_TOP:
+                aRect.width = rHelpArea.GetWidth();
+                break;
+            case GTK_POS_RIGHT:
+            case GTK_POS_LEFT:
+                aRect.height = rHelpArea.GetHeight();
+                break;
+        }
+
+        gtk_popover_set_pointing_to(pPopOver, &aRect);
+    }
+}
+#endif
+
 sal_uIntPtr GtkSalFrame::ShowPopover(const OUString& rHelpText, const Rectangle& rHelpArea, QuickHelpFlags nFlags)
 {
 #if GTK_CHECK_VERSION(3,12,0)
@@ -2466,14 +2487,6 @@ sal_uIntPtr GtkSalFrame::ShowPopover(const OUString& rHelpText, const Rectangle&
     OString sUTF = OUStringToOString(rHelpText, RTL_TEXTENCODING_UTF8);
     GtkWidget *pLabel =  gtk_label_new(sUTF.getStr());
     gtk_container_add(GTK_CONTAINER(pWidget), pLabel);
-
-    GdkRectangle aRect;
-    aRect.x = rHelpArea.Left();
-    aRect.y = rHelpArea.Top();
-    aRect.width = rHelpArea.GetWidth();
-    aRect.height = rHelpArea.GetHeight();
-
-    gtk_popover_set_pointing_to(GTK_POPOVER(pWidget), &aRect);
 
     if (nFlags & QuickHelpFlags::Top)
         gtk_popover_set_position(GTK_POPOVER(pWidget), GTK_POS_BOTTOM);
@@ -2483,6 +2496,8 @@ sal_uIntPtr GtkSalFrame::ShowPopover(const OUString& rHelpText, const Rectangle&
         gtk_popover_set_position(GTK_POPOVER(pWidget), GTK_POS_RIGHT);
     else if (nFlags & QuickHelpFlags::Right)
         gtk_popover_set_position(GTK_POPOVER(pWidget), GTK_POS_LEFT);
+
+    set_pointing_to(GTK_POPOVER(pWidget), rHelpArea);
 
     gtk_popover_set_modal(GTK_POPOVER(pWidget), false);
 
@@ -2502,13 +2517,7 @@ bool GtkSalFrame::UpdatePopover(sal_uIntPtr nId, const OUString& rHelpText, cons
 #if GTK_CHECK_VERSION(3,12,0)
     GtkWidget *pWidget = reinterpret_cast<GtkWidget*>(nId);
 
-    GdkRectangle aRect;
-    aRect.x = rHelpArea.Left();
-    aRect.y = rHelpArea.Top();
-    aRect.width = rHelpArea.GetWidth();
-    aRect.height = rHelpArea.GetHeight();
-
-    gtk_popover_set_pointing_to(GTK_POPOVER(pWidget), &aRect);
+    set_pointing_to(GTK_POPOVER(pWidget), rHelpArea);
 
     GtkWidget *pLabel = gtk_bin_get_child(GTK_BIN(pWidget));
     OString sUTF = OUStringToOString(rHelpText, RTL_TEXTENCODING_UTF8);
@@ -2533,6 +2542,26 @@ bool GtkSalFrame::HidePopover(sal_uIntPtr nId)
     (void)nId;
     return false;
 #endif
+}
+
+void GtkSalFrame::StartToolKitMoveBy()
+{
+    GdkEvent *pEvent = gtk_get_current_event();
+    if (!pEvent)
+    {
+        SAL_WARN("vcl.gtk", "no current event for starting window move by wm");
+        return;
+    }
+    if (pEvent->type != GDK_BUTTON_PRESS)
+    {
+        SAL_WARN("vcl.gtk", "current event for starting window move by wm is not a button");
+        return;
+    }
+    gtk_window_begin_move_drag(GTK_WINDOW(m_pWindow),
+                               pEvent->button.button,
+                               pEvent->button.x_root,
+                               pEvent->button.y_root,
+                               pEvent->button.time);
 }
 
 gboolean GtkSalFrame::signalButton( GtkWidget*, GdkEventButton* pEvent, gpointer frame )
@@ -3061,7 +3090,7 @@ gboolean GtkSalFrame::signalKey( GtkWidget*, GdkEventKey* pEvent, gpointer frame
     if( !aDel.isDeleted() && pThis->m_pIMHandler )
         pThis->m_pIMHandler->updateIMSpotLocation();
 
-    return true;
+    return false;
 }
 
 gboolean GtkSalFrame::signalDelete( GtkWidget*, GdkEvent*, gpointer frame )
@@ -3421,6 +3450,7 @@ void GtkSalFrame::signalDestroy( GtkWidget* pObj, gpointer frame )
     {
         pThis->m_pFixedContainer = nullptr;
         pThis->m_pEventBox = nullptr;
+        pThis->m_pTopLevelGrid = nullptr;
         pThis->m_pWindow = nullptr;
         pThis->InvalidateGraphics();
     }
@@ -3894,7 +3924,12 @@ uno::Reference<accessibility::XAccessibleEditableText>
     if (xState.is())
     {
         if (xState->contains(accessibility::AccessibleStateType::FOCUSED))
-            return uno::Reference<accessibility::XAccessibleEditableText>(xContext, uno::UNO_QUERY);
+        {
+            uno::Reference< accessibility::XAccessibleEditableText > xText =
+                uno::Reference<accessibility::XAccessibleEditableText>(xContext, uno::UNO_QUERY);
+            if (xText.is())
+                return xText;
+        }
     }
 
     for (sal_Int32 i = 0; i < xContext->getAccessibleChildCount(); ++i)

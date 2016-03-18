@@ -257,11 +257,11 @@ void SwFieldMgr::RemoveFieldType(sal_uInt16 nResId, const OUString& rName )
         pSh->RemoveFieldType(nResId, rName);
 }
 
-size_t SwFieldMgr::GetFieldTypeCount(sal_uInt16 nResId) const
+size_t SwFieldMgr::GetFieldTypeCount() const
 {
     SwWrtShell * pSh = pWrtShell ? pWrtShell : lcl_GetShell();
     OSL_ENSURE(pSh, "no SwWrtShell found");
-    return pSh ? pSh->GetFieldTypeCount(nResId) : 0;
+    return pSh ? pSh->GetFieldTypeCount() : 0;
 }
 
 SwFieldType* SwFieldMgr::GetFieldType(sal_uInt16 nResId, size_t nField) const
@@ -346,7 +346,7 @@ static SwFieldGroupRgn const aWebRanges[] =
 }
 
 // determine GroupId
-sal_uInt16 SwFieldMgr::GetGroup(bool bHtmlMode, sal_uInt16 nTypeId, sal_uInt16 nSubType)
+sal_uInt16 SwFieldMgr::GetGroup(sal_uInt16 nTypeId, sal_uInt16 nSubType)
 {
     if (nTypeId == TYP_SETINPFLD)
         nTypeId = TYP_SETFLD;
@@ -362,7 +362,7 @@ sal_uInt16 SwFieldMgr::GetGroup(bool bHtmlMode, sal_uInt16 nTypeId, sal_uInt16 n
 
     for (sal_uInt16 i = GRP_DOC; i <= GRP_VAR; i++)
     {
-        const SwFieldGroupRgn& rRange = GetGroupRange(bHtmlMode, i);
+        const SwFieldGroupRgn& rRange = GetGroupRange(false/*bHtmlMode*/, i);
         for (sal_uInt16 nPos = rRange.nStart; nPos < rRange.nEnd; nPos++)
         {
             if (aSwFields[nPos].nTypeId == nTypeId)
@@ -1651,7 +1651,7 @@ void SwFieldMgr::SetMacroPath(const OUString& rPath)
     }
 }
 
-sal_uLong SwFieldMgr::GetDefaultFormat(sal_uInt16 nTypeId, bool bIsText, SvNumberFormatter* pFormatter, double* pVal)
+sal_uLong SwFieldMgr::GetDefaultFormat(sal_uInt16 nTypeId, bool bIsText, SvNumberFormatter* pFormatter)
 {
     double fValue;
     short  nDefFormat;
@@ -1690,9 +1690,6 @@ sal_uLong SwFieldMgr::GetDefaultFormat(sal_uInt16 nTypeId, bool bIsText, SvNumbe
             }
             break;
     }
-
-    if (pVal)
-        *pVal = fValue;
 
     return pFormatter->GetStandardFormat(nDefFormat, GetCurrLanguage());
 }

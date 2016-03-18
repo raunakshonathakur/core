@@ -17,8 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <stdio.h>
-
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 #include <vcl/builderfactory.hxx>
@@ -653,7 +651,7 @@ void SvxShowCharSet::OutputIndex( int nNewIndex )
 }
 
 
-void SvxShowCharSet::SelectCharacter( sal_UCS4 cNew, bool bFocus )
+void SvxShowCharSet::SelectCharacter( sal_UCS4 cNew )
 {
     if (mxFontCharMap == nullptr)
         RecalculateFont(*this);
@@ -662,13 +660,10 @@ void SvxShowCharSet::SelectCharacter( sal_UCS4 cNew, bool bFocus )
     sal_UCS4 cNext = mxFontCharMap->GetNextChar( (cNew > 0) ? cNew - 1 : cNew );
 
     int nMapIndex = mxFontCharMap->GetIndexFromChar( cNext );
-    SelectIndex( nMapIndex, bFocus );
-    if( !bFocus )
-    {
-        // move selected item to top row if not in focus
-        aVscrollSB->SetThumbPos( nMapIndex / COLUMN_COUNT );
-        Invalidate();
-    }
+    SelectIndex( nMapIndex );
+    // move selected item to top row if not in focus
+    aVscrollSB->SetThumbPos( nMapIndex / COLUMN_COUNT );
+    Invalidate();
 }
 
 

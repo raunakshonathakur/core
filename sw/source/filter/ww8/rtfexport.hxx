@@ -83,7 +83,7 @@ public:
 
     virtual void AppendBookmarks(const SwTextNode& rNode, sal_Int32 nAktPos, sal_Int32 nLen) override;
 
-    virtual void AppendBookmark(const OUString& rName, bool bSkip = false) override;
+    virtual void AppendBookmark(const OUString& rName) override;
 
     virtual void AppendAnnotationMarks(const SwTextNode& rNode, sal_Int32 nAktPos, sal_Int32 nLen) override;
 
@@ -204,6 +204,8 @@ private:
     void WriteFootnoteSettings();
     void WriteMainText();
     void WriteInfo();
+    /// Writes the userprops group: user defined document properties.
+    void WriteUserProps();
     /// Writes the writer-specific \pgdsctbl group.
     void WritePageDescTable();
     /// This is necessary to have the numbering table ready before the main text is being processed.

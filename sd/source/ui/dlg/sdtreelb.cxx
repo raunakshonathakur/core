@@ -600,8 +600,7 @@ void SdPageObjsTLB::AddShapeList (
     SdrObjListIter aIter(
         rList,
         !rList.HasObjectNavigationOrder() /* use navigation order, if available */,
-        IM_FLAT,
-        false /*not reverse*/);
+        IM_FLAT);
 
     bool  bMarked=false;
     if(bisInSdNavigatorWin)
@@ -1008,7 +1007,7 @@ SdDrawDocument* SdPageObjsTLB::GetBookmarkDoc(SfxMedium* pMed)
             // in this mode the document is owned and controlled by the SdDrawDocument
             // it can be released by calling the corresponding CloseBookmarkDoc method
             // successful creation of a document makes this the owner of the medium
-            mpBookmarkDoc = const_cast<SdDrawDocument*>(mpDoc)->OpenBookmarkDoc(*mpMedium);
+            mpBookmarkDoc = const_cast<SdDrawDocument*>(mpDoc)->OpenBookmarkDoc(mpMedium);
 
         if ( !mpBookmarkDoc )
         {

@@ -376,7 +376,7 @@ Reference<deployment::XPackageRegistry> PackageRegistryImpl::create(
     create_folder( nullptr, registryCachePath, Reference<XCommandEnvironment>());
 
 
-#if OSL_DEBUG_LEVEL > 1
+#if OSL_DEBUG_LEVEL > 0
     // dump tables:
     {
         t_registryset allBackends;
@@ -386,18 +386,18 @@ Reference<deployment::XPackageRegistry> PackageRegistryImpl::create(
               iPos != that->m_filter2mediaType.end(); ++iPos )
         {
             OUStringBuffer buf;
-            buf.appendAscii( "extension \"" );
+            buf.append( "extension \"" );
             buf.append( iPos->first );
-            buf.appendAscii( "\" maps to media-type \"" );
+            buf.append( "\" maps to media-type \"" );
             buf.append( iPos->second );
-            buf.appendAscii( "\" maps to backend " );
+            buf.append( "\" maps to backend " );
             const Reference<deployment::XPackageRegistry> xBackend(
                 that->m_mediaType2backend.find( iPos->second )->second );
             allBackends.insert( xBackend );
             buf.append( Reference<lang::XServiceInfo>(
                             xBackend, UNO_QUERY_THROW )
                         ->getImplementationName() );
-            dp_misc::writeConsole( buf.makeStringAndClear() + "\n");
+            dp_misc::TRACE( buf.makeStringAndClear() + "\n");
         }
         dp_misc::TRACE( "> [dp_registry.cxx] ambiguous backends:\n\n" );
         for ( t_registryset::const_iterator iPos(
@@ -408,7 +408,7 @@ Reference<deployment::XPackageRegistry> PackageRegistryImpl::create(
             buf.append(
                 Reference<lang::XServiceInfo>(
                     *iPos, UNO_QUERY_THROW )->getImplementationName() );
-            buf.appendAscii( ": " );
+            buf.append( ": " );
             const Sequence< Reference<deployment::XPackageTypeInfo> > types(
                 (*iPos)->getSupportedPackageTypes() );
             for ( sal_Int32 pos = 0; pos < types.getLength(); ++pos ) {
@@ -417,12 +417,12 @@ Reference<deployment::XPackageRegistry> PackageRegistryImpl::create(
                 buf.append( xInfo->getMediaType() );
                 const OUString filter( xInfo->getFileFilter() );
                 if (!filter.isEmpty()) {
-                    buf.appendAscii( " (" );
+                    buf.append( " (" );
                     buf.append( filter );
-                    buf.appendAscii( ")" );
+                    buf.append( ")" );
                 }
                 if (pos < (types.getLength() - 1))
-                    buf.appendAscii( ", " );
+                    buf.append( ", " );
             }
             dp_misc::TRACE(buf.makeStringAndClear() + "\n\n");
         }

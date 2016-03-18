@@ -173,18 +173,18 @@ void OSelectionBrowseBox::initialize()
     if(xConnection.is())
     {
         const IParseContext& rContext = static_cast<OQueryController&>(getDesignView()->getController()).getParser().getContext();
-        IParseContext::InternationalKeyCode eFunctions[] = { IParseContext::KEY_AVG,IParseContext::KEY_COUNT,IParseContext::KEY_MAX
-            ,IParseContext::KEY_MIN,IParseContext::KEY_SUM
-            ,IParseContext::KEY_EVERY
-            ,IParseContext::KEY_ANY
-            ,IParseContext::KEY_SOME
-            ,IParseContext::KEY_STDDEV_POP
-            ,IParseContext::KEY_STDDEV_SAMP
-            ,IParseContext::KEY_VAR_SAMP
-            ,IParseContext::KEY_VAR_POP
-            ,IParseContext::KEY_COLLECT
-            ,IParseContext::KEY_FUSION
-            ,IParseContext::KEY_INTERSECTION
+        IParseContext::InternationalKeyCode eFunctions[] = { IParseContext::InternationalKeyCode::Avg,IParseContext::InternationalKeyCode::Count,IParseContext::InternationalKeyCode::Max
+            ,IParseContext::InternationalKeyCode::Min,IParseContext::InternationalKeyCode::Sum
+            ,IParseContext::InternationalKeyCode::Every
+            ,IParseContext::InternationalKeyCode::Any
+            ,IParseContext::InternationalKeyCode::Some
+            ,IParseContext::InternationalKeyCode::StdDevPop
+            ,IParseContext::InternationalKeyCode::StdDevSamp
+            ,IParseContext::InternationalKeyCode::VarSamp
+            ,IParseContext::InternationalKeyCode::VarPop
+            ,IParseContext::InternationalKeyCode::Collect
+            ,IParseContext::InternationalKeyCode::Fusion
+            ,IParseContext::InternationalKeyCode::Intersection
         };
 
         OUString sGroup = m_aFunctionStrings.getToken(comphelper::string::getTokenCount(m_aFunctionStrings, ';') - 1, ';');
@@ -1534,7 +1534,7 @@ void OSelectionBrowseBox::InsertColumn(OTableFieldDescRef pEntry, sal_uInt16& _n
     invalidateUndoRedo();
 }
 
-OTableFieldDescRef OSelectionBrowseBox::InsertField(const OJoinExchangeData& jxdSource, sal_uInt16 _nColumnPosition, bool bVis, bool bActivate)
+OTableFieldDescRef OSelectionBrowseBox::InsertField(const OJoinExchangeData& jxdSource)
 {
     OQueryTableWindow* pSourceWin = static_cast<OQueryTableWindow*>(jxdSource.pListBox->GetTabWin());
     if (!pSourceWin)
@@ -1553,9 +1553,9 @@ OTableFieldDescRef OSelectionBrowseBox::InsertField(const OJoinExchangeData& jxd
     aInfo->SetAlias(pSourceWin->GetAliasName());
 
     aInfo->SetDataType(pInf->GetDataType());
-    aInfo->SetVisible(bVis);
+    aInfo->SetVisible();
 
-    return InsertField(aInfo, _nColumnPosition, bVis, bActivate);
+    return InsertField(aInfo);
 }
 
 OTableFieldDescRef OSelectionBrowseBox::InsertField(const OTableFieldDescRef& _rInfo, sal_uInt16 _nColumnPosition, bool bVis, bool bActivate)

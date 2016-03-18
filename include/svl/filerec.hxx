@@ -236,11 +236,11 @@ protected:
         , _nPreTag(0)
     {
     }
-    void                 Construct_Impl( SvStream *pStream, sal_uInt8 nTag )
+    void                 Construct_Impl( SvStream *pStream )
                         {
                             _pStream = pStream;
                             _bSkipped = false;
-                            _nPreTag = nTag;
+                            _nPreTag = SFX_REC_PRETAG_EXT;
                         }
     inline bool         SetHeader_Impl( sal_uInt32 nHeader );
 
@@ -295,7 +295,7 @@ protected:
                                            sal_uInt16 nTag, sal_uInt8 nCurVer );
 
 public:
-    sal_uInt32          Close( bool bSeekToEndOfRec = true );
+    sal_uInt32          Close();
 };
 
 /**
@@ -319,8 +319,7 @@ protected:
     }
     void                Construct_Impl( SvStream *pStream )
                         {
-                            SfxMiniRecordReader::Construct_Impl(
-                                    pStream, SFX_REC_PRETAG_EXT );
+                            SfxMiniRecordReader::Construct_Impl( pStream );
                         }
     bool                FindHeader_Impl( sal_uInt16 nTypes, sal_uInt16 nTag );
 };
@@ -386,7 +385,7 @@ protected:
 public:
     inline          ~SfxMultiFixRecordWriter();
 
-    sal_uInt32          Close( bool bSeekToEndOfRec = true );
+    sal_uInt32          Close();
 };
 
 /** write record with multiple content items
@@ -444,13 +443,12 @@ protected:
 
 public:
                         SfxMultiVarRecordWriter( SvStream *pStream,
-                                                 sal_uInt16 nRecordTag,
-                                                 sal_uInt8 nRecordVer );
+                                                 sal_uInt16 nRecordTag );
     virtual             ~SfxMultiVarRecordWriter();
 
     void                NewContent();
 
-    sal_uInt32          Close( bool bSeekToEndOfRec = true );
+    sal_uInt32          Close();
 };
 
 /** write record with multiple content items with identical size
@@ -484,8 +482,7 @@ class SVL_DLLPUBLIC SfxMultiMixRecordWriter: public SfxMultiVarRecordWriter
 {
 public:
     inline              SfxMultiMixRecordWriter( SvStream *pStream,
-                                                 sal_uInt16 nRecordTag,
-                                                 sal_uInt8 nRecordVer );
+                                                 sal_uInt16 nRecordTag );
 
     void                NewContent( sal_uInt16 nTag, sal_uInt8 nVersion );
 };
@@ -588,7 +585,7 @@ inline void SfxMiniRecordReader::Skip()
 }
 
 /// @see SfxMiniRecordWriter::Close()
-inline sal_uInt32 SfxSingleRecordWriter::Close( bool bSeekToEndOfRec )
+inline sal_uInt32 SfxSingleRecordWriter::Close()
 {
     sal_uInt32 nRet = 0;
 
@@ -596,17 +593,16 @@ inline sal_uInt32 SfxSingleRecordWriter::Close( bool bSeekToEndOfRec )
     if ( !_bHeaderOk )
     {
         // write base class header
-        sal_uInt32 nEndPos = SfxMiniRecordWriter::Close( bSeekToEndOfRec );
+        sal_uInt32 nEndPos = SfxMiniRecordWriter::Close( false/*bSeekToEndOfRec*/ );
 
         // seek the end of the own header if needed or stay behind the record
-        if ( !bSeekToEndOfRec )
-            _pStream->SeekRel( SFX_REC_HEADERSIZE_SINGLE );
+        _pStream->SeekRel( SFX_REC_HEADERSIZE_SINGLE );
         nRet = nEndPos;
     }
 #ifdef DBG_UTIL
     else
         // check base class header
-        SfxMiniRecordWriter::Close( bSeekToEndOfRec );
+        SfxMiniRecordWriter::Close( false/*bSeekToEndOfRec*/ );
 #endif
 
     return nRet;
@@ -628,12 +624,10 @@ inline SfxMultiFixRecordWriter::~SfxMultiFixRecordWriter()
  *
  * @param pStream    target stream in which the record will be created
  * @param nRecordTag tag for the total record
- * @param nRecordVer version for the total record
  */
 inline SfxMultiMixRecordWriter::SfxMultiMixRecordWriter( SvStream* pStream,
-                                                         sal_uInt16 nRecordTag,
-                                                         sal_uInt8 nRecordVer )
-: SfxMultiVarRecordWriter( SFX_REC_TYPE_MIXTAGS, pStream, nRecordTag, nRecordVer )
+                                                         sal_uInt16 nRecordTag )
+: SfxMultiVarRecordWriter( SFX_REC_TYPE_MIXTAGS, pStream, nRecordTag, 0 )
 {
 }
 

@@ -21,7 +21,7 @@
 #ifndef INCLUDED_JVMFWK_INC_VENDORPLUGIN_HXX
 #define INCLUDED_JVMFWK_INC_VENDORPLUGIN_HXX
 
-#include <jvmfwk/framework.h>
+#include <jvmfwk/framework.hxx>
 #include <rtl/ref.hxx>
 #include <rtl/ustring.h>
 #include "jni.h"
@@ -73,8 +73,8 @@ typedef enum
     version should be the first in the array. </p>
     <p>
     The function allocates memory for an array and all the JavaInfo objects returned
-    in <code>parJavaInfo</code>. The caller must free each JavaInfo object by calling
-    <code>jfw_freeJavaInfo</code> (#include "jvmfwk/framework.h"). The array is to be
+    in <code>parJavaInfo</code>. The caller must delete each JavaInfo object.
+    The array is to be
     freed by rtl_freeMemory.
     In case an error occurred <code>parJavaInfo</code> need not be freed.
     </p>
@@ -217,8 +217,7 @@ javaPluginError jfw_plugin_getJavaInfoFromJavaHome(
     is also the first element in the vector.</p>
     <p>
     The function allocates memory for all the JavaInfo objects returned
-    in <code>vecJavaInfosFromPath</code>. The caller must free each JavaInfo object by calling
-    <code>jfw_freeJavaInfo</code> (#include "jvmfwk/framework.h").
+    in <code>vecJavaInfosFromPath</code>. The caller must delete each JavaInfo object.
     </p>
     @param vecVendorInfos
        [in] vector specifying the vendor and version requirements that the JRE must fulfill.

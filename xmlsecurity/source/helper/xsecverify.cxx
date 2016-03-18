@@ -143,7 +143,7 @@ void XSecController::addStreamReference(
             /*
              * get the input stream
              */
-            cssu::Reference< com::sun::star::io::XInputStream > xObjectInputStream
+            cssu::Reference< css::io::XInputStream > xObjectInputStream
                 = getObjectInputStream( ouUri );
 
         if ( xObjectInputStream.is() )
@@ -272,6 +272,15 @@ void XSecController::setDescription(const OUString& rDescription)
 
     InternalSignatureInformation& rInformation = m_vInternalSignatureInformations.back();
     rInformation.signatureInfor.ouDescription = rDescription;
+}
+
+void XSecController::setSignatureBytes(const uno::Sequence<sal_Int8>& rBytes)
+{
+    if (m_vInternalSignatureInformations.empty())
+        return;
+
+    InternalSignatureInformation& rInformation = m_vInternalSignatureInformations.back();
+    rInformation.signatureInfor.aSignatureBytes = rBytes;
 }
 
 void XSecController::setCertDigest(const OUString& rCertDigest)

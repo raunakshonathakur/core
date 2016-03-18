@@ -60,9 +60,7 @@ public:
 
     void        Insert( SotClipboardFormatId nFormat, const OUString & rFormatName );
     void        SetObjName( const SvGlobalName & rClass, const OUString & rObjName );
-    SotClipboardFormatId GetFormat( const TransferableDataHelper& aHelper,
-                        const DataFlavorExVector* pFormats=nullptr,
-                        const TransferableObjectDescriptor* pDesc=nullptr );
+    SotClipboardFormatId GetFormat( const TransferableDataHelper& aHelper);
 };
 
 #endif // INCLUDED_CUI_SOURCE_INC_PASTEDLG_HXX

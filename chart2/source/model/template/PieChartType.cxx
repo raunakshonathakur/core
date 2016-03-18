@@ -46,7 +46,7 @@ enum
     PROP_PIECHARTTYPE_3DRELATIVEHEIGHT
 };
 
-static void lcl_AddPropertiesToVector(
+void lcl_AddPropertiesToVector(
     ::std::vector< Property > & rOutProperties )
 {
     rOutProperties.push_back(
@@ -93,7 +93,7 @@ struct StaticPieChartTypeInfoHelper_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        ::std::vector< ::com::sun::star::beans::Property > aProperties;
+        ::std::vector< css::beans::Property > aProperties;
         lcl_AddPropertiesToVector( aProperties );
 
         ::std::sort( aProperties.begin(), aProperties.end(),

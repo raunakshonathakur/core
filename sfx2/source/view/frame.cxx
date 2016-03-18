@@ -278,7 +278,7 @@ sal_uInt16 SfxFrame::GetChildFrameCount() const
     return pChildArr ? pChildArr->size() : 0;
 }
 
-void SfxFrame::CancelTransfers( bool /*bCancelLoadEnv*/ )
+void SfxFrame::CancelTransfers()
 {
     if( !pImp->bInCancelTransfers )
     {
@@ -424,7 +424,7 @@ void SfxFrame::UpdateDescriptor( SfxObjectShell *pDoc )
     // Mark FileOpen parameter
     SfxItemSet* pItemSet = pMed->GetItemSet();
 
-    const SfxFilter* pFilter = pMed->GetOrigFilter();
+    std::shared_ptr<const SfxFilter> pFilter = pMed->GetOrigFilter();
     OUString aFilter;
     if ( pFilter )
         aFilter = pFilter->GetFilterName();
@@ -853,9 +853,9 @@ void SfxFrame::GrabFocusOnComponent_Impl()
         pFocusWindow->GrabFocus();
 }
 
-void SfxFrame::ReleasingComponent_Impl( bool bSet )
+void SfxFrame::ReleasingComponent_Impl()
 {
-    pImp->bReleasingComponent = bSet;
+    pImp->bReleasingComponent = true;
 }
 
 bool SfxFrame::IsInPlace() const

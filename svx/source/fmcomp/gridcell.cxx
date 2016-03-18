@@ -68,7 +68,6 @@
 #include <connectivity/sqlnode.hxx>
 
 #include <math.h>
-#include <stdio.h>
 
 using namespace ::connectivity;
 using namespace ::svxform;
@@ -528,7 +527,7 @@ void DbGridColumn::ImplInitWindow( vcl::Window& rParent, const InitWindowFacet _
 //= cell controls
 
 
-DbCellControl::DbCellControl( DbGridColumn& _rColumn, bool /*_bText*/ )
+DbCellControl::DbCellControl( DbGridColumn& _rColumn )
     :OPropertyChangeListener(m_aMutex)
     ,m_pModelChangeBroadcaster(nullptr)
     ,m_pFieldChangeBroadcaster(nullptr)
@@ -1598,7 +1597,7 @@ bool DbFormattedField::commitControl()
 }
 
 DbCheckBox::DbCheckBox( DbGridColumn& _rColumn )
-    :DbCellControl( _rColumn, true )
+    :DbCellControl( _rColumn )
 {
     setAlignedController( false );
 }

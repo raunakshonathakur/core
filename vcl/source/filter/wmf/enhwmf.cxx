@@ -17,10 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "winmtf.hxx"
 #include <osl/endian.h>
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <vcl/dibtools.hxx>
+
+#include "winmtf.hxx"
+
 #include <memory>
 
 #ifdef DBG_UTIL
@@ -912,37 +914,27 @@ bool EnhWMFReader::ReadEnhWMF()
                             aLineInfo.SetWidth( aSize.Width() );
 
                         bool bTransparent = false;
-                        switch( nStyle & 0xFF )
+                        switch( nStyle & PS_STYLE_MASK )
                         {
                             case PS_DASHDOTDOT :
                                 aLineInfo.SetStyle( LINE_DASH );
                                 aLineInfo.SetDashCount( 1 );
                                 aLineInfo.SetDotCount( 2 );
-                                aLineInfo.SetDashLen( 150 );
-                                aLineInfo.SetDotLen( 30 );
-                                aLineInfo.SetDistance( 50 );
                             break;
                             case PS_DASHDOT :
                                 aLineInfo.SetStyle( LINE_DASH );
                                 aLineInfo.SetDashCount( 1 );
                                 aLineInfo.SetDotCount( 1 );
-                                aLineInfo.SetDashLen( 150 );
-                                aLineInfo.SetDotLen( 30 );
-                                aLineInfo.SetDistance( 90 );
                             break;
                             case PS_DOT :
                                 aLineInfo.SetStyle( LINE_DASH );
                                 aLineInfo.SetDashCount( 0 );
                                 aLineInfo.SetDotCount( 1 );
-                                aLineInfo.SetDotLen( 30 );
-                                aLineInfo.SetDistance( 50 );
                             break;
                             case PS_DASH :
                                 aLineInfo.SetStyle( LINE_DASH );
                                 aLineInfo.SetDashCount( 1 );
                                 aLineInfo.SetDotCount( 0 );
-                                aLineInfo.SetDashLen( 225 );
-                                aLineInfo.SetDistance( 100 );
                             break;
                             case PS_NULL :
                                 bTransparent = true;
@@ -953,7 +945,7 @@ bool EnhWMFReader::ReadEnhWMF()
                             default :
                                 aLineInfo.SetStyle( LINE_SOLID );
                         }
-                        switch( nStyle & 0xF00 )
+                        switch( nStyle & PS_ENDCAP_STYLE_MASK )
                         {
                             case PS_ENDCAP_ROUND :
                                 if ( aSize.Width() )
@@ -971,7 +963,7 @@ bool EnhWMFReader::ReadEnhWMF()
                             default :
                                 aLineInfo.SetLineCap( css::drawing::LineCap_BUTT );
                         }
-                        switch( nStyle & 0xF000 )
+                        switch( nStyle & PS_JOIN_STYLE_MASK )
                         {
                             case PS_JOIN_ROUND :
                                 aLineInfo.SetLineJoin ( basegfx::B2DLineJoin::Round );
@@ -1008,20 +1000,28 @@ bool EnhWMFReader::ReadEnhWMF()
                             aLineInfo.SetWidth( nWidth );
 
                         bool bTransparent = false;
-                        sal_uInt16 nDashCount = 0;
-                        sal_uInt16 nDotCount = 0;
 
                         switch( nStyle & PS_STYLE_MASK )
                         {
                             case PS_DASHDOTDOT :
-                                nDotCount++;
+                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetDashCount( 1 );
+                                aLineInfo.SetDotCount( 2 );
+                            break;
                             case PS_DASHDOT :
-                                nDashCount++;
+                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetDashCount( 1 );
+                                aLineInfo.SetDotCount( 1 );
+                            break;
                             case PS_DOT :
-                                nDotCount++;
+                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetDashCount( 0 );
+                                aLineInfo.SetDotCount( 1 );
                             break;
                             case PS_DASH :
-                                nDashCount++;
+                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetDashCount( 1 );
+                                aLineInfo.SetDotCount( 0 );
                             break;
                             case PS_NULL :
                                 bTransparent = true;
@@ -1033,11 +1033,37 @@ bool EnhWMFReader::ReadEnhWMF()
                             default :
                                 aLineInfo.SetStyle( LINE_SOLID );
                         }
-                        if ( nDashCount | nDotCount )
+                        switch( nStyle & PS_ENDCAP_STYLE_MASK )
                         {
-                            aLineInfo.SetStyle( LINE_DASH );
-                            aLineInfo.SetDashCount( nDashCount );
-                            aLineInfo.SetDotCount( nDotCount );
+                            case PS_ENDCAP_ROUND :
+                                if ( aLineInfo.GetWidth() )
+                                {
+                                    aLineInfo.SetLineCap( css::drawing::LineCap_ROUND );
+                                    break;
+                                }
+                            case PS_ENDCAP_SQUARE :
+                                if ( aLineInfo.GetWidth() )
+                                {
+                                    aLineInfo.SetLineCap( css::drawing::LineCap_SQUARE );
+                                    break;
+                                }
+                            case PS_ENDCAP_FLAT :
+                            default :
+                                aLineInfo.SetLineCap( css::drawing::LineCap_BUTT );
+                        }
+                        switch( nStyle & PS_JOIN_STYLE_MASK )
+                        {
+                            case PS_JOIN_ROUND :
+                                aLineInfo.SetLineJoin ( basegfx::B2DLineJoin::Round );
+                            break;
+                            case PS_JOIN_MITER :
+                                aLineInfo.SetLineJoin ( basegfx::B2DLineJoin::Miter );
+                            break;
+                            case PS_JOIN_BEVEL :
+                                aLineInfo.SetLineJoin ( basegfx::B2DLineJoin::Bevel );
+                            break;
+                            default :
+                                aLineInfo.SetLineJoin ( basegfx::B2DLineJoin::NONE );
                         }
                         pOut->CreateObject( nIndex, GDI_PEN, new WinMtfLineStyle( aColorRef, aLineInfo, bTransparent ) );
                     }

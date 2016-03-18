@@ -448,12 +448,12 @@ void ScChildrenShapes::Notify(SfxBroadcaster&, const SfxHint& rHint)
 
 bool ScChildrenShapes::ReplaceChild (::accessibility::AccessibleShape* pCurrentChild,
         const css::uno::Reference< css::drawing::XShape >& _rxShape,
-        const long _nIndex, const ::accessibility::AccessibleShapeTreeInfo& _rShapeTreeInfo)
+        const long /*_nIndex*/, const ::accessibility::AccessibleShapeTreeInfo& _rShapeTreeInfo)
     throw (uno::RuntimeException)
 {
     // create the new child
     rtl::Reference< ::accessibility::AccessibleShape > pReplacement(::accessibility::ShapeTypeHandler::Instance().CreateAccessibleObject (
-        ::accessibility::AccessibleShapeInfo ( _rxShape, pCurrentChild->getAccessibleParent(), this, _nIndex ),
+        ::accessibility::AccessibleShapeInfo ( _rxShape, pCurrentChild->getAccessibleParent(), this ),
         _rShapeTreeInfo
     ));
     if ( pReplacement.is() )
@@ -2296,7 +2296,7 @@ OUString ScAccessibleDocument::GetCurrentCellName() const
     if (mpViewShell)
     {
         // Document not needed, because only the cell address, but not the tablename is needed
-        OUString sAddress(mpViewShell->GetViewData().GetCurPos().Format(SCA_VALID));
+        OUString sAddress(mpViewShell->GetViewData().GetCurPos().Format(ScRefFlags::VALID));
         sName = sName.replaceFirst("%1", sAddress);
     }
     return sName;

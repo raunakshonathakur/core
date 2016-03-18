@@ -1382,9 +1382,9 @@ Help* Application::GetHelp()
     return ImplGetSVData()->maAppData.mpHelp;
 }
 
-void Application::EnableAutoHelpId( bool bEnabled )
+void Application::EnableAutoHelpId()
 {
-    ImplGetSVData()->maHelpData.mbAutoHelpId = bEnabled;
+    ImplGetSVData()->maHelpData.mbAutoHelpId = true;
 }
 
 bool Application::IsAutoHelpIdEnabled()
@@ -1697,11 +1697,9 @@ void Application::EnableEventTestingMode()
 void Application::ShowNativeErrorBox(const OUString& sTitle  ,
                                      const OUString& sMessage)
 {
-    int btn = ImplGetSalSystem()->ShowNativeMessageBox (
+    int btn = ImplGetSalSystem()->ShowNativeMessageBox(
             sTitle,
-            sMessage,
-            SALSYSTEM_SHOWNATIVEMSGBOX_BTNCOMBI_OK,
-            SALSYSTEM_SHOWNATIVEMSGBOX_BTN_OK, false);
+            sMessage);
     if (btn != SALSYSTEM_SHOWNATIVEMSGBOX_BTN_OK) {
         OSL_TRACE("ShowNativeMessageBox returned %d", btn);
     }

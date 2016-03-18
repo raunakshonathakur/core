@@ -2886,17 +2886,17 @@ RTLFUNC(Dir)
                             rPar.Get(0)->PutString( "" );
                         }
 
-                        sal_uInt16 nFlags = 0;
+                        SbAttributes nFlags = SbAttributes::NONE;
                         if ( nParCount > 2 )
                         {
-                            pRTLData->nDirFlags = nFlags = rPar.Get(2)->GetInteger();
+                            pRTLData->nDirFlags = nFlags = static_cast<SbAttributes>(rPar.Get(2)->GetInteger());
                         }
                         else
                         {
-                            pRTLData->nDirFlags = 0;
+                            pRTLData->nDirFlags = SbAttributes::NONE;
                         }
                         // Read directory
-                        bool bIncludeFolders = ((nFlags & Sb_ATTR_DIRECTORY) != 0);
+                        bool bIncludeFolders = bool(nFlags & SbAttributes::DIRECTORY);
                         pRTLData->aDirSeq = xSFI->getFolderContents( aDirURLStr, bIncludeFolders );
                         pRTLData->nCurDirPos = 0;
 
@@ -2923,7 +2923,7 @@ RTLFUNC(Dir)
 
                 if( pRTLData->aDirSeq.getLength() > 0 )
                 {
-                    bool bFolderFlag = ((pRTLData->nDirFlags & Sb_ATTR_DIRECTORY) != 0);
+                    bool bFolderFlag = bool(pRTLData->nDirFlags & SbAttributes::DIRECTORY);
 
                     SbiInstance* pInst = GetSbData()->pInst;
                     bool bCompatibility = ( pInst && pInst->IsCompatibility() );
@@ -3000,18 +3000,18 @@ RTLFUNC(Dir)
 
                 OUString aDirURL = implSetupWildcard( aFileParam, pRTLData );
 
-                sal_uInt16 nFlags = 0;
+                SbAttributes nFlags = SbAttributes::NONE;
                 if ( nParCount > 2 )
                 {
-                    pRTLData->nDirFlags = nFlags = rPar.Get(2)->GetInteger();
+                    pRTLData->nDirFlags = nFlags = static_cast<SbAttributes>( rPar.Get(2)->GetInteger() );
                 }
                 else
                 {
-                    pRTLData->nDirFlags = 0;
+                    pRTLData->nDirFlags = SbAttributes::NONE;
                 }
 
                 // Read directory
-                bool bIncludeFolders = ((nFlags & Sb_ATTR_DIRECTORY) != 0);
+                bool bIncludeFolders = bool(nFlags & SbAttributes::DIRECTORY);
                 pRTLData->pDir = new Directory( aDirURL );
                 FileBase::RC nRet = pRTLData->pDir->open();
                 if( nRet != FileBase::E_None )
@@ -3042,7 +3042,7 @@ RTLFUNC(Dir)
 
             if( pRTLData->pDir )
             {
-                bool bFolderFlag = ((pRTLData->nDirFlags & Sb_ATTR_DIRECTORY) != 0);
+                bool bFolderFlag = bool(pRTLData->nDirFlags & SbAttributes::DIRECTORY);
                 for( ;; )
                 {
                     if( pRTLData->nCurDirPos < 0 )
@@ -3165,15 +3165,15 @@ RTLFUNC(GetAttr)
                     bool bDirectory = xSFI->isFolder( aPath );
                     if( bReadOnly )
                     {
-                        nFlags |= Sb_ATTR_READONLY;
+                        nFlags |= (sal_uInt16)SbAttributes::READONLY;
                     }
                     if( bHidden )
                     {
-                        nFlags |= Sb_ATTR_HIDDEN;
+                        nFlags |= (sal_uInt16)SbAttributes::HIDDEN;
                     }
                     if( bDirectory )
                     {
-                        nFlags |= Sb_ATTR_DIRECTORY;
+                        nFlags |= (sal_uInt16)SbAttributes::DIRECTORY;
                     }
                 }
                 catch(const Exception & )
@@ -3195,11 +3195,11 @@ RTLFUNC(GetAttr)
             bool bDirectory = isFolder( aType );
             if( bReadOnly )
             {
-                nFlags |= Sb_ATTR_READONLY;
+                nFlags |= (sal_uInt16)SbAttributes::READONLY;
             }
             if( bDirectory )
             {
-                nFlags |= Sb_ATTR_DIRECTORY;
+                nFlags |= (sal_uInt16)SbAttributes::DIRECTORY;
             }
         }
         rPar.Get(0)->PutInteger( nFlags );
@@ -3602,13 +3602,6 @@ RTLFUNC(Shell)
     (void)pBasic;
     (void)bWrite;
 
-    // No shell command for "virtual" portal users
-    if( needSecurityRestrictions() )
-    {
-        StarBASIC::Error(ERRCODE_BASIC_NOT_IMPLEMENTED);
-        return;
-    }
-
     sal_Size nArgCount = rPar.Count();
     if ( nArgCount < 2 || nArgCount > 5 )
     {
@@ -3964,13 +3957,6 @@ RTLFUNC(DDEInitiate)
     (void)pBasic;
     (void)bWrite;
 
-    // No DDE for "virtual" portal users
-    if( needSecurityRestrictions() )
-    {
-        StarBASIC::Error(ERRCODE_BASIC_NOT_IMPLEMENTED);
-        return;
-    }
-
     int nArgs = (int)rPar.Count();
     if ( nArgs != 3 )
     {
@@ -3998,13 +3984,6 @@ RTLFUNC(DDETerminate)
     (void)pBasic;
     (void)bWrite;
 
-    // No DDE for "virtual" portal users
-    if( needSecurityRestrictions() )
-    {
-        StarBASIC::Error(ERRCODE_BASIC_NOT_IMPLEMENTED);
-        return;
-    }
-
     rPar.Get(0)->PutEmpty();
     int nArgs = (int)rPar.Count();
     if ( nArgs != 2 )
@@ -4026,13 +4005,6 @@ RTLFUNC(DDETerminateAll)
     (void)pBasic;
     (void)bWrite;
 
-    // No DDE for "virtual" portal users
-    if( needSecurityRestrictions() )
-    {
-        StarBASIC::Error(ERRCODE_BASIC_NOT_IMPLEMENTED);
-        return;
-    }
-
     rPar.Get(0)->PutEmpty();
     int nArgs = (int)rPar.Count();
     if ( nArgs != 1 )
@@ -4053,13 +4025,6 @@ RTLFUNC(DDERequest)
 {
     (void)pBasic;
     (void)bWrite;
-
-    // No DDE for "virtual" portal users
-    if( needSecurityRestrictions() )
-    {
-        StarBASIC::Error(ERRCODE_BASIC_NOT_IMPLEMENTED);
-        return;
-    }
 
     int nArgs = (int)rPar.Count();
     if ( nArgs != 3 )
@@ -4087,13 +4052,6 @@ RTLFUNC(DDEExecute)
     (void)pBasic;
     (void)bWrite;
 
-    // No DDE for "virtual" portal users
-    if( needSecurityRestrictions() )
-    {
-        StarBASIC::Error(ERRCODE_BASIC_NOT_IMPLEMENTED);
-        return;
-    }
-
     rPar.Get(0)->PutEmpty();
     int nArgs = (int)rPar.Count();
     if ( nArgs != 3 )
@@ -4115,13 +4073,6 @@ RTLFUNC(DDEPoke)
 {
     (void)pBasic;
     (void)bWrite;
-
-    // No DDE for "virtual" portal users
-    if( needSecurityRestrictions() )
-    {
-        StarBASIC::Error(ERRCODE_BASIC_NOT_IMPLEMENTED);
-        return;
-    }
 
     rPar.Get(0)->PutEmpty();
     int nArgs = (int)rPar.Count();
@@ -4687,7 +4638,7 @@ RTLFUNC(SetAttr)
     if ( rPar.Count() == 3 )
     {
         OUString aStr = rPar.Get(1)->GetOUString();
-        sal_Int16 nFlags = rPar.Get(2)->GetInteger();
+        SbAttributes nFlags = static_cast<SbAttributes>( rPar.Get(2)->GetInteger() );
 
         if( hasUno() )
         {
@@ -4696,9 +4647,9 @@ RTLFUNC(SetAttr)
             {
                 try
                 {
-                    bool bReadOnly = (nFlags & Sb_ATTR_READONLY) != 0;
+                    bool bReadOnly = bool(nFlags & SbAttributes::READONLY);
                     xSFI->setReadOnly( aStr, bReadOnly );
-                    bool bHidden   = (nFlags & Sb_ATTR_HIDDEN) != 0;
+                    bool bHidden   = bool(nFlags & SbAttributes::HIDDEN);
                     xSFI->setHidden( aStr, bHidden );
                 }
                 catch(const Exception & )

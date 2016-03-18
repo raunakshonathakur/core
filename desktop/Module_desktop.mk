@@ -17,6 +17,7 @@ $(eval $(call gb_Module_add_targets,desktop,\
     Library_deploymentmisc \
     Library_offacc \
     Library_sofficeapp \
+    $(if $(ENABLE_BREAKPAD),Library_crashreport) \
     $(if $(ENABLE_HEADLESS),,Library_spl) \
     Package_branding \
     $(if $(CUSTOM_BRAND_DIR),Package_branding_custom) \
@@ -33,6 +34,7 @@ ifneq (,$(filter DESKTOP,$(BUILD_TYPE)))
 $(eval $(call gb_Module_add_targets,desktop,\
     Executable_soffice_bin \
     Executable_unopkg_bin \
+    Executable_minidump_upload \
     Library_migrationoo2 \
     Library_migrationoo3 \
     Library_unopkgapp \

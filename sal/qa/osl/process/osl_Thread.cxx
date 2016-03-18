@@ -167,11 +167,11 @@ public:
             osl::MutexGuard g(m_aMutex);
             return m_nFlag;
         }
-    void addValue(T n)
+    void incValue()
         {
             //only one thread operate on the flag.
             osl::MutexGuard g(m_aMutex);
-            m_nFlag += n;
+            m_nFlag++;
         }
     void acquire() {m_aMutex.acquire();}
     void release() {m_aMutex.release();}
@@ -239,7 +239,7 @@ protected:
         {
             while(schedule())
             {
-                m_aFlag.addValue(1);
+                m_aFlag.incValue();
                 ThreadHelper::thread_sleep_tenth_sec(1);
             }
         }
@@ -298,7 +298,7 @@ protected:
             /// if the thread should terminate, schedule return false
             while (m_aFlag.getValue() < 20 && schedule())
             {
-                m_aFlag.addValue(1);
+                m_aFlag.incValue();
                 ThreadHelper::thread_sleep_tenth_sec(1);
 
                 if (m_nWaitSec != 0)
@@ -346,7 +346,7 @@ protected:
         {
             while (m_aFlag.getValue() < 10)
             {
-                m_aFlag.addValue(1);
+                m_aFlag.incValue();
                 ThreadHelper::thread_sleep_tenth_sec(1);
             }
         }
@@ -391,7 +391,7 @@ protected:
             //if the thread should terminate, schedule return false
             while (schedule())
             {
-                m_aFlag.addValue(1);
+                m_aFlag.incValue();
             }
         }
     void SAL_CALL onTerminated() override
@@ -449,16 +449,6 @@ namespace osl_Thread
     class create : public CppUnit::TestFixture
     {
     public:
-
-        // initialise your test code values here.
-        void setUp() override
-            {
-            }
-
-        void tearDown() override
-            {
-            }
-
         /** Simple create a thread.
 
             Create a simple thread, it just does add 1 to value(which initialized 0),
@@ -518,15 +508,6 @@ namespace osl_Thread
     class createSuspended : public CppUnit::TestFixture
     {
     public:
-        // initialise your test code values here.
-        void setUp() override
-            {
-            }
-
-        void tearDown() override
-            {
-            }
-
         /** Create a suspended thread, use the same class as create_001
 
             after create, wait enough time, check the value, if it's still the initial value, pass
@@ -599,15 +580,6 @@ namespace osl_Thread
     class suspend : public CppUnit::TestFixture
     {
     public:
-        // initialise your test code values here.
-        void setUp() override
-            {
-            }
-
-        void tearDown() override
-            {
-            }
-
         /** Use a thread which has a flag added 1 every second
 
             ALGORITHM:
@@ -653,15 +625,6 @@ namespace osl_Thread
     class resume : public CppUnit::TestFixture
     {
     public:
-        // initialise your test code values here.
-        void setUp() override
-            {
-            }
-
-        void tearDown() override
-            {
-            }
-
         /** check if the thread run samely as usual after suspend and resume
 
             ALGORITHM:
@@ -738,15 +701,6 @@ namespace osl_Thread
     class terminate : public CppUnit::TestFixture
     {
     public:
-        // initialise your test code values here.
-        void setUp() override
-            {
-            }
-
-        void tearDown() override
-            {
-            }
-
         /** Check after call terminate if the running thread running go on executing
 
             ALGORITHM:
@@ -817,15 +771,6 @@ namespace osl_Thread
     class join : public CppUnit::TestFixture
     {
     public:
-        // initialise your test code values here.
-        void setUp() override
-            {
-            }
-
-        void tearDown() override
-            {
-            }
-
         /** Check after call terminate if the thread running function will not go on executing
 
             the next statement after join will not exec before the thread terminate
@@ -909,17 +854,6 @@ namespace osl_Thread
     class isRunning : public CppUnit::TestFixture
     {
     public:
-        // initialise your test code values here.
-        void setUp() override
-            {
-            }
-
-        void tearDown() override
-            {
-            }
-
-        /**
-         */
         void isRunning_001()
             {
                 OCountThread *aCountThread = new OCountThread();
@@ -975,15 +909,6 @@ namespace osl_Thread
     class setPriority : public CppUnit::TestFixture
     {
     public:
-        // initialise your test code values here.
-        void setUp() override
-            {
-            }
-
-        void tearDown() override
-            {
-            }
-
         // insert your test code here.
         rtl::OString getPrioName(oslThreadPriority _aPriority)
             {
@@ -1433,11 +1358,6 @@ namespace osl_Thread
     class getPriority : public CppUnit::TestFixture
     {
     public:
-        // initialise your test code values here.
-        void setUp() override {}
-
-        void tearDown() override {}
-
         // insert your test code here.
         void getPriority_001()
             {
@@ -1520,9 +1440,6 @@ namespace osl_Thread
     class waittest : public CppUnit::TestFixture
     {
     public:
-        void setUp() override {}
-        void tearDown() override {}
-
         /** call wait in the run method
 
             ALGORITHM:
@@ -1580,9 +1497,6 @@ namespace osl_Thread
     class yield : public CppUnit::TestFixture
     {
     public:
-        void setUp() override {}
-        void tearDown() override {}
-
         void yield_001()
         {
             // insert your test code here.

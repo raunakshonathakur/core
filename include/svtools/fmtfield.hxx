@@ -95,7 +95,7 @@ protected:
     bool                m_bUseInputStringForFormatting;
 
 public:
-    FormattedField(vcl::Window* pParent, WinBits nStyle = 0, SvNumberFormatter* pInitialFormatter = nullptr, sal_Int32 nFormatKey = 0);
+    FormattedField(vcl::Window* pParent, WinBits nStyle = 0, SvNumberFormatter* pInitialFormatter = nullptr);
 
     // Min-/Max-management
     bool    HasMinValue() const         { return m_bHasMin; }
@@ -222,7 +222,7 @@ public:
         InputLine format.  That's also what you get in Calc when you edit a cell
         using F2
      */
-    void    UseInputStringForFormatting( bool bUseInputStr = true );
+    void    UseInputStringForFormatting();
     bool    IsUsingInputStringForFormatting() const { return m_bUseInputStringForFormatting;}
 
 protected:

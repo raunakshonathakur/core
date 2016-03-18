@@ -155,14 +155,6 @@ bool FuPoor::MouseButtonDown(const MouseEvent& rMEvt)
 
 /*************************************************************************
 |*
-|* String in Applikations-Statuszeile ausgeben
-|*
-\************************************************************************/
-
-//  WriteStatus gibt's nicht mehr
-
-/*************************************************************************
-|*
 |* Tastaturereignisse bearbeiten
 |*
 |* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
@@ -289,28 +281,36 @@ void FuPoor::ImpForceQuadratic(Rectangle& rRect)
 bool FuPoor::doConstructOrthogonal() const
 {
     // Detect whether we're moving an object or resizing.
-    bool bIsMoveMode = false;
     if (pView->IsDragObj())
     {
         const SdrHdl* pHdl = pView->GetDragStat().GetHdl();
         if (!pHdl || (!pHdl->IsCornerHdl() && !pHdl->IsVertexHdl()))
         {
-            bIsMoveMode = true;
+            return false;
         }
     }
 
-    // Detect image and resize proportionally, but don't constrain movement by default
-    if (!bIsMoveMode && pView->AreObjectsMarked())
+    // Detect image/media and resize proportionally, but don't constrain movement by default
+    if (pView->AreObjectsMarked())
     {
         const SdrMarkList& rMarkList = pView->GetMarkedObjectList();
         if (rMarkList.GetMarkCount() == 1)
         {
-            if (rMarkList.GetMark(0)->GetMarkedSdrObj()->GetObjIdentifier() == OBJ_GRAF)
-            {
-                return true;
-            }
+            sal_uInt16 aObjIdentifier = rMarkList.GetMark(0)->GetMarkedSdrObj()->GetObjIdentifier();
+            bool bIsMediaSelected = aObjIdentifier == OBJ_GRAF ||
+                                    aObjIdentifier == OBJ_MEDIA ||
+                                    aObjIdentifier == OBJ_OLE2;
+
+            SdrHdl* pHdl = pView->PickHandle(aMDPos);
+            // Resize proportionally when media is selected and the user drags on a corner
+            if (pHdl)
+                return bIsMediaSelected && pHdl->IsCornerHdl();
+            return bIsMediaSelected;
         }
     }
+    else if (aSfxRequest.GetSlot() == SID_DRAW_XPOLYGON || aSfxRequest.GetSlot() == SID_DRAW_XPOLYGON_NOFILL)
+        return true;
+
     return false;
 }
 

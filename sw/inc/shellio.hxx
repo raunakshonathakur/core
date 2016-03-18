@@ -374,7 +374,7 @@ protected:
     bool CopyNextPam( SwPaM ** );
 
     void PutNumFormatFontsInAttrPool();
-    void PutEditEngFontsInAttrPool( bool bIncl_CJK_CTL = true );
+    void PutEditEngFontsInAttrPool();
 
     virtual sal_uLong WriteStream() = 0;
     void                SetBaseURL( const OUString& rURL ) { sBaseURL = rURL; }
@@ -526,8 +526,7 @@ struct SwReaderWriterEntry
 
 namespace SwReaderWriter
 {
-    /// Return reader based on ReaderWriterEnum.
-    SW_DLLPUBLIC Reader* GetReader( ReaderWriterEnum eReader );
+    SW_DLLPUBLIC Reader* GetRtfReader();
 
     /// Return reader based on the name.
     Reader* GetReader( const OUString& rFltName );

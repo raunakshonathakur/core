@@ -189,7 +189,7 @@ void FormulaDialog::HideReference( bool /*bDoneRefMode*/)
 {
 }
 
-void FormulaDialog::ReleaseFocus( RefEdit* /*pEdit*/, RefButton* /*pButton*/)
+void FormulaDialog::ReleaseFocus( RefEdit* /*pEdit*/)
 {
 }
 
@@ -239,7 +239,7 @@ IMPL_LINK_TYPED( FormulaDialog, OnClickHdl, OAddFieldWindow& ,_rAddFieldDlg, voi
     }
     m_pEdit = nullptr;
     _rAddFieldDlg.Hide();
-    RefInputDoneAfter( true );
+    RefInputDoneAfter();
 }
 
 uno::Reference< sheet::XFormulaParser> FormulaDialog::getFormulaParser() const

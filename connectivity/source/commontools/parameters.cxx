@@ -219,7 +219,7 @@ namespace dbtools
             OUString tblName;
             xDetailField->getPropertyValue("TableName") >>= tblName;
             if (!tblName.isEmpty())
-                sFilter = ::dbtools::quoteTableName( m_xConnectionMetadata, tblName, ::dbtools::eInDataManipulation ) + ".";
+                sFilter = ::dbtools::quoteTableName( m_xConnectionMetadata, tblName, ::dbtools::EComposeRule::InDataManipulation ) + ".";
         }
         {
             OUString colName;
@@ -281,7 +281,7 @@ namespace dbtools
             ParameterInformation::iterator aPos = m_aParameterInformation.find( *pDetailFields );
             if ( aPos != m_aParameterInformation.end() )
             {   // there is an inner parameter with this name
-                aPos->second.eType = eLinkedByParamName;
+                aPos->second.eType = ParameterClassification::LinkedByParamName;
                 aStrippedDetailFields.push_back( *pDetailFields );
             }
             else
@@ -302,7 +302,7 @@ namespace dbtools
                             ParameterInformation::value_type( sNewParamName, ParameterMetaData( nullptr ) )
                         );
                     OSL_ENSURE( aInsertionPos.second, "ParameterManager::classifyLinks: there already was a parameter with this name!" );
-                    aInsertionPos.first->second.eType = eLinkedByColumnName;
+                    aInsertionPos.first->second.eType = ParameterClassification::LinkedByColumnName;
 
                     // remember the filter component
                     _out_rAdditionalFilterComponents.push_back( sFilterCondition );
@@ -398,7 +398,7 @@ namespace dbtools
                 }
 
                 // now set this filter at the 's filter manager
-                _rFilterManager.setFilterComponent( FilterManager::fcLinkFilter, sAdditionalFilter.makeStringAndClear() );
+                _rFilterManager.setFilterComponent( FilterManager::FilterComponent::LinkFilter, sAdditionalFilter.makeStringAndClear() );
 
                 _rColumnsInLinkDetails = true;
             }
@@ -431,7 +431,7 @@ namespace dbtools
 #if OSL_DEBUG_LEVEL > 0
             if ( aParam->second.aInnerIndexes.size() )
             {
-                if ( aParam->second.eType == eLinkedByColumnName )
+                if ( aParam->second.eType == ParameterClassification::LinkedByColumnName )
                 {
                     if ( nSmallestIndexLinkedByColumnName == -1 )
                         nSmallestIndexLinkedByColumnName = aParam->second.aInnerIndexes[ 0 ];
@@ -442,7 +442,7 @@ namespace dbtools
                 }
             }
 #endif
-            if ( aParam->second.eType != eFilledExternally )
+            if ( aParam->second.eType != ParameterClassification::FilledExternally )
                 continue;
 
             // check which of the parameters have already been visited (e.g. filled via XParameters)

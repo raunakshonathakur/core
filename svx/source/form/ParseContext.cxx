@@ -58,19 +58,19 @@ OUString OSystemParseContext::getErrorMessage(ErrorCode _eCode) const
     SolarMutexGuard aGuard;
     switch (_eCode)
     {
-        case ERROR_GENERAL:                 aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_ERROR); break;
-        case ERROR_VALUE_NO_LIKE:           aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_VALUE_NO_LIKE); break;
-        case ERROR_FIELD_NO_LIKE:           aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_FIELD_NO_LIKE); break;
-        case ERROR_INVALID_COMPARE:         aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_CRIT_NO_COMPARE); break;
-        case ERROR_INVALID_INT_COMPARE:     aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_INT_NO_VALID); break;
-        case ERROR_INVALID_DATE_COMPARE:    aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_ACCESS_DAT_NO_VALID); break;
-        case ERROR_INVALID_REAL_COMPARE:    aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_REAL_NO_VALID); break;
-        case ERROR_INVALID_TABLE_NOSUCH:    aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_TABLE); break;
-        case ERROR_INVALID_TABLE_OR_QUERY:  aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_TABLE_OR_QUERY); break;
-        case ERROR_INVALID_COLUMN:          aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_COLUMN); break;
-        case ERROR_INVALID_TABLE_EXIST:     aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_TABLE_EXISTS); break;
-        case ERROR_INVALID_QUERY_EXIST:     aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_QUERY_EXISTS); break;
-        case ERROR_NONE: break;
+        case ErrorCode::General:               aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_ERROR); break;
+        case ErrorCode::ValueNoLike:           aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_VALUE_NO_LIKE); break;
+        case ErrorCode::FieldNoLike:           aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_FIELD_NO_LIKE); break;
+        case ErrorCode::InvalidCompare:        aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_CRIT_NO_COMPARE); break;
+        case ErrorCode::InvalidIntCompare:     aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_INT_NO_VALID); break;
+        case ErrorCode::InvalidDateCompare:    aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_ACCESS_DAT_NO_VALID); break;
+        case ErrorCode::InvalidRealCompare:    aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_REAL_NO_VALID); break;
+        case ErrorCode::InvalidTableNosuch:    aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_TABLE); break;
+        case ErrorCode::InvalidTableOrQuery:   aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_TABLE_OR_QUERY); break;
+        case ErrorCode::InvalidColumn:         aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_COLUMN); break;
+        case ErrorCode::InvalidTableExist:     aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_TABLE_EXISTS); break;
+        case ErrorCode::InvalidQueryExist:     aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_QUERY_EXISTS); break;
+        case ErrorCode::None: break;
     }
     return aMsg;
 }
@@ -81,31 +81,31 @@ OString OSystemParseContext::getIntlKeywordAscii(InternationalKeyCode _eKey) con
     size_t nIndex = 0;
     switch ( _eKey )
     {
-        case KEY_LIKE:      nIndex = 0; break;
-        case KEY_NOT:       nIndex = 1; break;
-        case KEY_NULL:      nIndex = 2; break;
-        case KEY_TRUE:      nIndex = 3; break;
-        case KEY_FALSE:     nIndex = 4; break;
-        case KEY_IS:        nIndex = 5; break;
-        case KEY_BETWEEN:   nIndex = 6; break;
-        case KEY_OR:        nIndex = 7; break;
-        case KEY_AND:       nIndex = 8; break;
-        case KEY_AVG:       nIndex = 9; break;
-        case KEY_COUNT:     nIndex = 10; break;
-        case KEY_MAX:       nIndex = 11; break;
-        case KEY_MIN:       nIndex = 12; break;
-        case KEY_SUM:       nIndex = 13; break;
-        case KEY_EVERY:     nIndex = 14; break;
-        case KEY_ANY:       nIndex = 15; break;
-        case KEY_SOME:      nIndex = 16; break;
-        case KEY_STDDEV_POP: nIndex = 17; break;
-        case KEY_STDDEV_SAMP: nIndex = 18; break;
-        case KEY_VAR_SAMP:  nIndex = 19; break;
-        case KEY_VAR_POP:   nIndex = 20; break;
-        case KEY_COLLECT:   nIndex = 21; break;
-        case KEY_FUSION:    nIndex = 22; break;
-        case KEY_INTERSECTION: nIndex = 23; break;
-        case KEY_NONE:
+        case InternationalKeyCode::Like:      nIndex = 0; break;
+        case InternationalKeyCode::Not:       nIndex = 1; break;
+        case InternationalKeyCode::Null:      nIndex = 2; break;
+        case InternationalKeyCode::True:      nIndex = 3; break;
+        case InternationalKeyCode::False:     nIndex = 4; break;
+        case InternationalKeyCode::Is:        nIndex = 5; break;
+        case InternationalKeyCode::Between:   nIndex = 6; break;
+        case InternationalKeyCode::Or:        nIndex = 7; break;
+        case InternationalKeyCode::And:       nIndex = 8; break;
+        case InternationalKeyCode::Avg:       nIndex = 9; break;
+        case InternationalKeyCode::Count:     nIndex = 10; break;
+        case InternationalKeyCode::Max:       nIndex = 11; break;
+        case InternationalKeyCode::Min:       nIndex = 12; break;
+        case InternationalKeyCode::Sum:       nIndex = 13; break;
+        case InternationalKeyCode::Every:     nIndex = 14; break;
+        case InternationalKeyCode::Any:       nIndex = 15; break;
+        case InternationalKeyCode::Some:      nIndex = 16; break;
+        case InternationalKeyCode::StdDevPop: nIndex = 17; break;
+        case InternationalKeyCode::StdDevSamp: nIndex = 18; break;
+        case InternationalKeyCode::VarSamp:  nIndex = 19; break;
+        case InternationalKeyCode::VarPop:   nIndex = 20; break;
+        case InternationalKeyCode::Collect:   nIndex = 21; break;
+        case InternationalKeyCode::Fusion:    nIndex = 22; break;
+        case InternationalKeyCode::Intersection: nIndex = 23; break;
+        case InternationalKeyCode::None:
             OSL_FAIL( "OSystemParseContext::getIntlKeywordAscii: illegal argument!" );
             break;
     }
@@ -123,13 +123,13 @@ IParseContext::InternationalKeyCode OSystemParseContext::getIntlKeyCode(const OS
 {
     static const IParseContext::InternationalKeyCode Intl_TokenID[] =
     {
-        KEY_LIKE, KEY_NOT, KEY_NULL, KEY_TRUE,
-        KEY_FALSE, KEY_IS, KEY_BETWEEN, KEY_OR,
-        KEY_AND, KEY_AVG, KEY_COUNT, KEY_MAX,
-        KEY_MIN, KEY_SUM, KEY_EVERY,
-        KEY_ANY, KEY_SOME, KEY_STDDEV_POP,
-        KEY_STDDEV_SAMP, KEY_VAR_SAMP, KEY_VAR_POP,
-        KEY_COLLECT, KEY_FUSION, KEY_INTERSECTION
+        InternationalKeyCode::Like, InternationalKeyCode::Not, InternationalKeyCode::Null, InternationalKeyCode::True,
+        InternationalKeyCode::False, InternationalKeyCode::Is, InternationalKeyCode::Between, InternationalKeyCode::Or,
+        InternationalKeyCode::And, InternationalKeyCode::Avg, InternationalKeyCode::Count, InternationalKeyCode::Max,
+        InternationalKeyCode::Min, InternationalKeyCode::Sum, InternationalKeyCode::Every,
+        InternationalKeyCode::Any, InternationalKeyCode::Some, InternationalKeyCode::StdDevPop,
+        InternationalKeyCode::StdDevSamp, InternationalKeyCode::VarSamp, InternationalKeyCode::VarPop,
+        InternationalKeyCode::Collect, InternationalKeyCode::Fusion, InternationalKeyCode::Intersection
     };
 
     sal_uInt32 nCount = sizeof Intl_TokenID / sizeof Intl_TokenID[0];
@@ -140,7 +140,7 @@ IParseContext::InternationalKeyCode OSystemParseContext::getIntlKeyCode(const OS
             return Intl_TokenID[i];
     }
 
-    return KEY_NONE;
+    return InternationalKeyCode::None;
 }
 
 

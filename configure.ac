@@ -1265,6 +1265,13 @@ AC_ARG_ENABLE(kde4,
          KDE4 are available.]),
 ,)
 
+AC_ARG_ENABLE(gui,
+    AS_HELP_STRING([--disable-gui],
+        [Disable X11/Wayland support to reduce dependencies. Maybe useful for
+         headless servers, but soffice --headless works just fine without it.
+         Work in progress, use only if you are hacking on it.]),
+,enable_gui=yes)
+
 AC_ARG_ENABLE(randr,
     AS_HELP_STRING([--disable-randr],
         [Disable RandR support in the vcl project.]),
@@ -1484,11 +1491,6 @@ AC_ARG_ENABLE(openssl,
          components will either use GNUTLS or NSS. Work in progress,
          use only if you are hacking on it.]),
 ,enable_openssl=yes)
-
-AC_ARG_WITH(prebuilt-openssl,
-    AS_HELP_STRING([--with-prebuilt-openssl],
-        [Don't build OpenSSL but use prebuilt binaries. Only for use on Windows, when you can't build it,
-         thanks to the Cygwin fork() problem when running the Perl disaster in OpenSSL's build system.]))
 
 AC_ARG_ENABLE(library-bin-tar,
     AS_HELP_STRING([--enable-library-bin-tar],
@@ -3784,14 +3786,20 @@ if test "$COM_IS_CLANG" = TRUE; then
     CLANG_FULL_VERSION=`echo __clang_version__ | ${CC%-cl.exe*} -E -P -`
     CLANGVER=`echo $clang_version | $AWK -F. '{ print \$1*10000+\$2*100+\$3 }'`
     AC_MSG_RESULT([Clang $CLANG_FULL_VERSION, $CLANGVER])
+    AC_DEFINE_UNQUOTED(CLANG_VERSION,$CLANGVER)
     AC_DEFINE_UNQUOTED(CLANG_FULL_VERSION,$CLANG_FULL_VERSION)
 fi
 AC_SUBST(COM_IS_CLANG)
 
 if test "$CCACHE" != "" -a "$COM_IS_CLANG" = TRUE; then
     if test -z "$CCACHE_CPP2"; then
-        AC_MSG_WARN([Using ccache with Clang without CCACHE_CPP2 set causes spurious warnings.])
-        add_warning "Using ccache with Clang without CCACHE_CPP2 set causes spurious warnings."
+        if test "$enable_ccache" = "" ; then
+            AC_MSG_WARN([Using ccache with Clang without CCACHE_CPP2 set causes spurious warnings/errors.])
+            add_warning "Using ccache with Clang without CCACHE_CPP2 set causes spurious warnings/errors. Disabling it."
+            CCACHE=
+        else
+            AC_MSG_ERROR([Using --enable-ccache with Clang without CCACHE_CPP2 set causes spurious warnings/errors.])
+        fi
     fi
 fi
 
@@ -4540,8 +4548,12 @@ solaris*)
 esac
 
 if test "$with_x" = "no"; then
+    AC_MSG_ERROR([Use --disable-gui instead. How can we get rid of this option? No idea where it comes from.])
+fi
+
+if test "$enable_gui" = "no"; then
     if test "$USING_X11" != TRUE; then
-        AC_MSG_ERROR([$host_os operating system is not suitable to build LibreOffice with --without-x])
+        AC_MSG_ERROR([$host_os operating system is not suitable to build LibreOffice with --disable-gui.])
     fi
     USING_X11=
 fi
@@ -5272,9 +5284,13 @@ find_dotnetsdk46()
 {
     unset frametest
 
-    for ver in 4.6; do
-        # TODO(davido): Do we need to take care about 32bit?
+    for ver in 4.6.1 4.6; do
         reg_get_value_64 "HKEY_LOCAL_MACHINE/SOFTWARE/Wow6432Node/Microsoft/Microsoft SDKs/NETFXSDK/$ver/KitsInstallationFolder"
+        if test -n "$regvalue"; then
+            frametest=$regvalue
+            return
+        fi
+        reg_get_value_32 "HKEY_LOCAL_MACHINE/SOFTWARE/Microsoft/Microsoft SDKs/NETFXSDK/$ver/KitsInstallationFolder"
         if test -n "$regvalue"; then
             frametest=$regvalue
             return
@@ -5946,8 +5962,10 @@ if test "$GCC" = "yes"; then
             AC_LANG_PUSH([C++])
             AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <list>
-#if !defined __GLIBCXX__ ||(__GLIBCXX__ < 20080606 && __GLIBCXX__ != 20080306)
+#if defined __GLIBCXX__
+#if __GLIBCXX__ < 20080606 && __GLIBCXX__ != 20080306
 #error
+#endif
 #endif
                 ]])],[HAVE_THREADSAFE_STATICS=TRUE],[])
             AC_LANG_POP([C++])
@@ -5976,7 +5994,7 @@ AC_SUBST(HAVE_THREADSAFE_STATICS)
 dnl ===================================================================
 dnl visibility and other gcc features
 dnl ===================================================================
-if test "$GCC" = "yes"; then
+if test "$GCC" = "yes" -o "$COM_IS_CLANG" = TRUE; then
     AC_MSG_CHECKING([whether $CC supports -fvisibility=hidden])
     save_CFLAGS=$CFLAGS
     CFLAGS="$CFLAGS -Werror -fvisibility=hidden"
@@ -6041,13 +6059,61 @@ if test "$GCC" = "yes"; then
         ], [AC_MSG_RESULT([no])])
     CFLAGS=$save_CFLAGS
 
+    AC_MSG_CHECKING([whether $CXX defines __base_class_type_info in cxxabi.h])
+    AC_LANG_PUSH([C++])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+            #include <cstddef>
+            #include <cxxabi.h>
+            std::size_t f() { return sizeof(__cxxabiv1::__base_class_type_info); }
+        ])], [
+            AC_DEFINE([HAVE_CXXABI_H_BASE_CLASS_TYPE_INFO],[1])
+            AC_MSG_RESULT([yes])
+        ], [AC_MSG_RESULT([no])])
+    AC_LANG_POP([C++])
+
+    AC_MSG_CHECKING([whether $CXX defines __class_type_info in cxxabi.h])
+    AC_LANG_PUSH([C++])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+            #include <cstddef>
+            #include <cxxabi.h>
+            std::size_t f() { return sizeof(__cxxabiv1::__class_type_info); }
+        ])], [
+            AC_DEFINE([HAVE_CXXABI_H_CLASS_TYPE_INFO],[1])
+            AC_MSG_RESULT([yes])
+        ], [AC_MSG_RESULT([no])])
+    AC_LANG_POP([C++])
+
     AC_MSG_CHECKING([whether $CXX declares __cxa_allocate_exception in cxxabi.h])
     AC_LANG_PUSH([C++])
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([
             #include <cxxabi.h>
             void * f() { return __cxxabiv1::__cxa_allocate_exception(0); }
         ])], [
-            AC_DEFINE([HAVE_GCC_CXXABI_H_CXA_ALLOCATE_EXCEPTION],[1])
+            AC_DEFINE([HAVE_CXXABI_H_CXA_ALLOCATE_EXCEPTION],[1])
+            AC_MSG_RESULT([yes])
+        ], [AC_MSG_RESULT([no])])
+    AC_LANG_POP([C++])
+
+    AC_MSG_CHECKING([whether $CXX defines __cxa_eh_globals in cxxabi.h])
+    AC_LANG_PUSH([C++])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+            #include <cstddef>
+            #include <cxxabi.h>
+            std::size_t f() { return sizeof(__cxxabiv1::__cxa_eh_globals); }
+        ])], [
+            AC_DEFINE([HAVE_CXXABI_H_CXA_EH_GLOBALS],[1])
+            AC_MSG_RESULT([yes])
+        ], [AC_MSG_RESULT([no])])
+    AC_LANG_POP([C++])
+
+    AC_MSG_CHECKING([whether $CXX defines __cxa_exceptions in cxxabi.h])
+    AC_LANG_PUSH([C++])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+            #include <cstddef>
+            #include <cxxabi.h>
+            std::size_t f() { return sizeof(__cxxabiv1::__cxa_exceptions); }
+        ])], [
+            AC_DEFINE([HAVE_CXXABI_H_CXA_EXCEPTIONS],[1])
             AC_MSG_RESULT([yes])
         ], [AC_MSG_RESULT([no])])
     AC_LANG_POP([C++])
@@ -6058,7 +6124,7 @@ if test "$GCC" = "yes"; then
             #include <cxxabi.h>
             void * f() { return __cxxabiv1::__cxa_get_globals(); }
         ])], [
-            AC_DEFINE([HAVE_GCC_CXXABI_H_CXA_GET_GLOBALS],[1])
+            AC_DEFINE([HAVE_CXXABI_H_CXA_GET_GLOBALS],[1])
             AC_MSG_RESULT([yes])
         ], [AC_MSG_RESULT([no])])
     AC_LANG_POP([C++])
@@ -6069,7 +6135,31 @@ if test "$GCC" = "yes"; then
             #include <cxxabi.h>
             void f() { __cxxabiv1::__cxa_throw(0, 0, 0); }
         ])], [
-            AC_DEFINE([HAVE_GCC_CXXABI_H_CXA_THROW],[1])
+            AC_DEFINE([HAVE_CXXABI_H_CXA_THROW],[1])
+            AC_MSG_RESULT([yes])
+        ], [AC_MSG_RESULT([no])])
+    AC_LANG_POP([C++])
+
+    AC_MSG_CHECKING([whether $CXX defines __si_class_type_info in cxxabi.h])
+    AC_LANG_PUSH([C++])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+            #include <cstddef>
+            #include <cxxabi.h>
+            std::size_t f() { return sizeof(__cxxabiv1::__si_class_type_info); }
+        ])], [
+            AC_DEFINE([HAVE_CXXABI_H_SI_CLASS_TYPE_INFO],[1])
+            AC_MSG_RESULT([yes])
+        ], [AC_MSG_RESULT([no])])
+    AC_LANG_POP([C++])
+
+    AC_MSG_CHECKING([whether $CXX defines __vmi_class_type_info in cxxabi.h])
+    AC_LANG_PUSH([C++])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+            #include <cstddef>
+            #include <cxxabi.h>
+            std::size_t f() { return sizeof(__cxxabiv1::__vmi_class_type_info); }
+        ])], [
+            AC_DEFINE([HAVE_CXXABI_H_VMI_CLASS_TYPE_INFO],[1])
             AC_MSG_RESULT([yes])
         ], [AC_MSG_RESULT([no])])
     AC_LANG_POP([C++])
@@ -6304,11 +6394,6 @@ fi
 AC_MSG_CHECKING([whether $CXX supports C++14 constexpr])
 save_CXXFLAGS=$CXXFLAGS
 CXXFLAGS="$CXXFLAGS $CXXFLAGS_CXX11"
-if test "$ENABLE_DEBUG" != TRUE -a "$ENABLE_DBGUTIL" != TRUE \
-    -a "$ASSERT_ALWAYS_ABORT" != TRUE
-then
-    CXXFLAGS="$CXXFLAGS -DNDEBUG"
-fi
 AC_LANG_PUSH([C++])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     // A somewhat over-complicated way of checking for
@@ -6660,6 +6745,7 @@ else
     fi
 fi
 AC_SUBST(COMPILER_PLUGINS)
+AC_SUBST(COMPILER_PLUGINS_CXX)
 AC_SUBST(CLANGDIR)
 
 # Plugin to help linker.
@@ -7030,7 +7116,7 @@ if test "$ENABLE_JAVA" != ""; then
             add_warning "JAVA_HOME is set to /usr - this is very likely to be incorrect"
             add_warning "if this is the case, please inform the correct JAVA_HOME with --with-jdk-home"
         fi
-        dnl now that we have the path to the real javac, make a JAVA_HOME out of it..
+        dnl now that we probably have the path to the real javac, make a JAVA_HOME out of it..
         if test "$JAVA_HOME" != "/usr"; then
             if test "$_os" = "Darwin" -o "$OS_FOR_BUILD" = MACOSX; then
                 dnl Leopard returns a non-suitable path with readlink - points to "Current" only
@@ -7039,6 +7125,11 @@ if test "$ENABLE_JAVA" != ""; then
                 JAVA_HOME=$(echo $JAVA_HOME | $SED -e s,/CurrentJDK/Commands/javac$,/CurrentJDK/Home,)
             else
                 JAVA_HOME=$(echo $JAVA_HOME | $SED -e s,/bin/javac$,,)
+                dnl check that we have a directory as certain distros eg gentoo substitute javac for a script
+                dnl that checks which version to run
+                if test -f "$JAVA_HOME"; then
+                    JAVA_HOME=""; # set JAVA_HOME to null if it's a file
+                fi
             fi
         fi
     fi
@@ -8749,6 +8840,7 @@ if test "$with_system_boost" = "yes"; then
     SYSTEM_BOOST=TRUE
     AX_BOOST_BASE(1.47)
     AX_BOOST_DATE_TIME
+    AX_BOOST_FILESYSTEM
     AX_BOOST_IOSTREAMS
     mingw_boost_date_time_dll=`echo $BOOST_DATE_TIME_LIB | sed -e 's/^-l//' -e 's/\.dll$//'`
     libo_MINGW_TRY_DLL([$mingw_boost_date_time_dll])
@@ -8934,10 +9026,6 @@ if test "$with_system_nss" = "yes"; then
     libo_MINGW_CHECK_DLL([ssl3])
 fi
 
-if test $_os = WINNT -a -z "$ENABLE_RELEASE_BUILD" -a "$with_prebuilt_openssl" = yes; then
-    BUILD_TYPE="$BUILD_TYPE PREBUILT_OPENSSL"
-fi
-
 dnl ===================================================================
 dnl Check for system sane
 dnl ===================================================================
@@ -9109,7 +9197,7 @@ if test -z "$enable_orcus" -o "$enable_orcus" != no; then
     ENABLE_ORCUS="TRUE"
     AC_DEFINE(ENABLE_ORCUS)
 
-    libo_CHECK_SYSTEM_MODULE([orcus],[ORCUS],[liborcus-0.10 >= 0.9.0])
+    libo_CHECK_SYSTEM_MODULE([orcus],[ORCUS],[liborcus-0.11 >= 0.11.0])
     if test "$with_system_orcus" != "yes"; then
         if test "$SYSTEM_BOOST" = "TRUE"; then
             # ===========================================================
@@ -12789,7 +12877,10 @@ else
             # needed for msi packaging
             pathmunge "$WINDOWS_SDK_HOME/bin/x86" "before"
         fi
-        pathmunge "$DOTNET_FRAMEWORK_HOME/bin" "before"
+        # .NET 4.6 and higher don't have bin directory
+        if test -f "$DOTNET_FRAMEWORK_HOME/bin"; then
+            pathmunge "$DOTNET_FRAMEWORK_HOME/bin" "before"
+        fi
         pathmunge "$ASM_HOME" "before"
         pathmunge "$WINDOWS_SDK_HOME/bin" "before"
         pathmunge "$CSC_PATH" "before"
@@ -12855,10 +12946,10 @@ AC_CONFIG_HEADERS([config_host/config_eot.h])
 AC_CONFIG_HEADERS([config_host/config_extension_update.h])
 AC_CONFIG_HEADERS([config_host/config_cairo_canvas.h])
 AC_CONFIG_HEADERS([config_host/config_cups.h])
+AC_CONFIG_HEADERS([config_host/config_cxxabi.h])
 AC_CONFIG_HEADERS([config_host/config_dbus.h])
 AC_CONFIG_HEADERS([config_host/config_features.h])
 AC_CONFIG_HEADERS([config_host/config_folders.h])
-AC_CONFIG_HEADERS([config_host/config_gcc.h])
 AC_CONFIG_HEADERS([config_host/config_gio.h])
 AC_CONFIG_HEADERS([config_host/config_global.h])
 AC_CONFIG_HEADERS([config_host/config_graphite.h])

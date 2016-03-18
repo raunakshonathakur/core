@@ -50,12 +50,12 @@
 
 typedef time_t  osl_TStamp;
 
-typedef enum _osl_TLockMode
+enum osl_TLockMode
 {
     un_lock, read_lock, write_lock
-} osl_TLockMode;
+};
 
-typedef struct _osl_TFile
+struct osl_TFile
 {
     int     m_Handle;
     sal_Char*   m_pReadPtr;
@@ -63,16 +63,16 @@ typedef struct _osl_TFile
     sal_Char*   m_pWriteBuf;
     sal_uInt32  m_nWriteBufLen;
     sal_uInt32  m_nWriteBufFree;
-} osl_TFile;
+};
 
-typedef struct _osl_TProfileEntry
+struct osl_TProfileEntry
 {
     sal_uInt32  m_Line;
     sal_uInt32  m_Offset;
     sal_uInt32  m_Len;
-} osl_TProfileEntry;
+};
 
-typedef struct _osl_TProfileSection
+struct osl_TProfileSection
 {
     sal_uInt32  m_Line;
     sal_uInt32  m_Offset;
@@ -80,10 +80,10 @@ typedef struct _osl_TProfileSection
     sal_uInt32  m_NoEntries;
     sal_uInt32  m_MaxEntries;
     osl_TProfileEntry*  m_Entries;
-} osl_TProfileSection;
+};
 
 /* Profile-data structure hidden behind oslProfile: */
-typedef struct _osl_TProfileImpl
+struct osl_TProfileImpl
 {
     sal_uInt32  m_Flags;
     osl_TFile*  m_pFile;
@@ -97,7 +97,7 @@ typedef struct _osl_TProfileImpl
     osl_TProfileSection* m_Sections;
     pthread_mutex_t m_AccessLock;
     bool        m_bIsValid;
-} osl_TProfileImpl;
+};
 
 static osl_TFile* openFileImpl(const sal_Char* pszFilename, oslProfileOption ProfileFlags);
 static osl_TStamp closeFileImpl(osl_TFile* pFile, oslProfileOption Flags);
@@ -320,19 +320,17 @@ sal_Bool SAL_CALL osl_flushProfile(oslProfile Profile)
 
 static bool writeProfileImpl(osl_TFile* pFile)
 {
-#if OSL_DEBUG_LEVEL > 1
-    unsigned int nLen=0;
-#endif
-
     if ( !( pFile != nullptr && pFile->m_Handle >= 0 ) || ( pFile->m_pWriteBuf == nullptr ) )
     {
         return false;
     }
 
-#if OSL_DEBUG_LEVEL > 1
-    nLen=strlen(pFile->m_pWriteBuf);
-    SAL_WARN_IF(nLen != (pFile->m_nWriteBufLen - pFile->m_nWriteBufFree), "sal.osl", "nLen != (pFile->m_nWriteBufLen - pFile->m_nWriteBufFree)");
-#endif
+    SAL_WARN_IF(
+        (strlen(pFile->m_pWriteBuf)
+         != pFile->m_nWriteBufLen - pFile->m_nWriteBufFree),
+        "sal.osl",
+        strlen(pFile->m_pWriteBuf) << " != "
+            << (pFile->m_nWriteBufLen - pFile->m_nWriteBufFree));
 
     if ( !safeWrite(pFile->m_Handle, pFile->m_pWriteBuf, pFile->m_nWriteBufLen - pFile->m_nWriteBufFree) )
     {

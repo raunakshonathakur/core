@@ -668,7 +668,7 @@ void SmElementsControl::build()
             addElement(aEquation, aEquation, "");
             aEquation = "f ( x ) = sum from { { i = 0 } } to { infinity } { {f^{(i)}(0)} over {i!} x^i}";
             addElement(aEquation, aEquation, "");
-            aEquation = "f ( x ) = {1} over {%sigma sqrt{2%pi} }e^-{{(x-%mu)^2} over {2%sigma^2}}";
+            aEquation = "f ( x ) = {1} over {%sigma sqrt{2%pi} }func e^-{{(x-%mu)^2} over {2%sigma^2}}";
             addElement(aEquation, aEquation, "");
         }
         break;
@@ -760,7 +760,7 @@ IMPL_LINK_TYPED(SmElementsDockingWindow, SelectClickHandler, SmElement&, rElemen
     {
         pViewSh->GetViewFrame()->GetDispatcher()->Execute(
             SID_INSERTCOMMANDTEXT, SfxCallMode::RECORD,
-            new SfxStringItem(SID_INSERTCOMMANDTEXT, rElement.getText()), 0L);
+            new SfxStringItem(SID_INSERTCOMMANDTEXT, rElement.getText()), 0);
     }
 }
 

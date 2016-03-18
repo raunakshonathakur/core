@@ -35,6 +35,7 @@
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/container/XEnumeration.hpp>
 #include <unotools/localedatawrapper.hxx>
+#include <o3tl/typed_flags_set.hxx>
 
 class SbiInstance;                  // active StarBASIC process
 class SbiRuntime;                   // active StarBASIC procedure instance
@@ -48,12 +49,11 @@ class  SbiDllMgr;
 class  SvNumberFormatter;           // time/date functions
 enum class SbiImageFlags;
 
-enum ForType
-{
-    FOR_TO,
-    FOR_EACH_ARRAY,
-    FOR_EACH_COLLECTION,
-    FOR_EACH_XENUMERATION
+enum class ForType {
+    To,
+    EachArray,
+    EachCollection,
+    EachXEnumeration
 };
 
 struct SbiForStack {                // for/next stack:
@@ -63,7 +63,7 @@ struct SbiForStack {                // for/next stack:
     SbxVariableRef  refInc;         // increment expression
 
     // For each support
-    ForType         eForType;
+    ForType             eForType;
     sal_Int32           nCurCollectionIndex;
     sal_Int32*          pArrayCurIndices;
     sal_Int32*          pArrayLowerBounds;
@@ -72,12 +72,13 @@ struct SbiForStack {                // for/next stack:
 
     SbiForStack()
         : pNext(nullptr)
-        , eForType(FOR_TO)
+        , eForType(ForType::To)
         , nCurCollectionIndex(0)
         , pArrayCurIndices(nullptr)
         , pArrayLowerBounds(nullptr)
         , pArrayUpperBounds(nullptr)
     {}
+
     ~SbiForStack()
     {
         delete[] pArrayCurIndices;
@@ -86,18 +87,25 @@ struct SbiForStack {                // for/next stack:
     }
 };
 
-struct SbiGosubStack {              // GOSUB-Stack:
-    SbiGosubStack* pNext;           // Chain
-    const sal_uInt8* pCode;             // Return-Pointer
-    sal_uInt16 nStartForLvl;            // #118235: For Level in moment of gosub
-};
-
 #define MAXRECURSION 500
 
-#define Sb_ATTR_READONLY    0x0001
-#define Sb_ATTR_HIDDEN      0x0002
-#define Sb_ATTR_DIRECTORY   0x0010
+struct SbiGosubStack {              // GOSUB-Stack:
+    SbiGosubStack* pNext;           // Chain
+    const sal_uInt8* pCode;         // Return-Pointer
+    sal_uInt16 nStartForLvl;        // #118235: For Level in moment of gosub
+};
 
+enum class SbAttributes {
+    NONE          = 0x0000,
+    READONLY      = 0x0001,
+    HIDDEN        = 0x0002,
+    DIRECTORY     = 0x0010
+};
+
+namespace o3tl
+{
+    template<> struct typed_flags<SbAttributes> : is_typed_flags<SbAttributes, 0x13> {};
+}
 
 class WildCard;
 
@@ -106,7 +114,7 @@ class SbiRTLData
 public:
 
     ::osl::Directory* pDir;
-    sal_Int16   nDirFlags;
+    SbAttributes nDirFlags;
     short   nCurDirPos;
 
     OUString sFullNameToBeChecked;
@@ -298,7 +306,7 @@ class SbiRuntime
 
     void PushVar( SbxVariable* );
     SbxVariableRef PopVar();
-    SbxVariable* GetTOS( short=0 );
+    SbxVariable* GetTOS();
     void TOSMakeTemp();
     void ClearExprStack();
 
@@ -426,13 +434,6 @@ inline void checkArithmeticOverflow( SbxVariable* pVar )
 
 
 StarBASIC* GetCurrentBasic( StarBASIC* pRTBasic );
-
-// Get information if security restrictions should be
-// used (File IO based on UCB, no RTL function SHELL
-// no DDE functionality, no DLLCALL) in basic because
-// of portal "virtual" users (portal user != UNIX user)
-// (Implemented in iosys.cxx)
-bool needSecurityRestrictions();
 
 // Returns true if UNO is available, otherwise the old
 // file system implementation has to be used

@@ -12,17 +12,21 @@
 #include <cppunit/TestAssert.h>
 #include "qahelper.hxx"
 
-#include <unotools/tempfile.hxx>
 #include <unotools/ucbstreamhelper.hxx>
 
 #include <test/xmltesttools.hxx>
 
 #include <com/sun/star/packages/zip/ZipFileAccess.hpp>
 
-xmlDocPtr XPathHelper::parseExport(ScDocShell* pShell, uno::Reference<lang::XMultiServiceFactory> xSFactory, const OUString& rFile, sal_Int32 nFormat)
+xmlDocPtr XPathHelper::parseExport(ScDocShell& rShell, uno::Reference<lang::XMultiServiceFactory> xSFactory, const OUString& rFile, sal_Int32 nFormat)
 {
-    std::shared_ptr<utl::TempFile> pTempFile = ScBootstrapFixture::exportTo(pShell, nFormat);
+    std::shared_ptr<utl::TempFile> pTempFile = ScBootstrapFixture::exportTo(&rShell, nFormat);
 
+    return parseExport(pTempFile, xSFactory, rFile);
+}
+
+xmlDocPtr XPathHelper::parseExport(std::shared_ptr<utl::TempFile> pTempFile, uno::Reference<lang::XMultiServiceFactory> xSFactory, const OUString& rFile)
+{
     // Read the XML stream we're interested in.
     uno::Reference<packages::zip::XZipFileAccess2> xNameAccess = packages::zip::ZipFileAccess::createWithURL(comphelper::getComponentContext(xSFactory), pTempFile->GetURL());
     uno::Reference<io::XInputStream> xInputStream(xNameAccess->getByName(rFile), uno::UNO_QUERY);

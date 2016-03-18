@@ -172,12 +172,13 @@ void ScViewFunc::PasteRTF( SCCOL nStartCol, SCROW nStartRow,
         ShowAllCursors();
     }
 }
-void ScViewFunc::DoRefConversion( bool bRecord )
+void ScViewFunc::DoRefConversion()
 {
     ScDocument* pDoc = GetViewData().GetDocument();
     ScMarkData& rMark = GetViewData().GetMarkData();
     SCTAB nTabCount = pDoc->GetTableCount();
-    if (bRecord && !pDoc->IsUndoEnabled())
+    bool bRecord = true;
+    if (!pDoc->IsUndoEnabled())
         bRecord = false;
 
     ScRange aMarkRange;
@@ -297,7 +298,7 @@ void ScViewFunc::DoRefConversion( bool bRecord )
         ErrorMessage(STR_ERR_NOREF);
 }
 //  Thesaurus - Undo ok
-void ScViewFunc::DoThesaurus( bool bRecord )
+void ScViewFunc::DoThesaurus()
 {
     SCCOL nCol;
     SCROW nRow;
@@ -311,7 +312,8 @@ void ScViewFunc::DoThesaurus( bool bRecord )
     std::unique_ptr<ESelection> pEditSel;
     std::unique_ptr<ScEditEngineDefaulter> pThesaurusEngine;
     bool bIsEditMode = GetViewData().HasEditView(eWhich);
-    if (bRecord && !rDoc.IsUndoEnabled())
+    bool bRecord = true;
+    if (!rDoc.IsUndoEnabled())
         bRecord = false;
     if (bIsEditMode)                                            // edit mode active
     {
@@ -417,13 +419,13 @@ void ScViewFunc::DoThesaurus( bool bRecord )
     pDocSh->PostPaintGridAll();
 }
 
-void ScViewFunc::DoHangulHanjaConversion( bool bRecord )
+void ScViewFunc::DoHangulHanjaConversion()
 {
     ScConversionParam aConvParam( SC_CONVERSION_HANGULHANJA, LANGUAGE_KOREAN, 0, true );
-    DoSheetConversion( aConvParam, bRecord );
+    DoSheetConversion( aConvParam );
 }
 
-void ScViewFunc::DoSheetConversion( const ScConversionParam& rConvParam, bool bRecord )
+void ScViewFunc::DoSheetConversion( const ScConversionParam& rConvParam )
 {
     SCCOL nCol;
     SCROW nRow;
@@ -435,7 +437,8 @@ void ScViewFunc::DoSheetConversion( const ScConversionParam& rConvParam, bool bR
     ScSplitPos eWhich = rViewData.GetActivePart();
     EditView* pEditView = nullptr;
     bool bIsEditMode = rViewData.HasEditView(eWhich);
-    if (bRecord && !rDoc.IsUndoEnabled())
+    bool bRecord = true;
+    if (!rDoc.IsUndoEnabled())
         bRecord = false;
     if (bIsEditMode)                                            // edit mode active
     {
@@ -575,13 +578,13 @@ bool ScViewFunc::PasteFile( const Point& rPos, const OUString& rFile, bool bLink
         const SfxStringItem aMediaURLItem( SID_INSERT_AVMEDIA, aStrURL );
         return ( nullptr != GetViewData().GetDispatcher().Execute(
                                 SID_INSERT_AVMEDIA, SfxCallMode::SYNCHRON,
-                                &aMediaURLItem, 0L ) );
+                                &aMediaURLItem, 0 ) );
     }
 
     if (!bLink)     // for bLink only graphics or URL
     {
         // 1. can I open the file?
-        const SfxFilter* pFlt = nullptr;
+        std::shared_ptr<const SfxFilter> pFlt;
 
         // search only for its own filters, without selection box (as in ScDocumentLoader)
         SfxFilterMatcher aMatcher( ScDocShell::Factory().GetFilterContainer()->GetName() );
@@ -589,7 +592,7 @@ bool ScViewFunc::PasteFile( const Point& rPos, const OUString& rFile, bool bLink
         // #i73992# GuessFilter no longer calls UseInteractionHandler.
         // This is UI, so it can be called here.
         aSfxMedium.UseInteractionHandler(true);
-        ErrCode nErr = aMatcher.GuessFilter( aSfxMedium, &pFlt );
+        ErrCode nErr = aMatcher.GuessFilter( aSfxMedium, pFlt );
 
         if ( pFlt && !nErr )
         {
@@ -603,7 +606,7 @@ bool ScViewFunc::PasteFile( const Point& rPos, const OUString& rFile, bool bLink
             // Open Asynchronously, because it can also happen from D&D
             // and that is not so good for the MAC...
             return ( nullptr != rDispatcher.Execute( SID_OPENDOC,
-                                    SfxCallMode::ASYNCHRON, &aFileNameItem, &aFilterItem, &aTargetItem, 0L) );
+                                    SfxCallMode::ASYNCHRON, &aFileNameItem, &aFilterItem, &aTargetItem, 0) );
         }
     }
 

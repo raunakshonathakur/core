@@ -75,8 +75,7 @@ public:
             <TRUE/> whenever the box is used in import dialogs. */
     void                FillFromDbTextEncodingMap(
                             bool bExcludeImportSubsets = false,
-                            sal_uInt32 nExcludeInfoFlags = 0,
-                            sal_uInt32 nButIncludeInfoFlags = 0
+                            sal_uInt32 nExcludeInfoFlags = 0
                             );
 
     /** Fill with all known MIME encodings and select the best according to
@@ -84,15 +83,12 @@ public:
      */
     void                FillWithMimeAndSelectBest();
 
-    void                InsertTextEncoding( const rtl_TextEncoding nEnc,
-                            sal_Int32  nPos = LISTBOX_APPEND );
+    void                InsertTextEncoding( const rtl_TextEncoding nEnc );
 
     void                InsertTextEncoding( const rtl_TextEncoding nEnc,
-                            const OUString& rEntry,
-                            sal_Int32  nPos = LISTBOX_APPEND );
+                            const OUString& rEntry );
 
-    void                SelectTextEncoding( const rtl_TextEncoding nEnc,
-                            bool bSelect = true );
+    void                SelectTextEncoding( const rtl_TextEncoding nEnc );
 
     rtl_TextEncoding    GetSelectTextEncoding() const;
 };

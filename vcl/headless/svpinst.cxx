@@ -142,8 +142,12 @@ void SvpSalInstance::deregisterFrame( SalFrame* pFrame )
         std::list< SalUserEvent >::iterator it = m_aUserEvents.begin();
         do
         {
-            if( it->m_pFrame    == pFrame )
+            if( it->m_pFrame == pFrame )
             {
+                if (it->m_nEvent == SALEVENT_USEREVENT)
+                {
+                    delete static_cast<ImplSVEvent *>(it->m_pData);
+                }
                 it = m_aUserEvents.erase( it );
             }
             else
@@ -291,7 +295,7 @@ SalYieldResult SvpSalInstance::DoYield(bool bWait, bool bHandleAllCurrentEvents,
                 {
                     // this would be a good time to post a paint
                     const SvpSalFrame* pSvpFrame = static_cast<const SvpSalFrame*>(it->m_pFrame);
-                    pSvpFrame->PostPaint(false);
+                    pSvpFrame->PostPaint();
                 }
             }
         }

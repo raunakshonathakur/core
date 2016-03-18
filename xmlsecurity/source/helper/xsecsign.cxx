@@ -153,7 +153,7 @@ cssu::Reference< cssxc::sax::XReferenceResolvedListener > XSecController::prepar
     {
         const SignatureReferenceInformation& refInfor = vReferenceInfors[i];
 
-        cssu::Reference< com::sun::star::io::XInputStream > xInputStream
+        cssu::Reference< css::io::XInputStream > xInputStream
             = getObjectInputStream( refInfor.ouURI );
 
         if (xInputStream.is())
@@ -226,9 +226,10 @@ void XSecController::setX509Certificate(
     sal_Int32 nSecurityId,
     const OUString& ouX509IssuerName,
     const OUString& ouX509SerialNumber,
-    const OUString& ouX509Cert)
+    const OUString& ouX509Cert,
+    const OUString& ouX509CertDigest)
 {
-    setX509Certificate(nSecurityId, -1, ouX509IssuerName, ouX509SerialNumber, ouX509Cert);
+    setX509Certificate(nSecurityId, -1, ouX509IssuerName, ouX509SerialNumber, ouX509Cert, ouX509CertDigest);
 }
 
 void XSecController::setX509Certificate(
@@ -236,7 +237,8 @@ void XSecController::setX509Certificate(
     const sal_Int32 nSecurityEnvironmentIndex,
     const OUString& ouX509IssuerName,
     const OUString& ouX509SerialNumber,
-    const OUString& ouX509Cert)
+    const OUString& ouX509Cert,
+    const OUString& ouX509CertDigest)
 {
     int index = findSignatureInfor( nSecurityId );
 
@@ -247,6 +249,7 @@ void XSecController::setX509Certificate(
         isi.signatureInfor.ouX509IssuerName = ouX509IssuerName;
         isi.signatureInfor.ouX509SerialNumber = ouX509SerialNumber;
         isi.signatureInfor.ouX509Certificate = ouX509Cert;
+        isi.signatureInfor.ouCertDigest = ouX509CertDigest;
         m_vInternalSignatureInformations.push_back( isi );
     }
     else
@@ -256,13 +259,14 @@ void XSecController::setX509Certificate(
         si.ouX509IssuerName = ouX509IssuerName;
         si.ouX509SerialNumber = ouX509SerialNumber;
         si.ouX509Certificate = ouX509Cert;
+        si.ouCertDigest = ouX509CertDigest;
         si.nSecurityEnvironmentIndex = nSecurityEnvironmentIndex;
     }
 }
 
 void XSecController::setDate(
     sal_Int32 nSecurityId,
-    const ::com::sun::star::util::DateTime& rDateTime )
+    const css::util::DateTime& rDateTime )
 {
     int index = findSignatureInfor( nSecurityId );
 
@@ -350,7 +354,7 @@ bool XSecController::WriteSignature(
         {
             m_pErrorMessage = ERROR_SAXEXCEPTIONDURINGCREATION;
         }
-        catch( com::sun::star::io::IOException& )
+        catch( css::io::IOException& )
         {
             m_pErrorMessage = ERROR_IOEXCEPTIONDURINGCREATION;
         }

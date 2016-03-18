@@ -268,12 +268,11 @@ void ScRangeData::GetSymbol( OUString& rSymbol, const ScAddress& rPos, const For
     rSymbol = aStr;
 }
 
-void ScRangeData::UpdateSymbol( OUStringBuffer& rBuffer, const ScAddress& rPos,
-                                const FormulaGrammar::Grammar eGrammar )
+void ScRangeData::UpdateSymbol( OUStringBuffer& rBuffer, const ScAddress& rPos )
 {
     std::unique_ptr<ScTokenArray> pTemp( pCode->Clone() );
     ScCompiler aComp( pDoc, rPos, *pTemp.get());
-    aComp.SetGrammar(eGrammar);
+    aComp.SetGrammar(formula::FormulaGrammar::GRAM_DEFAULT);
     aComp.MoveRelWrap(GetMaxCol(), GetMaxRow());
     aComp.CreateStringFromTokenArray( rBuffer );
 }
@@ -464,7 +463,8 @@ void ScRangeData::MakeValidName( OUString& rName )
         ScAddress::Details details( static_cast<FormulaGrammar::AddressConvention>( nConv ) );
         // Don't check Parse on VALID, any partial only VALID may result in
         // #REF! during compile later!
-        while (aRange.Parse( rName, nullptr, details) || aAddr.Parse( rName, nullptr, details))
+        while (aRange.Parse(rName, nullptr, details) != ScRefFlags::ZERO ||
+                aAddr.Parse(rName, nullptr, details) != ScRefFlags::ZERO)
         {
             // Range Parse is partially valid also with invalid sheet name,
             // Address Parse dito, during compile name would generate a #REF!
@@ -499,8 +499,11 @@ bool ScRangeData::IsNameValid( const OUString& rName, ScDocument* pDoc )
         ScAddress::Details details( static_cast<FormulaGrammar::AddressConvention>( nConv ) );
         // Don't check Parse on VALID, any partial only VALID may result in
         // #REF! during compile later!
-        if (aRange.Parse( rName, pDoc, details) || aAddr.Parse( rName, pDoc, details))
+        if (aRange.Parse(rName, pDoc, details) != ScRefFlags::ZERO ||
+             aAddr.Parse(rName, pDoc, details) != ScRefFlags::ZERO )
+        {
             return false;
+        }
     }
     return true;
 }

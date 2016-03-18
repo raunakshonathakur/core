@@ -638,7 +638,7 @@ GridId IcnGridMap_Impl::GetGrid( sal_uInt16 nGridX, sal_uInt16 nGridY )
         return nGridY + ( static_cast<GridId>(nGridX) * _nGridRows );
 }
 
-GridId IcnGridMap_Impl::GetGrid( const Point& rDocPos, bool* pbClipped )
+GridId IcnGridMap_Impl::GetGrid( const Point& rDocPos )
 {
     Create();
 
@@ -648,20 +648,15 @@ GridId IcnGridMap_Impl::GetGrid( const Point& rDocPos, bool* pbClipped )
     nY -= TBOFFS_WINBORDER;
     nX /= _pView->nGridDX;
     nY /= _pView->nGridDY;
-    bool bClipped = false;
     if( nX >= _nGridCols )
     {
         nX = _nGridCols - 1;
-        bClipped = true;
     }
     if( nY >= _nGridRows )
     {
         nY = _nGridRows - 1;
-        bClipped = true;
     }
     GridId nId = GetGrid( (sal_uInt16)nX, (sal_uInt16)nY );
-    if( pbClipped )
-        *pbClipped = bClipped;
     DBG_ASSERT(nId <(sal_uLong)(_nGridCols*_nGridRows),"GetGrid failed");
     return nId;
 }
@@ -679,7 +674,7 @@ Rectangle IcnGridMap_Impl::GetGridRect( GridId nId )
         nTop + _pView->nGridDY );
 }
 
-GridId IcnGridMap_Impl::GetUnoccupiedGrid( bool bOccupyFound )
+GridId IcnGridMap_Impl::GetUnoccupiedGrid()
 {
     Create();
     sal_uLong nStart = 0;
@@ -692,8 +687,7 @@ GridId IcnGridMap_Impl::GetUnoccupiedGrid( bool bOccupyFound )
         {
             if( !_pGridMap[ nCur ] )
             {
-                if( bOccupyFound )
-                    _pGridMap[ nCur ] = true;
+                _pGridMap[ nCur ] = true;
                 return (GridId)nCur;
             }
         }
@@ -709,11 +703,11 @@ GridId IcnGridMap_Impl::GetUnoccupiedGrid( bool bOccupyFound )
 // An entry only means that there's a GridRect lying under its center. This
 // variant is much faster than allocating via the bounding rectangle but can
 // lead to small overlaps.
-void IcnGridMap_Impl::OccupyGrids( const SvxIconChoiceCtrlEntry* pEntry, bool bOccupy )
+void IcnGridMap_Impl::OccupyGrids( const SvxIconChoiceCtrlEntry* pEntry )
 {
     if( !_pGridMap || !SvxIconChoiceCtrl_Impl::IsBoundingRectValid( pEntry->aRect ))
         return;
-    OccupyGrid( GetGrid( pEntry->aRect.Center()), bOccupy );
+    OccupyGrid( GetGrid( pEntry->aRect.Center()) );
 }
 
 void IcnGridMap_Impl::Clear()

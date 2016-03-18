@@ -167,12 +167,12 @@ bool ScFormulaReferenceHelper::ParseWithNames( ScRangeList& rRanges, const OUStr
         ScRange aRange;
         OUString aRangeStr( rStr.getToken( nToken, ';' ) );
 
-        sal_uInt16 nFlags = aRange.ParseAny( aRangeStr, pDoc, aDetails );
-        if ( nFlags & SCA_VALID )
+        ScRefFlags nFlags = aRange.ParseAny( aRangeStr, pDoc, aDetails );
+        if ( nFlags & ScRefFlags::VALID )
         {
-            if ( (nFlags & SCA_TAB_3D) == 0 )
+            if ( (nFlags & ScRefFlags::TAB_3D) == ScRefFlags::ZERO )
                 aRange.aStart.SetTab( nRefTab );
-            if ( (nFlags & SCA_TAB2_3D) == 0 )
+            if ( (nFlags & ScRefFlags::TAB2_3D) == ScRefFlags::ZERO )
                 aRange.aEnd.SetTab( aRange.aStart.Tab() );
             rRanges.Append( aRange );
         }
@@ -285,11 +285,11 @@ void ScFormulaReferenceHelper::ShowReference(const OUString& rStr)
     }
 }
 
-void ScFormulaReferenceHelper::ReleaseFocus( formula::RefEdit* pEdit, formula::RefButton* pButton )
+void ScFormulaReferenceHelper::ReleaseFocus( formula::RefEdit* pEdit )
 {
     if( !pRefEdit && pEdit )
     {
-        m_pDlg->RefInputStart( pEdit, pButton );
+        m_pDlg->RefInputStart( pEdit );
     }
 
     ScTabViewShell* pViewShell = ScTabViewShell::GetActiveViewShell();
@@ -679,7 +679,7 @@ void ScFormulaReferenceHelper::ViewShellChanged()
 
     EnableSpreadsheets();
 }
-void ScFormulaReferenceHelper::EnableSpreadsheets(bool bFlag, bool bChildren)
+void ScFormulaReferenceHelper::EnableSpreadsheets(bool bFlag)
 {
     ScDocShell* pDocShell = static_cast<ScDocShell*>(SfxObjectShell::GetFirst(checkSfxObjectShell<ScDocShell>));
     while( pDocShell )
@@ -701,8 +701,7 @@ void ScFormulaReferenceHelper::EnableSpreadsheets(bool bFlag, bool bChildren)
                         if(pParent)
                         {
                             pParent->EnableInput(bFlag,false);
-                            if(bChildren)
-                                pViewSh->EnableRefInput(bFlag);
+                            pViewSh->EnableRefInput(bFlag);
                         }
                     }
                 }
@@ -963,9 +962,9 @@ void ScRefHandler::ShowReference(const OUString& rStr)
     m_aHelper.ShowReference(rStr);
 }
 
-void ScRefHandler::ReleaseFocus( formula::RefEdit* pEdit, formula::RefButton* pButton )
+void ScRefHandler::ReleaseFocus( formula::RefEdit* pEdit )
 {
-    m_aHelper.ReleaseFocus( pEdit,pButton );
+    m_aHelper.ReleaseFocus( pEdit );
 }
 
 void ScRefHandler::RefInputDone( bool bForced )

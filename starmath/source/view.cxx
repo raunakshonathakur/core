@@ -467,15 +467,6 @@ void SmGraphicWindow::KeyInput(const KeyEvent& rKEvt)
         {
             if(!rKEvt.GetKeyCode().IsShift())
                 rCursor.InsertRow();
-#ifdef DEBUG_ENABLE_DUMPASDOT
-            else {
-                SmNode *pTree = (SmNode*)pViewShell->GetDoc()->GetFormulaTree();
-                std::fstream file("/tmp/smath-dump.gv", std::fstream::out);
-                OUString label(pViewShell->GetDoc()->GetText());
-                pTree->DumpAsDot(file, &label);
-                file.close();
-            }
-#endif /* DEBUG_ENABLE_DUMPASDOT */
         }break;
         case KEY_DELETE:
         {
@@ -582,7 +573,7 @@ void SmGraphicWindow::Command(const CommandEvent& rCEvt)
                 if  ( pWData && CommandWheelMode::ZOOM == pWData->GetMode() )
                 {
                     sal_uInt16 nTmpZoom = GetZoom();
-                    if( 0L > pWData->GetDelta() )
+                    if( 0 > pWData->GetDelta() )
                         nTmpZoom -= 10;
                     else
                         nTmpZoom += 10;
@@ -1286,7 +1277,7 @@ SfxPrinter* SmViewShell::GetPrinter(bool bCreate)
     return nullptr;
 }
 
-sal_uInt16 SmViewShell::SetPrinter(SfxPrinter *pNewPrinter, SfxPrinterChangeFlags nDiffFlags, bool )
+sal_uInt16 SmViewShell::SetPrinter(SfxPrinter *pNewPrinter, SfxPrinterChangeFlags nDiffFlags )
 {
     SfxPrinter *pOld = GetDoc()->GetPrinter();
     if ( pOld && pOld->IsPrinting() )
@@ -1546,7 +1537,7 @@ void SmViewShell::Execute(SfxRequest& rReq)
                 {
                     GetViewFrame()->GetDispatcher()->Execute(
                                 SID_COPYOBJECT, SfxCallMode::RECORD,
-                                new SfxVoidItem(SID_COPYOBJECT), 0L);
+                                new SfxVoidItem(SID_COPYOBJECT), 0);
                 }
                 else
                     pWin->Copy();
@@ -1572,7 +1563,7 @@ void SmViewShell::Execute(SfxRequest& rReq)
                 {
                     GetViewFrame()->GetDispatcher()->Execute(
                             SID_PASTEOBJECT, SfxCallMode::RECORD,
-                            new SfxVoidItem(SID_PASTEOBJECT), 0L);
+                            new SfxVoidItem(SID_PASTEOBJECT), 0);
                 }
             }
             break;
@@ -1653,7 +1644,7 @@ void SmViewShell::Execute(SfxRequest& rReq)
                     {
                         std::unique_ptr<SfxMedium> pClipboardMedium(new SfxMedium());
                         pClipboardMedium->GetItemSet(); //generate initial itemset, not sure if necessary
-                        const SfxFilter* pMathFilter =
+                        std::shared_ptr<const SfxFilter> pMathFilter =
                             SfxFilter::GetFilterByName(MATHML_XML);
                         pClipboardMedium->SetFilter(pMathFilter);
                         pClipboardMedium->setStreamToLoadFrom(xStrm, true /*bIsReadOnly*/);
@@ -1671,7 +1662,7 @@ void SmViewShell::Execute(SfxRequest& rReq)
                         {
                             std::unique_ptr<SfxMedium> pClipboardMedium(new SfxMedium());
                             pClipboardMedium->GetItemSet(); //generates initial itemset, not sure if necessary
-                            const SfxFilter* pMathFilter =
+                            std::shared_ptr<const SfxFilter> pMathFilter =
                                 SfxFilter::GetFilterByName(MATHML_XML);
                             pClipboardMedium->SetFilter(pMathFilter);
 

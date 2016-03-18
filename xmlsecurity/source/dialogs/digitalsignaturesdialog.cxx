@@ -24,12 +24,7 @@
 #include <sax/tools/converter.hxx>
 
 #include <com/sun/star/embed/XStorage.hpp>
-#include <com/sun/star/embed/StorageFormats.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
-#include <com/sun/star/io/XSeekable.hpp>
-#include <com/sun/star/io/XTruncate.hpp>
-#include <com/sun/star/io/TempFile.hpp>
-#include <com/sun/star/embed/XTransactedObject.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/security/NoPasswordException.hpp>
@@ -73,7 +68,7 @@ namespace
         virtual void ImplCommit() override;
 
     public:
-    virtual void Notify( const ::com::sun::star::uno::Sequence< OUString >& aPropertyNames ) override;
+    virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
         SaveODFItem();
         //See group ODF in Common.xcs
         bool isLessODF1_2()
@@ -83,7 +78,7 @@ namespace
     };
 
 void SaveODFItem::ImplCommit() {}
-void SaveODFItem::Notify( const ::com::sun::star::uno::Sequence< OUString >& ) {}
+void SaveODFItem::Notify( const css::uno::Sequence< OUString >& ) {}
 
     SaveODFItem::SaveODFItem(): utl::ConfigItem(OUString(
         "Office.Common/Save")), m_nODF(0)
@@ -219,7 +214,7 @@ bool DigitalSignaturesDialog::Init()
     return bInit;
 }
 
-void DigitalSignaturesDialog::SetStorage( const com::sun::star::uno::Reference < com::sun::star::embed::XStorage >& rxStore )
+void DigitalSignaturesDialog::SetStorage( const css::uno::Reference < css::embed::XStorage >& rxStore )
 {
     maSignatureManager.mxStore = rxStore;
     maSignatureManager.maSignatureHelper.SetStorage( maSignatureManager.mxStore, m_sODFVersion);
@@ -333,44 +328,7 @@ IMPL_LINK_NOARG_TYPED(DigitalSignaturesDialog, SignatureHighlightHdl, SvTreeList
 
 IMPL_LINK_NOARG_TYPED(DigitalSignaturesDialog, OKButtonHdl, Button*, void)
 {
-    // Export all other signatures...
-    SignatureStreamHelper aStreamHelper = maSignatureManager.ImplOpenSignatureStream(embed::ElementModes::WRITE|embed::ElementModes::TRUNCATE, false);
-
-    if (aStreamHelper.xSignatureStream.is() && aStreamHelper.nStorageFormat != embed::StorageFormats::OFOPXML)
-    {
-        // ODF
-        uno::Reference< io::XOutputStream > xOutputStream(
-            aStreamHelper.xSignatureStream, uno::UNO_QUERY );
-        uno::Reference< com::sun::star::xml::sax::XWriter> xSaxWriter =
-            maSignatureManager.maSignatureHelper.CreateDocumentHandlerWithHeader( xOutputStream );
-
-        uno::Reference< xml::sax::XDocumentHandler> xDocumentHandler(xSaxWriter, UNO_QUERY_THROW);
-        size_t nInfos = maSignatureManager.maCurrentSignatureInformations.size();
-        for( size_t n = 0 ; n < nInfos ; ++n )
-            XMLSignatureHelper::ExportSignature(
-            xDocumentHandler, maSignatureManager.maCurrentSignatureInformations[ n ] );
-
-        XMLSignatureHelper::CloseDocumentHandler( xDocumentHandler);
-
-    }
-    else if (aStreamHelper.xSignatureStorage.is() && aStreamHelper.nStorageFormat == embed::StorageFormats::OFOPXML)
-    {
-        // OOXML
-        size_t nSignatureCount = maSignatureManager.maCurrentSignatureInformations.size();
-        maSignatureManager.maSignatureHelper.ExportSignatureContentTypes(maSignatureManager.mxStore, nSignatureCount);
-        maSignatureManager.maSignatureHelper.ExportSignatureRelations(aStreamHelper.xSignatureStorage, nSignatureCount);
-
-        for (size_t i = 0; i < nSignatureCount; ++i)
-            maSignatureManager.maSignatureHelper.ExportOOXMLSignature(maSignatureManager.mxStore, aStreamHelper.xSignatureStorage, maSignatureManager.maCurrentSignatureInformations[i], i + 1);
-    }
-
-    // If stream was not provided, we are responsible for committing it....
-    if ( !maSignatureManager.mxSignatureStream.is() )
-    {
-        uno::Reference< embed::XTransactedObject > xTrans(
-            aStreamHelper.xSignatureStorage, uno::UNO_QUERY );
-        xTrans->commit();
-    }
+    maSignatureManager.write();
 
     EndDialog(RET_OK);
 }
@@ -392,7 +350,7 @@ IMPL_LINK_NOARG_TYPED(DigitalSignaturesDialog, AddButtonHdl, Button*, void)
         return;
     try
     {
-        uno::Reference<com::sun::star::xml::crypto::XSecurityEnvironment> xSecEnv = maSignatureManager.maSignatureHelper.GetSecurityEnvironment();
+        uno::Reference<css::xml::crypto::XSecurityEnvironment> xSecEnv = maSignatureManager.maSignatureHelper.GetSecurityEnvironment();
 
         ScopedVclPtrInstance< CertificateChooser > aChooser( this, mxCtx, xSecEnv );
         if ( aChooser->Execute() == RET_OK )
@@ -404,7 +362,7 @@ IMPL_LINK_NOARG_TYPED(DigitalSignaturesDialog, AddButtonHdl, Button*, void)
 
             sal_Int32 nStatus = maSignatureManager.maSignatureHelper.GetSignatureInformation( nSecurityId ).nStatus;
 
-            if ( nStatus == ::com::sun::star::xml::crypto::SecurityOperationStatus_OPERATION_SUCCEEDED )
+            if ( nStatus == css::xml::crypto::SecurityOperationStatus_OPERATION_SUCCEEDED )
             {
                 mbSignaturesChanged = true;
 
@@ -413,7 +371,7 @@ IMPL_LINK_NOARG_TYPED(DigitalSignaturesDialog, AddButtonHdl, Button*, void)
                 // will not contain
                 // SecurityOperationStatus_OPERATION_SUCCEEDED
                 mbVerifySignatures = true;
-                ImplGetSignatureInformations(true);
+                ImplGetSignatureInformations(true, /*bCacheLastSignature=*/false);
                 ImplFillSignaturesBox();
             }
         }
@@ -422,7 +380,7 @@ IMPL_LINK_NOARG_TYPED(DigitalSignaturesDialog, AddButtonHdl, Button*, void)
     {
         OSL_FAIL( "Exception while adding a signature!" );
         // Don't keep invalid entries...
-        ImplGetSignatureInformations(true);
+        ImplGetSignatureInformations(true, /*bCacheLastSignature=*/false);
         ImplFillSignaturesBox();
     }
 }
@@ -436,25 +394,9 @@ IMPL_LINK_NOARG_TYPED(DigitalSignaturesDialog, RemoveButtonHdl, Button*, void)
         try
         {
             sal_uInt16 nSelected = (sal_uInt16) reinterpret_cast<sal_uIntPtr>( m_pSignaturesLB->FirstSelected()->GetUserData() );
-            maSignatureManager.maCurrentSignatureInformations.erase( maSignatureManager.maCurrentSignatureInformations.begin()+nSelected );
-
-            // Export all other signatures...
-            SignatureStreamHelper aStreamHelper = maSignatureManager.ImplOpenSignatureStream(css::embed::ElementModes::WRITE | css::embed::ElementModes::TRUNCATE, true);
-            Reference< css::io::XOutputStream > xOutputStream(
-                aStreamHelper.xSignatureStream, UNO_QUERY_THROW);
-            Reference< css::xml::sax::XWriter> xSaxWriter =
-                maSignatureManager.maSignatureHelper.CreateDocumentHandlerWithHeader( xOutputStream );
-
-            uno::Reference< xml::sax::XDocumentHandler> xDocumentHandler(xSaxWriter, UNO_QUERY_THROW);
-            size_t nInfos = maSignatureManager.maCurrentSignatureInformations.size();
-            for( size_t n = 0 ; n < nInfos ; ++n )
-                XMLSignatureHelper::ExportSignature( xDocumentHandler, maSignatureManager.maCurrentSignatureInformations[ n ] );
-
-            XMLSignatureHelper::CloseDocumentHandler( xDocumentHandler);
+            maSignatureManager.remove(nSelected);
 
             mbSignaturesChanged = true;
-
-            aStreamHelper = SignatureStreamHelper();    // release objects...
 
             ImplFillSignaturesBox();
         }
@@ -477,11 +419,11 @@ void DigitalSignaturesDialog::ImplFillSignaturesBox()
 {
     m_pSignaturesLB->Clear();
 
-    uno::Reference< ::com::sun::star::xml::crypto::XSecurityEnvironment > xSecEnv = maSignatureManager.maSignatureHelper.GetSecurityEnvironment();
-    uno::Reference<com::sun::star::security::XSerialNumberAdapter> xSerialNumberAdapter =
-        ::com::sun::star::security::SerialNumberAdapter::create(mxCtx);
+    uno::Reference< css::xml::crypto::XSecurityEnvironment > xSecEnv = maSignatureManager.maSignatureHelper.GetSecurityEnvironment();
+    uno::Reference<css::security::XSerialNumberAdapter> xSerialNumberAdapter =
+        css::security::SerialNumberAdapter::create(mxCtx);
 
-    uno::Reference< ::com::sun::star::security::XCertificate > xCert;
+    uno::Reference< css::security::XCertificate > xCert;
 
     size_t nInfos = maSignatureManager.maCurrentSignatureInformations.size();
     size_t nValidSigs = 0, nValidCerts = 0;
@@ -547,7 +489,7 @@ void DigitalSignaturesDialog::ImplFillSignaturesBox()
                 aDateTimeStr = XmlSec::GetDateTimeString( rInfo.stDateTime );
                 aDescription = rInfo.ouDescription;
             }
-            bSigValid = ( rInfo.nStatus == ::com::sun::star::xml::crypto::SecurityOperationStatus_OPERATION_SUCCEEDED );
+            bSigValid = ( rInfo.nStatus == css::xml::crypto::SecurityOperationStatus_OPERATION_SUCCEEDED );
 
             if ( bSigValid )
             {
@@ -624,9 +566,9 @@ void DigitalSignaturesDialog::ImplFillSignaturesBox()
 
 //If bUseTempStream is true then the temporary signature stream is used.
 //Otherwise the real signature stream is used.
-void DigitalSignaturesDialog::ImplGetSignatureInformations(bool bUseTempStream)
+void DigitalSignaturesDialog::ImplGetSignatureInformations(bool bUseTempStream, bool bCacheLastSignature)
 {
-    maSignatureManager.read(bUseTempStream);
+    maSignatureManager.read(bUseTempStream, bCacheLastSignature);
     mbVerifySignatures = false;
 }
 
@@ -639,7 +581,7 @@ void DigitalSignaturesDialog::ImplShowSignaturesDetails()
         css::uno::Reference<css::xml::crypto::XSecurityEnvironment > xSecEnv =
             maSignatureManager.maSignatureHelper.GetSecurityEnvironment();
         css::uno::Reference<com::sun::star::security::XSerialNumberAdapter> xSerialNumberAdapter =
-            ::com::sun::star::security::SerialNumberAdapter::create(mxCtx);
+            css::security::SerialNumberAdapter::create(mxCtx);
         // Use Certificate from doc, not from key store
         uno::Reference< css::security::XCertificate > xCert;
         if (!rInfo.ouX509Certificate.isEmpty())

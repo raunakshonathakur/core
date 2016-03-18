@@ -51,7 +51,6 @@
 #include "SlideShowRestarter.hxx"
 #include "DrawController.hxx"
 #include "customshowlist.hxx"
-#include <boost/bind.hpp>
 #include "unopage.hxx"
 
 using ::com::sun::star::presentation::XSlideShowController;
@@ -184,12 +183,11 @@ css::uno::Reference< css::presentation::XSlideShowController > SlideShow::GetSli
 
 bool SlideShow::StartPreview( ViewShellBase& rBase,
     const css::uno::Reference< css::drawing::XDrawPage >& xDrawPage,
-    const css::uno::Reference< css::animations::XAnimationNode >& xAnimationNode,
-    vcl::Window* pParent /* = 0 */ )
+    const css::uno::Reference< css::animations::XAnimationNode >& xAnimationNode )
 {
     rtl::Reference< SlideShow > xSlideShow( GetSlideShow( rBase ) );
     if( xSlideShow.is() )
-        return xSlideShow->startPreview( xDrawPage, xAnimationNode, pParent );
+        return xSlideShow->startPreview( xDrawPage, xAnimationNode );
 
     return false;
 }
@@ -677,7 +675,7 @@ void SAL_CALL SlideShow::end()
                 WorkWindow* pWorkWindow = dynamic_cast<WorkWindow*>(pShell->GetViewFrame()->GetTopFrame().GetWindow().GetParent());
                 if( pWorkWindow )
                 {
-                    pWorkWindow->StartPresentationMode( false, isAlwaysOnTop() ? PresentationFlags::HideAllApps : PresentationFlags::NONE );
+                    pWorkWindow->StartPresentationMode( isAlwaysOnTop() ? PresentationFlags::HideAllApps : PresentationFlags::NONE );
                 }
             }
         }
@@ -1073,7 +1071,9 @@ void SlideShow::StartInPlacePresentation()
             }
 
             pHelper->RequestView( FrameworkHelper::msImpressViewURL, FrameworkHelper::msCenterPaneURL );
-            pHelper->RunOnConfigurationEvent( FrameworkHelper::msConfigurationUpdateEndEvent, ::boost::bind(&SlideShow::StartInPlacePresentationConfigurationCallback, this) );
+            pHelper->RunOnConfigurationEvent(
+                FrameworkHelper::msConfigurationUpdateEndEvent,
+                [this] (bool const) { return this->StartInPlacePresentationConfigurationCallback(); } );
             return;
         }
         else

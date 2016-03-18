@@ -196,7 +196,7 @@ public:
     void SetNumberingRestart();
 
     /// Embeds all local links (ranges/graphics).
-    sal_uInt16 GetLinkUpdMode(bool bDocSettings = false) const;
+    sal_uInt16 GetLinkUpdMode() const;
     void SetLinkUpdMode( sal_uInt16 nMode );
 
     /// Copy content of all ranges at current position of cursor to given Shell.
@@ -206,7 +206,7 @@ public:
        If table is copied into table, move all cursors away from it.
        Copy and Paste must be in FEShell because of FlyFrames!
        Copy all selections to the document. */
-    bool _CopySelToDoc( SwDoc* pInsDoc, SwNodeIndex* pNdInsPos = nullptr );
+    bool _CopySelToDoc( SwDoc* pInsDoc );
 
     long SplitNode( bool bAutoFormat = false, bool bCheckTableStart = true );
     bool AppendTextNode();
@@ -294,8 +294,8 @@ public:
     sal_uInt16 GetCharFormatCount() const;
     SwCharFormat& GetCharFormat(sal_uInt16 nFormat) const;
     SwCharFormat* GetCurCharFormat() const;
-    void FillByEx(SwCharFormat*, bool bReset = false);
-    SwCharFormat* MakeCharFormat( const OUString& rName, SwCharFormat* pDerivedFrom = nullptr );
+    void FillByEx(SwCharFormat*);
+    SwCharFormat* MakeCharFormat( const OUString& rName );
     SwCharFormat* FindCharFormatByName( const OUString& rName ) const;
 
     /* FormatCollections (new) - Explaining the general naming pattern:
@@ -338,7 +338,7 @@ public:
     void SetTextFormatColl(SwTextFormatColl*, const bool bResetListAttrs = false);
     SwTextFormatColl *MakeTextFormatColl(const OUString &rFormatCollName,
         SwTextFormatColl *pDerivedFrom = nullptr);
-    void FillByEx(SwTextFormatColl*, bool bReset = false);
+    void FillByEx(SwTextFormatColl*);
     SwTextFormatColl* FindTextFormatCollByName( const OUString& rName ) const;
 
     /// @return "Auto-Collection" with given Id. If it does not exist create it.
@@ -369,7 +369,7 @@ public:
     SwFieldType* GetFieldType(size_t nField, sal_uInt16 nResId = USHRT_MAX, bool bUsed = false) const;
     SwFieldType* GetFieldType(sal_uInt16 nResId, const OUString& rName) const;
 
-    void RemoveFieldType(size_t nField, sal_uInt16 nResId = USHRT_MAX);
+    void RemoveFieldType(size_t nField);
     void RemoveFieldType(sal_uInt16 nResId, const OUString& rName);
 
     void FieldToText( SwFieldType* pType );
@@ -394,7 +394,7 @@ public:
     void UnlockExpFields();
     bool IsExpFieldsLocked() const;
 
-    SwFieldUpdateFlags GetFieldUpdateFlags(bool bDocSettings = false) const;
+    SwFieldUpdateFlags GetFieldUpdateFlags() const;
     void SetFieldUpdateFlags( SwFieldUpdateFlags eFlags );
 
     /// For evaluation of DB fields (new DB-manager).
@@ -523,13 +523,13 @@ public:
     bool SelectionHasNumber() const;
     bool SelectionHasBullet() const;
 
-    OUString GetUniqueNumRuleName( const OUString* pChkStr = nullptr, bool bAutoNum = true ) const;
+    OUString GetUniqueNumRuleName() const;
     void ChgNumRuleFormats( const SwNumRule& rRule );
 
     /// Set (and query if) a numbering with StartFlag starts at current PointPos.
     void SetNumRuleStart( bool bFlag = true, SwPaM* pCursor = nullptr );
     bool IsNumRuleStart( SwPaM* pPaM = nullptr ) const;
-    void SetNodeNumStart( sal_uInt16 nStt, SwPaM* = nullptr );
+    void SetNodeNumStart( sal_uInt16 nStt );
 
     sal_uInt16 GetNodeNumStart( SwPaM* pPaM = nullptr ) const;
 
@@ -538,8 +538,7 @@ public:
     /** Searches for a text node with a numbering rule.
      in case a list style is found, <sListId> holds the list id, to which the
      text node belongs, which applies the found list style. */
-    const SwNumRule * SearchNumRule(const bool bForward,
-                                    const bool bNum,
+    const SwNumRule * SearchNumRule(const bool bNum,
                                     const bool bOutline,
                                     int nNonEmptyAllowed,
                                     OUString& sListId );
@@ -602,7 +601,7 @@ public:
     const Graphic* GetGraphic( bool bWait = true ) const;
     const GraphicObject* GetGraphicObj() const;
 
-    bool IsGrfSwapOut( bool bOnlyLinked = false ) const;
+    bool IsLinkedGrfSwapOut() const;
     sal_uInt16 GetGraphicType() const;
 
     const tools::PolyPolygon *GetGraphicPolygon() const;
@@ -632,7 +631,7 @@ public:
     // #i73788#
     /// Remove default parameter, because method always called this default value.
     Graphic GetIMapGraphic() const; ///< @return a graphic for all Flys!
-    const SwFlyFrameFormat* FindFlyByName( const OUString& rName, sal_uInt8 nNdTyp = 0 ) const;
+    const SwFlyFrameFormat* FindFlyByName( const OUString& rName ) const;
 
     /** @return a ClientObject, if CurrentCursor->Point() points to a SwOLENode
      (and mark is neither set not pointint to same ClientObject)
@@ -687,8 +686,7 @@ public:
 
     void InsertDDETable( const SwInsertTableOptions& rInsTableOpts,  ///< HEADLINE_NO_BORDER
                          SwDDEFieldType* pDDEType,
-                         sal_uInt16 nRows, sal_uInt16 nCols,
-                         sal_Int16 eAdj = css::text::HoriOrientation::FULL );
+                         sal_uInt16 nRows, sal_uInt16 nCols  );
 
     void UpdateTable();
     void SetTableName( SwFrameFormat& rTableFormat, const OUString &rNewName );
@@ -802,7 +800,7 @@ public:
     bool IsOutlineMovable( sal_uInt16 nIdx ) const;
     bool IsOutlineCopyable( sal_uInt16 nIdx ) const;
 
-    sal_uInt16 GetLineCount( bool bActPos = true );
+    sal_uInt16 GetLineCount();
 
     /// Query and set footnote-text/number. Set.. to current SSelection!
     bool GetCurFootnote( SwFormatFootnote* pToFillFootnote = nullptr );
@@ -830,9 +828,7 @@ public:
     void DelSectionFormat( size_t nFormat);
     void UpdateSection( size_t const nSect, SwSectionData &,
             SfxItemSet const*const  = nullptr);
-    bool IsAnySectionInDoc( bool bChkReadOnly = false,
-                            bool bChkHidden = false,
-                            bool BChkTOX = false ) const;
+    bool IsAnySectionInDoc() const;
 
     OUString GetUniqueSectionName( const OUString* pChkStr = nullptr ) const;
 
@@ -853,7 +849,7 @@ public:
     bool CanSpecialInsert() const;
 
     /// Optimizing UI.
-    void SetNewDoc(bool bNew = true);
+    void SetNewDoc();
 
     sfx2::LinkManager& GetLinkManager();
     inline const sfx2::LinkManager& GetLinkManager() const;
@@ -929,7 +925,7 @@ public:
 
     /// Interface for TextInputData - (for input of Japanese/Chinese chars.)
     void CreateExtTextInput(LanguageType eInputLanguage);
-    OUString DeleteExtTextInput( SwExtTextInput* pDel = nullptr, bool bInsText = true);
+    OUString DeleteExtTextInput( bool bInsText = true);
     void SetExtTextInputData( const CommandExtTextInputData& );
 
     /// Interface for access to AutoComplete-list.

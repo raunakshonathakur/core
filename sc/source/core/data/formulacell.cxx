@@ -116,7 +116,7 @@ static struct DebugCalculation
     {
         for (auto const& it : mvPos)
         {
-            OUString aStr( it.maPos.Format( SCA_VALID | SCA_TAB_3D, it.mpDoc) +
+            OUString aStr( it.maPos.Format( ScRefFlags::VALID | ScRefFlags::TAB_3D, it.mpDoc) +
                     " [" + OUString::number( it.mnRecursion) + "," + OUString::number( it.mnGroup) + "]");
             fprintf( stderr, "%s -> ", aStr.toUtf8().getStr());
         }
@@ -128,7 +128,7 @@ static struct DebugCalculation
     {
         for (auto const& it : mvResults)
         {
-            OUString aStr( it.maPos.Format( SCA_VALID | SCA_TAB_3D, it.mpDoc));
+            OUString aStr( it.maPos.Format( ScRefFlags::VALID | ScRefFlags::TAB_3D, it.mpDoc));
             aStr += " (" + it.maResult + ")";
             fprintf( stderr, "%s, ", aStr.toUtf8().getStr());
         }
@@ -468,6 +468,7 @@ void adjustRangeName(formula::FormulaToken* pToken, ScDocument& rNewDoc, const S
     {
         bNewGlobal = bOldGlobal;
         pRangeData = new ScRangeData(*pOldRangeData, &rNewDoc);
+        pRangeData->SetIndex(0);    // needed for insert to assign a new index
         ScTokenArray* pRangeNameToken = pRangeData->GetCode();
         if (rNewDoc.GetPool() != const_cast<ScDocument*>(pOldDoc)->GetPool())
         {
@@ -1499,6 +1500,28 @@ bool ScFormulaCell::MarkUsedExternalReferences()
     return pCode && pDocument->MarkUsedExternalReferences(*pCode, aPos);
 }
 
+namespace {
+class RecursionCounter
+{
+    ScRecursionHelper&  rRec;
+    bool                bStackedInIteration;
+public:
+    RecursionCounter( ScRecursionHelper& r, ScFormulaCell* p ) : rRec(r)
+    {
+        bStackedInIteration = rRec.IsDoingIteration();
+        if (bStackedInIteration)
+            rRec.GetRecursionInIterationStack().push( p);
+        rRec.IncRecursionCount();
+    }
+    ~RecursionCounter()
+    {
+        rRec.DecRecursionCount();
+        if (bStackedInIteration)
+            rRec.GetRecursionInIterationStack().pop();
+    }
+};
+}
+
 void ScFormulaCell::Interpret()
 {
 #if DEBUG_CALCULATION
@@ -1769,25 +1792,7 @@ void ScFormulaCell::Interpret()
 
 void ScFormulaCell::InterpretTail( ScInterpretTailParameter eTailParam )
 {
-    class RecursionCounter
-    {
-        ScRecursionHelper&  rRec;
-        bool                bStackedInIteration;
-        public:
-        RecursionCounter( ScRecursionHelper& r, ScFormulaCell* p ) : rRec(r)
-        {
-            bStackedInIteration = rRec.IsDoingIteration();
-            if (bStackedInIteration)
-                rRec.GetRecursionInIterationStack().push( p);
-            rRec.IncRecursionCount();
-        }
-        ~RecursionCounter()
-        {
-            rRec.DecRecursionCount();
-            if (bStackedInIteration)
-                rRec.GetRecursionInIterationStack().pop();
-        }
-    } aRecursionCounter( pDocument->GetRecursionHelper(), this);
+    RecursionCounter aRecursionCounter( pDocument->GetRecursionHelper(), this);
     nSeenInIteration = pDocument->GetRecursionHelper().GetIteration();
     if( !pCode->GetCodeLen() && !pCode->GetCodeError() )
     {
@@ -2712,10 +2717,10 @@ sal_uInt16 ScFormulaCell::GetMatrixEdge( ScAddress& rOrgPos ) const
                 {
 #if OSL_DEBUG_LEVEL > 0
                     OStringBuffer aMsg("broken Matrix, no MatFormula at origin, Pos: ");
-                    OUString aTmp(aPos.Format(SCA_VALID_COL | SCA_VALID_ROW, pDocument));
+                    OUString aTmp(aPos.Format(ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID, pDocument));
                     aMsg.append(OUStringToOString(aTmp, RTL_TEXTENCODING_ASCII_US));
                     aMsg.append(", MatOrg: ");
-                    aTmp = aOrg.Format(SCA_VALID_COL | SCA_VALID_ROW, pDocument);
+                    aTmp = aOrg.Format(ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID, pDocument);
                     aMsg.append(OUStringToOString(aTmp, RTL_TEXTENCODING_ASCII_US));
                     OSL_FAIL(aMsg.getStr());
 #endif
@@ -2743,10 +2748,10 @@ sal_uInt16 ScFormulaCell::GetMatrixEdge( ScAddress& rOrgPos ) const
             else
             {
                 OStringBuffer aMsg( "broken Matrix, Pos: " );
-                OUString aTmp(aPos.Format(SCA_VALID_COL | SCA_VALID_ROW, pDocument));
+                OUString aTmp(aPos.Format(ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID, pDocument));
                 aMsg.append(OUStringToOString(aTmp, RTL_TEXTENCODING_UTF8 ));
                 aMsg.append(", MatOrg: ");
-                aTmp = aOrg.Format(SCA_VALID_COL | SCA_VALID_ROW, pDocument);
+                aTmp = aOrg.Format(ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID, pDocument);
                 aMsg.append(OUStringToOString(aTmp, RTL_TEXTENCODING_UTF8 ));
                 aMsg.append(", MatCols: ");
                 aMsg.append(static_cast<sal_Int32>( nC ));
@@ -3979,6 +3984,12 @@ bool ScFormulaCell::InterpretFormulaGroup()
     if (!ScCalcConfig::isOpenCLEnabled() && !ScCalcConfig::isSwInterpreterEnabled())
         return false;
 
+    // Guard against endless recursion of Interpret() calls, for this to work
+    // ScFormulaCell::InterpretFormulaGroup() must never be called through
+    // anything else than ScFormulaCell::Interpret(), same as
+    // ScFormulaCell::InterpretTail()
+    RecursionCounter aRecursionCounter( pDocument->GetRecursionHelper(), this);
+
     // TODO : Disable invariant formula group interpretation for now in order
     // to get implicit intersection to work.
     if (mxGroup->mbInvariant && false)
@@ -4026,8 +4037,7 @@ bool ScFormulaCell::InterpretFormulaGroup()
 
         ScTokenArray aCode;
         ScGroupTokenConverter aConverter(aCode, *pDocument, *this, xGroup->mpTopCell->aPos);
-        std::vector<ScTokenArray*> aLoopControl;
-        if (!aConverter.convert(*pCode, aLoopControl))
+        if (!aConverter.convert(*pCode))
         {
             SAL_INFO("sc.opencl", "conversion of group " << this << " failed, disabling");
             mxGroup->meCalcState = sc::GroupCalcDisabled;

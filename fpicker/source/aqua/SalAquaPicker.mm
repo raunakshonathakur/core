@@ -39,7 +39,6 @@
 #include <stdio.h>
 
 #pragma mark DEFINES
-#define CLASS_NAME "SalAquaPicker"
 #define kSetHideExtensionStateKey @"NSNavLastUserSetHideExtensionButtonState"
 
 
@@ -55,14 +54,10 @@ SalAquaPicker::SalAquaPicker()
 : m_pDialog(nullptr)
 , m_pControlHelper(new ControlHelper())
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 SalAquaPicker::~SalAquaPicker()
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-
     SolarMutexGuard aGuard;
 
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
@@ -74,14 +69,10 @@ SalAquaPicker::~SalAquaPicker()
         [m_pDialog release];
 
     [pool release];
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 void SAL_CALL SalAquaPicker::implInitialize()
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-
     SolarMutexGuard aGuard;
 
     if (m_pDialog != nil) {
@@ -91,14 +82,12 @@ void SAL_CALL SalAquaPicker::implInitialize()
     switch (m_nDialogType)
     {
         case NAVIGATIONSERVICES_OPEN:
-            OSL_TRACE("NAVIGATIONSERVICES_OPEN");
             m_pDialog = [NSOpenPanel openPanel];
             [(NSOpenPanel*)m_pDialog setCanChooseDirectories:NO];
             [(NSOpenPanel*)m_pDialog setCanChooseFiles:YES];
             break;
 
         case NAVIGATIONSERVICES_SAVE:
-            OSL_TRACE("NAVIGATIONSERVICES_SAVE");
             m_pDialog = [NSSavePanel savePanel];
             [(NSSavePanel*)m_pDialog setCanSelectHiddenExtension:NO]; //changed for issue #102102
             /* I would have loved to use
@@ -114,40 +103,30 @@ void SAL_CALL SalAquaPicker::implInitialize()
                 NSUserDefaults *pDefaults = [NSUserDefaults standardUserDefaults];
                 NSNumber *pExtn = [pDefaults objectForKey:kSetHideExtensionStateKey];
                 if(pExtn == nil || [pExtn boolValue] == NO) {
-                    OSL_TRACE("Hiding extension");
                     [pDefaults setBool:YES forKey:kSetHideExtensionStateKey];
                 }
             }
             break;
 
         case NAVIGATIONSERVICES_DIRECTORY:
-            OSL_TRACE("NAVIGATIONSERVICES_DIRECTORY");
             m_pDialog = [NSOpenPanel openPanel];
             [(NSOpenPanel*)m_pDialog setCanChooseDirectories:YES];
             [(NSOpenPanel*)m_pDialog setCanChooseFiles:NO];
             break;
 
         default:
-            OSL_TRACE("m_nDialogType is UNKNOWN: %d", m_nDialogType);
             break;
     }
 
-    if (m_pDialog == nil) {
-        OSL_TRACE("An error occurred while creating the dialog!");
-    }
-    else {
+    if (m_pDialog != nil) {
         [(NSOpenPanel*)m_pDialog setCanCreateDirectories:YES];
         //Retain the dialog instance or it will go away immediately
         [m_pDialog retain];
     }
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 int SalAquaPicker::run()
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-
     SolarMutexGuard aGuard;
 
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
@@ -197,7 +176,6 @@ int SalAquaPicker::run()
             implsetDisplayDirectory([pDir OUStringForInfo:FULLPATH]);
         }
     }
-    DBG_PRINT_EXIT(CLASS_NAME, __func__, retVal);
 
     [pool release];
 
@@ -206,49 +184,35 @@ int SalAquaPicker::run()
 
 int SalAquaPicker::runandwaitforresult()
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-
     SolarMutexGuard aGuard;
 
     int status = this->run();
 
-    DBG_PRINT_EXIT(CLASS_NAME, __func__, status);
     return status;
 }
 
 void SAL_CALL SalAquaPicker::implsetDisplayDirectory( const rtl::OUString& aDirectory )
     throw( lang::IllegalArgumentException, uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__, "directory", aDirectory);
-
     SolarMutexGuard aGuard;
 
     if (aDirectory != m_sDisplayDirectory) {
         m_sDisplayDirectory = aDirectory;
     }
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 rtl::OUString SAL_CALL SalAquaPicker::implgetDisplayDirectory() throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__);
-    DBG_PRINT_EXIT(CLASS_NAME, __func__, m_sDisplayDirectory);
-
     return m_sDisplayDirectory;
 }
 
 void SAL_CALL SalAquaPicker::implsetTitle( const rtl::OUString& aTitle ) throw( uno::RuntimeException )
 {
-    DBG_PRINT_ENTRY(CLASS_NAME, __func__, "title", aTitle);
-
     SolarMutexGuard aGuard;
 
     if (m_pDialog != nil) {
         [m_pDialog setTitle:[NSString stringWithOUString:aTitle]];
     }
-
-    DBG_PRINT_EXIT(CLASS_NAME, __func__);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

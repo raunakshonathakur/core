@@ -217,7 +217,7 @@ bool ScAreaLink::FindExtRange( ScRange& rRange, ScDocument* pSrcDoc, const OUStr
     if (!bFound)        // direct reference (range or cell)
     {
         ScAddress::Details aDetails(pSrcDoc->GetAddressConvention(), 0, 0);
-        if ( rRange.ParseAny( rAreaName, pSrcDoc, aDetails ) & SCA_VALID )
+        if ( rRange.ParseAny( rAreaName, pSrcDoc, aDetails ) & ScRefFlags::VALID )
             bFound = true;
     }
     return bFound;
@@ -236,7 +236,7 @@ bool ScAreaLink::Refresh( const OUString& rNewFile, const OUString& rNewFilter,
     OUString aNewUrl( ScGlobal::GetAbsDocName( rNewFile, pImpl->m_pDocSh ) );
     bool bNewUrlName = (aNewUrl != aFileName);
 
-    const SfxFilter* pFilter = pImpl->m_pDocSh->GetFactory().GetFilterContainer()->GetFilter4FilterName(rNewFilter);
+    std::shared_ptr<const SfxFilter> pFilter = pImpl->m_pDocSh->GetFactory().GetFilterContainer()->GetFilter4FilterName(rNewFilter);
     if (!pFilter)
         return false;
 

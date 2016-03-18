@@ -976,7 +976,7 @@ IMPL_LINK_TYPED(SpellDialog, ModifyHdl, Edit&, rEd, void)
 IMPL_LINK_NOARG_TYPED(SpellDialog, CancelHdl, Button*, void)
 {
     //apply changes and ignored text parts first - if there are any
-    rParent.ApplyChangedSentence(m_pSentenceED->CreateSpellPortions(true), false);
+    rParent.ApplyChangedSentence(m_pSentenceED->CreateSpellPortions(), false);
     Close();
 }
 
@@ -1048,7 +1048,7 @@ bool SpellDialog::GetNextSentence_Impl(bool bUseSavedSentence, bool bRecheck)
     if(!bUseSavedSentence)
     {
         //apply changes and ignored text parts
-        rParent.ApplyChangedSentence(m_pSentenceED->CreateSpellPortions(true), bRecheck);
+        rParent.ApplyChangedSentence(m_pSentenceED->CreateSpellPortions(), bRecheck);
     }
     m_pSentenceED->ResetIgnoreErrorsAt();
     m_pSentenceED->ResetModified();
@@ -1675,8 +1675,8 @@ bool SentenceEditWindow_Impl::MarkNextError( bool bIgnoreCurrentError, css::uno:
 void SentenceEditWindow_Impl::MoveErrorMarkTo(sal_uInt16 nStart, sal_uInt16 nEnd, bool bGrammarError)
 {
     TextEngine* pTextEngine = GetTextEngine();
-    pTextEngine->RemoveAttribs( 0, (sal_uInt16)TEXTATTR_FONTCOLOR, true );
-    pTextEngine->RemoveAttribs( 0, (sal_uInt16)TEXTATTR_FONTWEIGHT, true );
+    pTextEngine->RemoveAttribs( 0, (sal_uInt16)TEXTATTR_FONTCOLOR );
+    pTextEngine->RemoveAttribs( 0, (sal_uInt16)TEXTATTR_FONTWEIGHT );
     pTextEngine->SetAttrib( TextAttribFontWeight(WEIGHT_BOLD), 0, nStart, nEnd );
     pTextEngine->SetAttrib( TextAttribFontColor(bGrammarError ? COL_LIGHTBLUE : COL_LIGHTRED), 0, nStart, nEnd );
     m_nErrorStart = nStart;
@@ -1852,7 +1852,7 @@ static void lcl_InsertBreakPosition_Impl(
     Returns the text in spell portions. Each portion contains text with an
     equal language and attribute. The spell alternatives are empty.
   -----------------------------------------------------------------------*/
-svx::SpellPortions SentenceEditWindow_Impl::CreateSpellPortions( bool bSetIgnoreFlag ) const
+svx::SpellPortions SentenceEditWindow_Impl::CreateSpellPortions() const
 {
     svx::SpellPortions aRet;
     ExtTextEngine* pTextEngine = GetTextEngine();
@@ -1913,7 +1913,7 @@ svx::SpellPortions SentenceEditWindow_Impl::CreateSpellPortions( bool bSetIgnore
                 aPortion1.sText = pTextEngine->GetText(
                             TextSelection(TextPaM(0, nStart), TextPaM(0, aStart->nPosition)));
                 bool bIsIgnoreError = m_aIgnoreErrorsAt.find( nStart ) != m_aIgnoreErrorsAt.end();
-                if( bSetIgnoreFlag && bIsIgnoreError )
+                if( bIsIgnoreError )
                 {
                     aPortion1.bIgnoreThisError = true;
                 }
@@ -1979,10 +1979,10 @@ void SentenceEditWindow_Impl::ResetUndo()
 }
 
 
-void SentenceEditWindow_Impl::AddUndoAction( SfxUndoAction *pAction, bool bTryMerg )
+void SentenceEditWindow_Impl::AddUndoAction( SfxUndoAction *pAction )
 {
     ::svl::IUndoManager& rUndoMgr = GetTextEngine()->GetUndoManager();
-    rUndoMgr.AddUndoAction(pAction, bTryMerg);
+    rUndoMgr.AddUndoAction(pAction);
     GetSpellDialog()->m_pUndoPB->Enable();
 }
 
@@ -2045,8 +2045,8 @@ void  SentenceEditWindow_Impl::SetUndoEditMode(bool bSet)
 
     //remove error marks
     TextEngine* pTextEngine = GetTextEngine();
-    pTextEngine->RemoveAttribs( 0, (sal_uInt16)TEXTATTR_FONTCOLOR, true );
-    pTextEngine->RemoveAttribs( 0, (sal_uInt16)TEXTATTR_FONTWEIGHT, true );
+    pTextEngine->RemoveAttribs( 0, (sal_uInt16)TEXTATTR_FONTCOLOR );
+    pTextEngine->RemoveAttribs( 0, (sal_uInt16)TEXTATTR_FONTWEIGHT );
 
     //put the appropriate action on the Undo-stack
     SpellUndoAction_Impl* pAction = new SpellUndoAction_Impl(

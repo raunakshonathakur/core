@@ -40,7 +40,7 @@ namespace dbtools
     using namespace ::connectivity;
 
 SQLExceptionInfo::SQLExceptionInfo()
-    :m_eType(UNDEFINED)
+    :m_eType(TYPE::Undefined)
 {
 }
 
@@ -141,14 +141,14 @@ void SQLExceptionInfo::implDetermineType()
     const Type& aSQLContextType  = ::cppu::UnoType<SQLContext>::get();
 
     if ( isAssignableFrom( aSQLContextType, m_aContent.getValueType() ) )
-        m_eType = SQL_CONTEXT;
+        m_eType = TYPE::SQLContext;
     else if ( isAssignableFrom( aSQLWarningType, m_aContent.getValueType() ) )
-        m_eType = SQL_WARNING;
+        m_eType = TYPE::SQLWarning;
     else if ( isAssignableFrom( aSQLExceptionType, m_aContent.getValueType() ) )
-        m_eType = SQL_EXCEPTION;
+        m_eType = TYPE::SQLException;
     else
     {
-        m_eType = UNDEFINED;
+        m_eType = TYPE::Undefined;
         m_aContent.clear();
     }
 }
@@ -158,14 +158,14 @@ bool SQLExceptionInfo::isKindOf(TYPE _eType) const
 {
     switch (_eType)
     {
-        case SQL_CONTEXT:
-            return (m_eType == SQL_CONTEXT);
-        case SQL_WARNING:
-            return (m_eType == SQL_CONTEXT) || (m_eType == SQL_WARNING);
-        case SQL_EXCEPTION:
-            return (m_eType == SQL_CONTEXT) || (m_eType == SQL_WARNING) || (m_eType == SQL_EXCEPTION);
-        case UNDEFINED:
-            return (m_eType == UNDEFINED);
+        case TYPE::SQLContext:
+            return (m_eType == TYPE::SQLContext);
+        case TYPE::SQLWarning:
+            return (m_eType == TYPE::SQLContext) || (m_eType == TYPE::SQLWarning);
+        case TYPE::SQLException:
+            return (m_eType == TYPE::SQLContext) || (m_eType == TYPE::SQLWarning) || (m_eType == TYPE::SQLException);
+        case TYPE::Undefined:
+            return (m_eType == TYPE::Undefined);
     }
     return false;
 }
@@ -173,28 +173,28 @@ bool SQLExceptionInfo::isKindOf(TYPE _eType) const
 
 SQLExceptionInfo::operator const ::com::sun::star::sdbc::SQLException*() const
 {
-    OSL_ENSURE(isKindOf(SQL_EXCEPTION), "SQLExceptionInfo::operator SQLException* : invalid call !");
+    OSL_ENSURE(isKindOf(TYPE::SQLException), "SQLExceptionInfo::operator SQLException* : invalid call !");
     return static_cast<const ::com::sun::star::sdbc::SQLException*>(m_aContent.getValue());
 }
 
 
 SQLExceptionInfo::operator const ::com::sun::star::sdb::SQLContext*() const
 {
-    OSL_ENSURE(isKindOf(SQL_CONTEXT), "SQLExceptionInfo::operator SQLException* : invalid call !");
+    OSL_ENSURE(isKindOf(TYPE::SQLContext), "SQLExceptionInfo::operator SQLException* : invalid call !");
     return static_cast<const ::com::sun::star::sdb::SQLContext*>(m_aContent.getValue());
 }
 
 
-void SQLExceptionInfo::prepend( const OUString& _rErrorMessage, const OUString& _rSQLState, const sal_Int32 _nErrorCode )
+void SQLExceptionInfo::prepend( const OUString& _rErrorMessage )
 {
     SQLException aException;
     aException.Message = _rErrorMessage;
-    aException.ErrorCode = _nErrorCode;
-    aException.SQLState = !_rSQLState.isEmpty() ? _rSQLState : "S1000";
+    aException.ErrorCode = 0;
+    aException.SQLState = "S1000";
     aException.NextException = m_aContent;
     m_aContent <<= aException;
 
-    m_eType = SQL_EXCEPTION;
+    m_eType = TYPE::SQLException;
 }
 
 
@@ -204,9 +204,9 @@ void SQLExceptionInfo::append( TYPE _eType, const OUString& _rErrorMessage, cons
     Any aAppend;
     switch ( _eType )
     {
-    case SQL_EXCEPTION: aAppend <<= SQLException(); break;
-    case SQL_WARNING:   aAppend <<= SQLWarning();   break;
-    case SQL_CONTEXT:   aAppend <<= SQLContext();   break;
+    case TYPE::SQLException: aAppend <<= SQLException(); break;
+    case TYPE::SQLWarning:   aAppend <<= SQLWarning();   break;
+    case TYPE::SQLContext:   aAppend <<= SQLContext();   break;
     default:
         OSL_FAIL( "SQLExceptionInfo::append: invalid exception type: this will crash!" );
         break;
@@ -253,7 +253,7 @@ void SQLExceptionInfo::doThrow()
 
 SQLExceptionIteratorHelper::SQLExceptionIteratorHelper( const SQLExceptionInfo& _rChainStart )
     :m_pCurrent( nullptr )
-    ,m_eCurrentType( SQLExceptionInfo::UNDEFINED )
+    ,m_eCurrentType( SQLExceptionInfo::TYPE::Undefined )
 {
     if ( _rChainStart.isValid() )
     {
@@ -265,7 +265,7 @@ SQLExceptionIteratorHelper::SQLExceptionIteratorHelper( const SQLExceptionInfo& 
 
 SQLExceptionIteratorHelper::SQLExceptionIteratorHelper( const ::com::sun::star::sdbc::SQLException& _rChainStart )
     :m_pCurrent( &_rChainStart )
-    ,m_eCurrentType( SQLExceptionInfo::SQL_EXCEPTION )
+    ,m_eCurrentType( SQLExceptionInfo::TYPE::SQLException )
 {
 }
 
@@ -274,15 +274,15 @@ void SQLExceptionIteratorHelper::current( SQLExceptionInfo& _out_rInfo ) const
 {
     switch ( m_eCurrentType )
     {
-    case SQLExceptionInfo::SQL_EXCEPTION:
+    case SQLExceptionInfo::TYPE::SQLException:
         _out_rInfo = *m_pCurrent;
         break;
 
-    case SQLExceptionInfo::SQL_WARNING:
+    case SQLExceptionInfo::TYPE::SQLWarning:
         _out_rInfo = *static_cast< const SQLWarning* >( m_pCurrent );
         break;
 
-    case SQLExceptionInfo::SQL_CONTEXT:
+    case SQLExceptionInfo::TYPE::SQLContext:
         _out_rInfo = *static_cast< const SQLContext* >( m_pCurrent );
         break;
 
@@ -309,7 +309,7 @@ const ::com::sun::star::sdbc::SQLException* SQLExceptionIteratorHelper::next()
     {
         // no SQLException at all in the next chain element
         m_pCurrent = nullptr;
-        m_eCurrentType = SQLExceptionInfo::UNDEFINED;
+        m_eCurrentType = SQLExceptionInfo::TYPE::Undefined;
         return pReturn;
     }
 
@@ -319,19 +319,19 @@ const ::com::sun::star::sdbc::SQLException* SQLExceptionIteratorHelper::next()
     const Type aTypeContext( ::cppu::UnoType< SQLContext >::get() );
     if ( isAssignableFrom( aTypeContext, aNextElementType ) )
     {
-        m_eCurrentType = SQLExceptionInfo::SQL_CONTEXT;
+        m_eCurrentType = SQLExceptionInfo::TYPE::SQLContext;
         return pReturn;
     }
 
     const Type aTypeWarning( ::cppu::UnoType< SQLWarning >::get() );
     if ( isAssignableFrom( aTypeWarning, aNextElementType ) )
     {
-        m_eCurrentType = SQLExceptionInfo::SQL_WARNING;
+        m_eCurrentType = SQLExceptionInfo::TYPE::SQLWarning;
         return pReturn;
     }
 
     // a simple SQLException
-    m_eCurrentType = SQLExceptionInfo::SQL_EXCEPTION;
+    m_eCurrentType = SQLExceptionInfo::TYPE::SQLException;
     return pReturn;
 }
 
@@ -349,7 +349,7 @@ void throwFunctionSequenceException(const Reference< XInterface >& _Context, con
     throw SQLException(
         aResources.getResourceString(STR_ERRORMSG_SEQUENCE),
         _Context,
-        getStandardSQLState( SQL_FUNCTION_SEQUENCE_ERROR ),
+        getStandardSQLState( StandardSQLState::FUNCTION_SEQUENCE_ERROR ),
         0,
         _Next
     );
@@ -362,15 +362,14 @@ void throwInvalidIndexException(const ::com::sun::star::uno::Reference< ::com::s
     throw SQLException(
         aResources.getResourceString(STR_INVALID_INDEX),
         _Context,
-        getStandardSQLState( SQL_INVALID_DESCRIPTOR_INDEX ),
+        getStandardSQLState( StandardSQLState::INVALID_DESCRIPTOR_INDEX ),
         0,
         _Next
     );
 }
 
 void throwFunctionNotSupportedSQLException(const OUString& _rFunctionName,
-    const css::uno::Reference<css::uno::XInterface>& _rxContext,
-    const css::uno::Any& _rNextException) throw (css::sdbc::SQLException)
+    const css::uno::Reference<css::uno::XInterface>& _rxContext) throw (css::sdbc::SQLException)
 {
     ::connectivity::SharedResources aResources;
     const OUString sError( aResources.getResourceStringWithSubstitution(
@@ -380,9 +379,9 @@ void throwFunctionNotSupportedSQLException(const OUString& _rFunctionName,
     throw SQLException(
         sError,
         _rxContext,
-        getStandardSQLState( SQL_FUNCTION_NOT_SUPPORTED ),
+        getStandardSQLState( StandardSQLState::FUNCTION_NOT_SUPPORTED ),
         0,
-        _rNextException
+        css::uno::Any()
     );
 }
 
@@ -410,10 +409,10 @@ void throwGenericSQLException(const OUString& _rMsg, const ::com::sun::star::uno
 void throwGenericSQLException(const OUString& _rMsg, const Reference< XInterface >& _rxSource, const Any& _rNextException)
     throw (SQLException)
 {
-    throw SQLException( _rMsg, _rxSource, getStandardSQLState( SQL_GENERAL_ERROR ), 0, _rNextException);
+    throw SQLException( _rMsg, _rxSource, getStandardSQLState( StandardSQLState::GENERAL_ERROR ), 0, _rNextException);
 }
 
-void throwFeatureNotImplementedSQLException( const OUString& _rFeatureName, const Reference< XInterface >& _rxContext, const Any* _pNextException )
+void throwFeatureNotImplementedSQLException( const OUString& _rFeatureName, const Reference< XInterface >& _rxContext )
     throw (SQLException)
 {
     ::connectivity::SharedResources aResources;
@@ -425,9 +424,9 @@ void throwFeatureNotImplementedSQLException( const OUString& _rFeatureName, cons
     throw SQLException(
         sError,
         _rxContext,
-        getStandardSQLState( SQL_FEATURE_NOT_IMPLEMENTED ),
+        getStandardSQLState( StandardSQLState::FEATURE_NOT_IMPLEMENTED ),
         0,
-        _pNextException ? *_pNextException : Any()
+        Any()
     );
 }
 
@@ -450,7 +449,7 @@ void throwInvalidColumnException( const OUString& _rColumnName, const Reference<
     OUString sErrorMessage( aResources.getResourceStringWithSubstitution(
                                 STR_INVALID_COLUMNNAME,
                                 "$columnname$",_rColumnName) );
-    throwSQLException( sErrorMessage, SQL_COLUMN_NOT_FOUND, _rxContext );
+    throwSQLException( sErrorMessage, StandardSQLState::COLUMN_NOT_FOUND, _rxContext );
 }
 
 void throwSQLException( const OUString& _rMessage, const OUString& _rSQLState,
@@ -467,10 +466,9 @@ void throwSQLException( const OUString& _rMessage, const OUString& _rSQLState,
 
 
 void throwSQLException( const OUString& _rMessage, StandardSQLState _eSQLState,
-        const Reference< XInterface >& _rxContext, const sal_Int32 _nErrorCode,
-        const Any* _pNextException ) throw (SQLException)
+        const Reference< XInterface >& _rxContext, const sal_Int32 _nErrorCode ) throw (SQLException)
 {
-    throwSQLException( _rMessage, getStandardSQLState( _eSQLState ), _rxContext, _nErrorCode, _pNextException );
+    throwSQLException( _rMessage, getStandardSQLState( _eSQLState ), _rxContext, _nErrorCode );
 }
 
 
@@ -478,27 +476,27 @@ OUString getStandardSQLState( StandardSQLState _eState )
 {
     switch ( _eState )
     {
-    case SQL_WRONG_PARAMETER_NUMBER:    return OUString("07001");
-    case SQL_INVALID_DESCRIPTOR_INDEX:  return OUString("07009");
-    case SQL_UNABLE_TO_CONNECT:         return OUString("08001");
-    case SQL_NUMERIC_OUT_OF_RANGE:      return OUString("22003");
-    case SQL_INVALID_DATE_TIME:         return OUString("22007");
-    case SQL_INVALID_CURSOR_STATE:      return OUString("24000");
-    case SQL_TABLE_OR_VIEW_EXISTS:      return OUString("42S01");
-    case SQL_TABLE_OR_VIEW_NOT_FOUND:   return OUString("42S02");
-    case SQL_INDEX_ESISTS:              return OUString("42S11");
-    case SQL_INDEX_NOT_FOUND:           return OUString("42S12");
-    case SQL_COLUMN_EXISTS:             return OUString("42S21");
-    case SQL_COLUMN_NOT_FOUND:          return OUString("42S22");
-    case SQL_GENERAL_ERROR:             return OUString("HY000");
-    case SQL_INVALID_SQL_DATA_TYPE:     return OUString("HY004");
-    case SQL_OPERATION_CANCELED:        return OUString("HY008");
-    case SQL_FUNCTION_SEQUENCE_ERROR:   return OUString("HY010");
-    case SQL_INVALID_CURSOR_POSITION:   return OUString("HY109");
-    case SQL_INVALID_BOOKMARK_VALUE:    return OUString("HY111");
-    case SQL_FEATURE_NOT_IMPLEMENTED:   return OUString("HYC00");
-    case SQL_FUNCTION_NOT_SUPPORTED:    return OUString("IM001");
-    case SQL_CONNECTION_DOES_NOT_EXIST: return OUString("08003");
+    case StandardSQLState::WRONG_PARAMETER_NUMBER:    return OUString("07001");
+    case StandardSQLState::INVALID_DESCRIPTOR_INDEX:  return OUString("07009");
+    case StandardSQLState::UNABLE_TO_CONNECT:         return OUString("08001");
+    case StandardSQLState::NUMERIC_OUT_OF_RANGE:      return OUString("22003");
+    case StandardSQLState::INVALID_DATE_TIME:         return OUString("22007");
+    case StandardSQLState::INVALID_CURSOR_STATE:      return OUString("24000");
+    case StandardSQLState::TABLE_OR_VIEW_EXISTS:      return OUString("42S01");
+    case StandardSQLState::TABLE_OR_VIEW_NOT_FOUND:   return OUString("42S02");
+    case StandardSQLState::INDEX_ESISTS:              return OUString("42S11");
+    case StandardSQLState::INDEX_NOT_FOUND:           return OUString("42S12");
+    case StandardSQLState::COLUMN_EXISTS:             return OUString("42S21");
+    case StandardSQLState::COLUMN_NOT_FOUND:          return OUString("42S22");
+    case StandardSQLState::GENERAL_ERROR:             return OUString("HY000");
+    case StandardSQLState::INVALID_SQL_DATA_TYPE:     return OUString("HY004");
+    case StandardSQLState::OPERATION_CANCELED:        return OUString("HY008");
+    case StandardSQLState::FUNCTION_SEQUENCE_ERROR:   return OUString("HY010");
+    case StandardSQLState::INVALID_CURSOR_POSITION:   return OUString("HY109");
+    case StandardSQLState::INVALID_BOOKMARK_VALUE:    return OUString("HY111");
+    case StandardSQLState::FEATURE_NOT_IMPLEMENTED:   return OUString("HYC00");
+    case StandardSQLState::FUNCTION_NOT_SUPPORTED:    return OUString("IM001");
+    case StandardSQLState::CONNECTION_DOES_NOT_EXIST: return OUString("08003");
     default:                            return OUString("HY001"); // General Error
     }
 }

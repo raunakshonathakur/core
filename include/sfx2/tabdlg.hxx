@@ -127,8 +127,7 @@ public:
 
     sal_uInt16          AddTabPage( const OString& rName,           // Name of the label for the page in the notebook .ui
                                     CreateTabPage pCreateFunc,      // != 0
-                                    GetTabPageRanges pRangesFunc,   // can be 0
-                                    bool bItemsOnDemand = false);
+                                    GetTabPageRanges pRangesFunc);  // can be 0
 
     sal_uInt16          AddTabPage ( const OString &rName,          // Name of the label for the page in the notebook .ui
                                      sal_uInt16 nPageCreateId );    // Identifier of the Factory Method to create the page
@@ -141,9 +140,7 @@ public:
                                     sal_uInt16 nPos = TAB_APPEND);
 
     void                AddTabPage( sal_uInt16 nId,
-                                    const OUString &rRiderText,
-                                    bool bItemsOnDemand = false,
-                                    sal_uInt16 nPos = TAB_APPEND);
+                                    const OUString &rRiderText);
 
     void                RemoveTabPage( const OString& rName ); // Name of the label for the page in the notebook .ui
     void                RemoveTabPage( sal_uInt16 nId );
@@ -190,7 +187,7 @@ public:
 
     short               Execute() override;
     void                StartExecuteModal( const Link<Dialog&,void>& rEndDialogHdl ) override;
-    void                Start( bool bShow = true );
+    void                Start();
 
     const SfxItemSet*   GetExampleSet() const { return pExampleSet; }
     SfxItemSet*         GetExampleSet() { return pExampleSet; }
@@ -236,8 +233,8 @@ public:
 
     bool                HasExchangeSupport() const
                             { return bHasExchangeSupport; }
-    void                SetExchangeSupport( bool bNew = true )
-                            { bHasExchangeSupport = bNew; }
+    void                SetExchangeSupport()
+                            { bHasExchangeSupport = true; }
 
     enum sfxpg {
       KEEP_PAGE = 0x0000,      // Error handling; page does not change

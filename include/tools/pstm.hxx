@@ -59,7 +59,7 @@ public:
     virtual void    Load( SvPersistStream & ) override;          \
     virtual void    Save( SvPersistStream & ) override;
 
-#define PRV_SV_IMPL_PERSIST( Class )                                \
+#define SV_IMPL_PERSIST1( Class, Super1 )                           \
     void *          Class::CreateInstance( SvPersistBase ** ppBase )\
                     {                                               \
                         Class * p = new Class();                    \
@@ -76,9 +76,6 @@ public:
                         return rStm;                                \
                     }
 
-#define SV_IMPL_PERSIST1( Class, Super1 )                           \
-    PRV_SV_IMPL_PERSIST( Class )
-
 class SvPersistStream;
 
 class SvPersistBase : public SvRttiBase
@@ -90,8 +87,6 @@ public:
     TOOLS_DLLPUBLIC friend SvPersistStream& operator >> ( SvPersistStream & rStm,
                                           SvPersistBase *& rpObj );
 };
-
-typedef std::map<SvPersistBase*, sal_uIntPtr> PersistBaseMap;
 
 class SvStream;
 
@@ -130,12 +125,18 @@ class SvStream;
 */
 class TOOLS_DLLPUBLIC SvPersistStream : public SvStream
 {
+public:
+    typedef UniqueIndex<SvPersistBase>::Index Index;
+
+private:
+    typedef std::map<SvPersistBase*, Index> PersistBaseMap;
+
     SvClassManager &    rClassMgr;
     SvStream *          pStm;
     PersistBaseMap      aPTable; // reversed pointer and key
     UniqueIndex<SvPersistBase>
                         aPUIdx;
-    sal_uIntPtr         nStartIdx;
+    Index               nStartIdx;
     const SvPersistStream * pRefStm;
 
     virtual sal_uIntPtr GetData( void* pData, sal_uIntPtr nSize ) override;
@@ -145,19 +146,18 @@ class TOOLS_DLLPUBLIC SvPersistStream : public SvStream
 
 protected:
     void                WriteObj( sal_uInt8 nHdr, SvPersistBase * pObj );
-    void                ReadObj( SvPersistBase * & rpObj, bool bRegister );
+    void                ReadObj( SvPersistBase * & rpObj );
 
 public:
     virtual void        ResetError() override;
 
-                        SvPersistStream( SvClassManager &, SvStream * pStream,
-                                         sal_uInt32 nStartIdx = 1 );
+                        SvPersistStream( SvClassManager &, SvStream * pStream );
                         virtual ~SvPersistStream();
 
-    void                SetStream( SvStream * pStream );
+    void                ClearStream();
 
-    SvPersistBase *     GetObject( sal_uIntPtr nIdx ) const;
-    sal_uIntPtr         GetIndex( SvPersistBase * ) const;
+    SvPersistBase *     GetObject( Index nIdx ) const;
+    Index               GetIndex( SvPersistBase * ) const;
 
     static void         WriteCompressed( SvStream & rStm, sal_uInt32 nVal );
     static sal_uInt32   ReadCompressed( SvStream & rStm );

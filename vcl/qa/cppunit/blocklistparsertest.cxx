@@ -36,11 +36,11 @@ void BlocklistParserTest::testParse()
 {
     std::vector<wgl::DriverInfo> aDriveInfos;
 
-    WinBlocklistParser aBlocklistParser(getURLFromSrc("vcl/qa/cppunit/") + "test_blocklist_parse.xml", aDriveInfos);
+    WinBlocklistParser aBlocklistParser(m_directories.getURLFromSrc("vcl/qa/cppunit/") + "test_blocklist_parse.xml", aDriveInfos);
     aBlocklistParser.parse();
 
-    auto const n = aDriveInfos.size();
-    CPPUNIT_ASSERT_EQUAL(static_cast<decltype(n)>(20), n);
+    size_t const n = aDriveInfos.size();
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(20), n);
 
     size_t i = 0;
 
@@ -105,7 +105,7 @@ void BlocklistParserTest::testEvaluate()
 {
     std::vector<wgl::DriverInfo> aDriveInfos;
 
-    WinBlocklistParser aBlocklistParser(getURLFromSrc("vcl/qa/cppunit/") + "test_blocklist_evaluate.xml", aDriveInfos);
+    WinBlocklistParser aBlocklistParser(m_directories.getURLFromSrc("vcl/qa/cppunit/") + "test_blocklist_evaluate.xml", aDriveInfos);
     aBlocklistParser.parse();
 
     OUString vendorAMD = WinOpenGLDeviceInfo::GetDeviceVendor(wgl::VendorAMD);

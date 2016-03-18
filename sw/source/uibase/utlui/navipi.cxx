@@ -60,7 +60,23 @@
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::frame;
 
-SFX_IMPL_CHILDWINDOW_CONTEXT( SwNavigationChild, SID_NAVIGATOR, SwView )
+//! soon obsolete !
+SfxChildWindowContext* SwNavigationChild::CreateImpl( vcl::Window *pParent,
+        SfxBindings *pBindings, SfxChildWinInfo* pInfo )
+{
+    SfxChildWindowContext *pContext = new SwNavigationChild(pParent,
+            /* cast is safe here! */static_cast< sal_uInt16 >(SwView::GetInterfaceId()),
+            pBindings,pInfo);
+    return pContext;
+}
+void    SwNavigationChild::RegisterChildWindowContext(SfxModule* pMod)
+{
+    SfxChildWinContextFactory *pFact = new SfxChildWinContextFactory(
+       SwNavigationChild::CreateImpl,
+       /* cast is safe here! */static_cast< sal_uInt16 >(SwView::GetInterfaceId()) );
+    SfxChildWindowContext::RegisterChildWindowContext(pMod, SID_NAVIGATOR, pFact);
+}
+
 
 // Filter the control characters out of the Outline-Entry
 
@@ -174,14 +190,11 @@ void SwNavigationPI::FillBox()
     }
 }
 
-void SwNavigationPI::UsePage(SwWrtShell *pSh)
+void SwNavigationPI::UsePage()
 {
-    if (!pSh)
-    {
-        SwView *pView = GetCreateView();
-        pSh = pView ? &pView->GetWrtShell() : nullptr;
-        GetPageEdit().SetValue(1);
-    }
+    SwView *pView = GetCreateView();
+    SwWrtShell *pSh = pView ? &pView->GetWrtShell() : nullptr;
+    GetPageEdit().SetValue(1);
     if (pSh)
     {
         const sal_uInt16 nPageCnt = pSh->GetPageCnt();
@@ -518,7 +531,7 @@ void SwNavigationPI::GotoPage()
         _ZoomIn();
     if(IsGlobalMode())
         ToggleTree();
-    UsePage(nullptr);
+    UsePage();
     GetPageEdit().GrabFocus();
 }
 
@@ -819,7 +832,7 @@ SwNavigationPI::SwNavigationPI( SfxBindings* _pBindings,
     }
     else
         m_aContentTree->GrabFocus();
-    UsePage(nullptr);
+    UsePage();
     m_aPageChgIdle.SetIdleHdl(LINK(this, SwNavigationPI, ChangePageHdl));
     m_aPageChgIdle.SetPriority(SchedulerPriority::LOWEST);
 

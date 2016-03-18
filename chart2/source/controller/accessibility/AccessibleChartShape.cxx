@@ -48,12 +48,7 @@ AccessibleChartShape::AccessibleChartShape(
         {
             xParent.set( rAccInfo.m_pParent );
         }
-        sal_Int32 nIndex = -1;
-        if ( rAccInfo.m_spObjectHierarchy )
-        {
-            nIndex = rAccInfo.m_spObjectHierarchy->getIndexInParent( rAccInfo.m_aOID );
-        }
-        ::accessibility::AccessibleShapeInfo aShapeInfo( xShape, xParent, nIndex );
+        ::accessibility::AccessibleShapeInfo aShapeInfo( xShape, xParent );
 
         m_aShapeTreeInfo.SetSdrView( rAccInfo.m_pSdrView );
         m_aShapeTreeInfo.SetController( nullptr );
@@ -121,7 +116,7 @@ sal_Int16 AccessibleChartShape::getAccessibleRole()
 }
 
 OUString AccessibleChartShape::getAccessibleDescription()
-    throw (::com::sun::star::uno::RuntimeException, std::exception)
+    throw (css::uno::RuntimeException, std::exception)
 {
     OUString aDescription;
     if ( m_pAccShape.is() )
@@ -132,7 +127,7 @@ OUString AccessibleChartShape::getAccessibleDescription()
 }
 
 OUString AccessibleChartShape::getAccessibleName()
-    throw (::com::sun::star::uno::RuntimeException, std::exception)
+    throw (css::uno::RuntimeException, std::exception)
 {
     OUString aName;
     if ( m_pAccShape.is() )
@@ -261,7 +256,7 @@ OUString AccessibleChartShape::getTitledBorderText()
 }
 
 OUString AccessibleChartShape::getToolTipText()
-    throw (::com::sun::star::uno::RuntimeException, std::exception)
+    throw (css::uno::RuntimeException, std::exception)
 {
     OUString aText;
     if ( m_pAccShape.is() )

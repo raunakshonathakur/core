@@ -47,11 +47,11 @@ private:
 
 protected:
     sal_Unicode GetHexValue();
-    void ScanText( const sal_Unicode = 0 );
+    void ScanText();
     void SkipGroup();
 
     // scanne das naechste Token,
-    virtual int _GetNextToken() override;
+    virtual int GetNextToken_() override;
 
     void ReadUnknownData();
     virtual void ReadBitmapData();

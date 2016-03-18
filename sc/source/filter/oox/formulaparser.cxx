@@ -467,20 +467,20 @@ protected:
     size_t              appendWhiteSpaceTokens( const WhiteSpaceVec* pSpaces );
     size_t              insertWhiteSpaceTokens( const WhiteSpaceVec* pSpaces, size_t nIndexFromEnd );
 
-    size_t              getOperandSize( size_t nOpCountFromEnd, size_t nOpIndex ) const;
+    size_t              getOperandSize( size_t nOpIndex ) const;
     void                pushOperandSize( size_t nSize );
     size_t              popOperandSize();
 
-    ApiToken&           getOperandToken( size_t nOpCountFromEnd, size_t nOpIndex, size_t nTokenIndex );
+    ApiToken&           getOperandToken( size_t nOpIndex, size_t nTokenIndex );
 
     bool                pushOperandToken( sal_Int32 nOpCode, const WhiteSpaceVec* pSpaces = nullptr );
     bool                pushAnyOperandToken( const Any& rAny, sal_Int32 nOpCode, const WhiteSpaceVec* pSpaces = nullptr );
     template< typename Type >
     bool                pushValueOperandToken( const Type& rValue, sal_Int32 nOpCode, const WhiteSpaceVec* pSpaces = nullptr );
     template< typename Type >
-    inline bool         pushValueOperandToken( const Type& rValue, const WhiteSpaceVec* pSpaces = nullptr )
-                            { return pushValueOperandToken( rValue, OPCODE_PUSH, pSpaces ); }
-    bool                pushParenthesesOperandToken( const WhiteSpaceVec* pOpeningSpaces = nullptr, const WhiteSpaceVec* pClosingSpaces = nullptr );
+    inline bool         pushValueOperandToken( const Type& rValue )
+                            { return pushValueOperandToken( rValue, OPCODE_PUSH, nullptr ); }
+    bool                pushParenthesesOperandToken( const WhiteSpaceVec* pClosingSpaces = nullptr );
     bool                pushUnaryPreOperatorToken( sal_Int32 nOpCode, const WhiteSpaceVec* pSpaces = nullptr );
     bool                pushUnaryPostOperatorToken( sal_Int32 nOpCode, const WhiteSpaceVec* pSpaces = nullptr );
     bool                pushBinaryOperatorToken( sal_Int32 nOpCode, const WhiteSpaceVec* pSpaces = nullptr );
@@ -544,7 +544,7 @@ protected:
     const sal_Int32     mnMaxXlsCol;                /// Maximum column index in imported document.
     const sal_Int32     mnMaxXlsRow;                /// Maximum row index in imported document.
 
-    CellAddress         maBaseAddr;                 /// Base address for relative references.
+    ScAddress           maBaseAddr;                 /// Base address for relative references.
     bool                mbRelativeAsOffset;         /// True = relative row/column index is (signed) offset, false = explicit index.
     bool                mb2dRefsAs3dRefs;           /// True = convert all 2D references to 3D references in sheet specified by base address.
     bool                mbSpecialTokens;            /// True = special handling for tExp and tTbl tokens, false = exit with error.
@@ -564,10 +564,10 @@ private:
 FormulaParserImpl::FormulaParserImpl( const FormulaParser& rParent ) :
     FormulaFinalizer( rParent ),
     WorkbookHelper( rParent ),
-    mnMaxApiCol( rParent.getAddressConverter().getMaxApiAddress().Column ),
-    mnMaxApiRow( rParent.getAddressConverter().getMaxApiAddress().Row ),
-    mnMaxXlsCol( rParent.getAddressConverter().getMaxXlsAddress().Column ),
-    mnMaxXlsRow( rParent.getAddressConverter().getMaxXlsAddress().Row ),
+    mnMaxApiCol( rParent.getAddressConverter().getMaxApiAddress().Col() ),
+    mnMaxApiRow( rParent.getAddressConverter().getMaxApiAddress().Row() ),
+    mnMaxXlsCol( rParent.getAddressConverter().getMaxXlsAddress().Col() ),
+    mnMaxXlsRow( rParent.getAddressConverter().getMaxXlsAddress().Row() ),
     mbRelativeAsOffset( false ),
     mb2dRefsAs3dRefs( false ),
     mbSpecialTokens( false ),
@@ -618,7 +618,7 @@ OUString FormulaParserImpl::resolveOleTarget( sal_Int32 nRefId, bool bUseRefShee
 
 void FormulaParserImpl::initializeImport( const CellAddress& rBaseAddr, FormulaType eType )
 {
-    maBaseAddr = rBaseAddr;
+    maBaseAddr = ScAddress( rBaseAddr.Column, rBaseAddr.Row, rBaseAddr.Sheet );
     mbRelativeAsOffset = mb2dRefsAs3dRefs = mbSpecialTokens = mbAllowNulChars = false;
     switch( eType )
     {
@@ -727,11 +727,11 @@ size_t FormulaParserImpl::insertWhiteSpaceTokens( const WhiteSpaceVec* pSpaces, 
     return pSpaces ? pSpaces->size() : 0;
 }
 
-size_t FormulaParserImpl::getOperandSize( size_t nOpCountFromEnd, size_t nOpIndex ) const
+size_t FormulaParserImpl::getOperandSize( size_t nOpIndex ) const
 {
-    OSL_ENSURE( (nOpIndex < nOpCountFromEnd) && (nOpCountFromEnd <= maOperandSizeStack.size()),
+    OSL_ENSURE( (nOpIndex < 1) && (1 <= maOperandSizeStack.size()),
         "FormulaParserImpl::getOperandSize - invalid parameters" );
-    return maOperandSizeStack[ maOperandSizeStack.size() - nOpCountFromEnd + nOpIndex ];
+    return maOperandSizeStack[ maOperandSizeStack.size() - 1 + nOpIndex ];
 }
 
 void FormulaParserImpl::pushOperandSize( size_t nSize )
@@ -747,13 +747,12 @@ size_t FormulaParserImpl::popOperandSize()
     return nOpSize;
 }
 
-ApiToken& FormulaParserImpl::getOperandToken( size_t nOpCountFromEnd, size_t nOpIndex, size_t nTokenIndex )
+ApiToken& FormulaParserImpl::getOperandToken( size_t nOpIndex, size_t nTokenIndex )
 {
-    SAL_WARN_IF(
-        getOperandSize( nOpCountFromEnd, nOpIndex ) <= nTokenIndex, "sc.filter",
+    SAL_WARN_IF( getOperandSize( nOpIndex ) <= nTokenIndex, "sc.filter",
         "FormulaParserImpl::getOperandToken - invalid parameters" );
     SizeTypeVector::const_iterator aIndexIt = maTokenIndexes.end();
-    for( SizeTypeVector::const_iterator aEnd = maOperandSizeStack.end(), aIt = aEnd - nOpCountFromEnd + nOpIndex; aIt != aEnd; ++aIt )
+    for( SizeTypeVector::const_iterator aEnd = maOperandSizeStack.end(), aIt = aEnd - 1 + nOpIndex; aIt != aEnd; ++aIt )
         aIndexIt -= *aIt;
     return maTokenStorage[ *(aIndexIt + nTokenIndex) ];
 }
@@ -783,9 +782,9 @@ bool FormulaParserImpl::pushValueOperandToken( const Type& rValue, sal_Int32 nOp
     return true;
 }
 
-bool FormulaParserImpl::pushParenthesesOperandToken( const WhiteSpaceVec* pOpeningSpaces, const WhiteSpaceVec* pClosingSpaces )
+bool FormulaParserImpl::pushParenthesesOperandToken( const WhiteSpaceVec* pClosingSpaces )
 {
-    size_t nSpacesSize = appendWhiteSpaceTokens( pOpeningSpaces );
+    size_t nSpacesSize = appendWhiteSpaceTokens( nullptr );
     appendRawToken( OPCODE_OPEN );
     nSpacesSize += appendWhiteSpaceTokens( pClosingSpaces );
     appendRawToken( OPCODE_CLOSE );
@@ -861,7 +860,7 @@ bool FormulaParserImpl::pushFunctionOperatorToken( sal_Int32 nOpCode, size_t nPa
 
     // add function parentheses and function name
     return bOk &&
-        ((nParamCount > 0) ? pushParenthesesOperatorToken( nullptr, pClosingSpaces ) : pushParenthesesOperandToken( nullptr, pClosingSpaces )) &&
+        ((nParamCount > 0) ? pushParenthesesOperatorToken( nullptr, pClosingSpaces ) : pushParenthesesOperandToken( pClosingSpaces )) &&
         pushUnaryPreOperatorToken( nOpCode, pLeadingSpaces );
 }
 
@@ -872,10 +871,10 @@ bool FormulaParserImpl::pushFunctionOperatorToken( const FunctionInfo& rFuncInfo
     {
        // create an external add-in call for the passed built-in function
         if( (rFuncInfo.mnApiOpCode == OPCODE_EXTERNAL) && !rFuncInfo.maExtProgName.isEmpty() )
-            getOperandToken( 1, 0, 0 ).Data <<= rFuncInfo.maExtProgName;
+            getOperandToken( 0, 0 ).Data <<= rFuncInfo.maExtProgName;
         // create a bad token with unsupported function name
         else if( (rFuncInfo.mnApiOpCode == OPCODE_BAD) && !rFuncInfo.maOoxFuncName.isEmpty() )
-            getOperandToken( 1, 0, 0 ).Data <<= rFuncInfo.maOoxFuncName;
+            getOperandToken( 0, 0 ).Data <<= rFuncInfo.maOoxFuncName;
     }
     return bOk;
 }
@@ -1057,7 +1056,7 @@ bool FormulaParserImpl::pushExternalNameOperand( const ExternalNameRef& rxExtNam
 
 bool FormulaParserImpl::pushSpecialTokenOperand( const BinAddress& rBaseAddr, bool bTable )
 {
-    CellAddress aBaseAddr( maBaseAddr.Sheet, rBaseAddr.mnCol, rBaseAddr.mnRow );
+    CellAddress aBaseAddr( maBaseAddr.Tab(), rBaseAddr.mnCol, rBaseAddr.mnRow );
     ApiSpecialTokenInfo aTokenInfo( aBaseAddr, bTable );
     return mbSpecialTokens && (getFormulaSize() == 0) && pushValueOperand( aTokenInfo, OPCODE_BAD );
 }
@@ -1098,13 +1097,13 @@ void FormulaParserImpl::initReference2d( SingleReference& orApiRef ) const
 {
     if( mb2dRefsAs3dRefs )
     {
-        initReference3d( orApiRef, maBaseAddr.Sheet, false );
+        initReference3d( orApiRef, sal_Int32 (maBaseAddr.Tab() ), false );
     }
     else
     {
         orApiRef.Flags = SHEET_RELATIVE;
         // #i10184# absolute sheet index needed for relative references in shared formulas
-        orApiRef.Sheet = maBaseAddr.Sheet;
+        orApiRef.Sheet = sal_Int32( maBaseAddr.Tab() );
         orApiRef.RelativeSheet = 0;
     }
 }
@@ -1149,9 +1148,9 @@ void FormulaParserImpl::convertReference( SingleReference& orApiRef, const BinSi
         if( !bRelativeAsOffset )
         {
             if( rRef.mbColRel )
-                orApiRef.RelativeColumn -= maBaseAddr.Column;
+                orApiRef.RelativeColumn -= sal_Int32( maBaseAddr.Col() );
             if( rRef.mbRowRel )
-                orApiRef.RelativeRow -= maBaseAddr.Row;
+                orApiRef.RelativeRow -= maBaseAddr.Row();
         }
     }
 }
@@ -1572,7 +1571,7 @@ bool OoxFormulaParserImpl::importTableToken( SequenceInputStream& rStrm )
                 }
                 else if( bThisRow )
                 {
-                    nStartRow = nEndRow = maBaseAddr.Row - xTable->getRange().StartRow;
+                    nStartRow = nEndRow = maBaseAddr.Row() - xTable->getRange().StartRow;
                     bFixedHeight = true;
                 }
                 else

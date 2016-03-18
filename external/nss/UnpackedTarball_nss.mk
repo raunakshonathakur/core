@@ -28,6 +28,12 @@ $(eval $(call gb_UnpackedTarball_add_patches,nss,\
         external/nss/nss-chromium-nss-static.patch \
         external/nss/nss-more-static.patch \
         external/nss/nss-ios.patch) \
+	$(if $(filter MSC-INTEL,$(COM)-$(CPUNAME)), \
+		external/nss/nss.cygwin64.in32bit.patch) \
+	$(if $(filter WNTMSC,$(OS)$(COM)), \
+		external/nss/nss.vs2015.pdb.patch) \
+    $(if $(findstring 120_70,$(VCVER)_$(WINDOWS_SDK_VERSION)), \
+        external/nss/nss-winXP-sdk.patch.1) \
 ))
 
 # nss-pem is only needed for internal curl to read the NSS CA database

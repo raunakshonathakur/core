@@ -69,7 +69,8 @@
 #include "com/sun/star/util/XNumberFormatTypes.hpp"
 #include "com/sun/star/util/NumberFormat.hpp"
 #include "com/sun/star/util/XNumberFormatsSupplier.hpp"
-#include <com/sun/star/util/SearchOptions.hpp>
+#include <com/sun/star/util/SearchOptions2.hpp>
+#include <com/sun/star/util/SearchAlgorithms2.hpp>
 #include <com/sun/star/util/SearchFlags.hpp>
 #include "com/sun/star/util/SearchAlgorithms.hpp"
 #include "com/sun/star/i18n/TransliterationModulesExtra.hpp"
@@ -80,12 +81,15 @@
 #include "com/sun/star/beans/PropertyAttribute.hpp"
 #include "com/sun/star/text/XTextField.hpp"
 #include "com/sun/star/text/TextMarkupType.hpp"
+#include <com/sun/star/chart2/data/XDataSource.hpp>
+#include <com/sun/star/document/XEmbeddedObjectSupplier2.hpp>
 #include <osl/file.hxx>
 #include <paratr.hxx>
 #include <drawfont.hxx>
 #include <txtfrm.hxx>
 #include <editeng/svxenum.hxx>
 #include <comphelper/propertysequence.hxx>
+#include <sfx2/classificationhelper.hxx>
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
 
 static const char* DATA_DIRECTORY = "/sw/qa/extras/uiwriter/data/";
@@ -145,6 +149,7 @@ public:
     void testUnoParagraph();
     void testTdf60967();
     void testSearchWithTransliterate();
+    void testTdf73660();
     void testNewDocModifiedState();
     void testTdf77342();
     void testTdf74230();
@@ -152,6 +157,7 @@ public:
     void testTdf80663();
     void testTdf57197();
     void testTdf90808();
+    void testTdf97601();
     void testTdf75137();
     void testTdf83798();
     void testTdf89714();
@@ -182,6 +188,7 @@ public:
     void testTdf96536();
     void testTdf96479();
     void testTdf96961();
+    void testClassificationPaste();
 
     CPPUNIT_TEST_SUITE(SwUiWriterTest);
     CPPUNIT_TEST(testReplaceForward);
@@ -233,6 +240,7 @@ public:
     CPPUNIT_TEST(testUnoParagraph);
     CPPUNIT_TEST(testTdf60967);
     CPPUNIT_TEST(testSearchWithTransliterate);
+    CPPUNIT_TEST(testTdf73660);
     CPPUNIT_TEST(testNewDocModifiedState);
     CPPUNIT_TEST(testTdf77342);
     CPPUNIT_TEST(testTdf74230);
@@ -240,6 +248,7 @@ public:
     CPPUNIT_TEST(testTdf80663);
     CPPUNIT_TEST(testTdf57197);
     CPPUNIT_TEST(testTdf90808);
+    CPPUNIT_TEST(testTdf97601);
     CPPUNIT_TEST(testTdf75137);
     CPPUNIT_TEST(testTdf83798);
     CPPUNIT_TEST(testTdf89714);
@@ -270,6 +279,7 @@ public:
     CPPUNIT_TEST(testTdf96536);
     CPPUNIT_TEST(testTdf96479);
     CPPUNIT_TEST(testTdf96961);
+    CPPUNIT_TEST(testClassificationPaste);
     CPPUNIT_TEST_SUITE_END();
 
 private:
@@ -600,7 +610,7 @@ void SwUiWriterTest::testImportRTF()
     OString aData = "{\\rtf1 Hello world!\\par}";
     SvMemoryStream aStream(const_cast<sal_Char*>(aData.getStr()), aData.getLength(), StreamMode::READ);
     SwReader aReader(aStream, OUString(), OUString(), *pWrtShell->GetCursor());
-    Reader* pRTFReader = SwReaderWriter::GetReader(READER_WRITER_RTF);
+    Reader* pRTFReader = SwReaderWriter::GetRtfReader();
     CPPUNIT_ASSERT(pRTFReader != nullptr);
     CPPUNIT_ASSERT_EQUAL(sal_uLong(0), aReader.Read(*pRTFReader));
 
@@ -979,7 +989,7 @@ void SwUiWriterTest::testMergeDoc()
     SwDoc* const pDoc1(createDoc("merge-change1.odt"));
 
     auto xDoc2Component(loadFromDesktop(
-            getURLFromSrc(DATA_DIRECTORY) + "merge-change2.odt",
+            m_directories.getURLFromSrc(DATA_DIRECTORY) + "merge-change2.odt",
             "com.sun.star.text.TextDocument"));
     auto pxDoc2Document(
             dynamic_cast<SwXTextDocument *>(xDoc2Component.get()));
@@ -1001,6 +1011,8 @@ void SwUiWriterTest::testMergeDoc()
     getParagraph(5, "Para Six: One Three Four Five");
     getParagraph(6, "");
     getParagraph(7, "");
+
+    xDoc2Component->dispose();
 }
 
 void SwUiWriterTest::testCreatePortions()
@@ -1695,28 +1707,28 @@ void SwUiWriterTest::testTdf69282WithMirror()
 void SwUiWriterTest::testTdf78742()
 {
     //testing with service type and any .ods file
-    OUString path = getURLFromSrc(DATA_DIRECTORY) + "calc-data-source.ods";
+    OUString path = m_directories.getURLFromSrc(DATA_DIRECTORY) + "calc-data-source.ods";
     SfxMedium aMedium(path, StreamMode::READ | StreamMode::SHARE_DENYWRITE);
     SfxFilterMatcher aMatcher(OUString("com.sun.star.text.TextDocument"));
-    const SfxFilter* pFilter = nullptr;
-    sal_uInt32 filter = aMatcher.DetectFilter(aMedium, &pFilter, true);
+    std::shared_ptr<const SfxFilter> pFilter;
+    sal_uInt32 filter = aMatcher.DetectFilter(aMedium, pFilter);
     CPPUNIT_ASSERT_EQUAL(ERRCODE_IO_ABORT, filter);
     //it should not return any Filter
     CPPUNIT_ASSERT(!pFilter);
     //testing without service type and any .ods file
     SfxMedium aMedium2(path, StreamMode::READ | StreamMode::SHARE_DENYWRITE);
     SfxFilterMatcher aMatcher2;
-    const SfxFilter* pFilter2 = nullptr;
-    sal_uInt32 filter2 = aMatcher2.DetectFilter(aMedium2, &pFilter2, true);
+    std::shared_ptr<const SfxFilter> pFilter2;
+    sal_uInt32 filter2 = aMatcher2.DetectFilter(aMedium2, pFilter2);
     CPPUNIT_ASSERT_EQUAL(ERRCODE_CLASS_NONE, filter2);
     //Filter should be returned with proper Name
     CPPUNIT_ASSERT_EQUAL(OUString("calc8"), pFilter2->GetFilterName());
     //testing with service type and any .odt file
-    OUString path2 = getURLFromSrc(DATA_DIRECTORY) + "fdo69893.odt";
+    OUString path2 = m_directories.getURLFromSrc(DATA_DIRECTORY) + "fdo69893.odt";
     SfxMedium aMedium3(path2, StreamMode::READ | StreamMode::SHARE_DENYWRITE);
     SfxFilterMatcher aMatcher3(OUString("com.sun.star.text.TextDocument"));
-    const SfxFilter* pFilter3 = nullptr;
-    sal_uInt32 filter3 = aMatcher3.DetectFilter(aMedium3, &pFilter3, true);
+    std::shared_ptr<const SfxFilter> pFilter3;
+    sal_uInt32 filter3 = aMatcher3.DetectFilter(aMedium3, pFilter3);
     CPPUNIT_ASSERT_EQUAL(ERRCODE_CLASS_NONE, filter3);
     //Filter should be returned with proper Name
     CPPUNIT_ASSERT_EQUAL(OUString("writer8"), pFilter3->GetFilterName());
@@ -1819,15 +1831,17 @@ void SwUiWriterTest::testSearchWithTransliterate()
     aIdx = SwNodeIndex(pDoc->GetNodes().GetEndOfContent(), -1);
     aPaM = SwPaM(aIdx);
     pDoc->getIDocumentContentOperations().InsertString(aPaM,"This is Other PARAGRAPH");
-    css::util::SearchOptions SearchOpt;
+    css::util::SearchOptions2 SearchOpt;
     SearchOpt.algorithmType = css::util::SearchAlgorithms_ABSOLUTE;
-    SearchOpt.searchFlag = 0x00000001;
+    SearchOpt.searchFlag = css::util::SearchFlags::ALL_IGNORE_CASE;
     SearchOpt.searchString = "other";
     SearchOpt.replaceString.clear();
     SearchOpt.changedChars = 0;
     SearchOpt.deletedChars = 0;
     SearchOpt.insertedChars = 0;
     SearchOpt.transliterateFlags = css::i18n::TransliterationModulesExtra::IGNORE_DIACRITICS_CTL;
+    SearchOpt.AlgorithmType2 = css::util::SearchAlgorithms2::ABSOLUTE;
+    SearchOpt.WildcardEscapeCharacter = 0;
     //transliteration option set so that at least one of the search strings is not found
     sal_uLong case1 = pWrtShell->SearchPattern(SearchOpt,true,DOCPOS_START,DOCPOS_END);
     SwShellCursor* pShellCursor = pWrtShell->getShellCursor(true);
@@ -1840,6 +1854,43 @@ void SwUiWriterTest::testSearchWithTransliterate()
     pShellCursor = pWrtShell->getShellCursor(true);
     CPPUNIT_ASSERT_EQUAL(OUString("paragraph"),pShellCursor->GetText());
     CPPUNIT_ASSERT_EQUAL(1,(int)case2);
+}
+
+void SwUiWriterTest::testTdf73660()
+{
+    SwDoc* pDoc = createDoc();
+    SwWrtShell* pWrtShell = pDoc->GetDocShell()->GetWrtShell();
+    OUString aData1 = "First" + OUString(CHAR_SOFTHYPHEN) + "Word";
+    OUString aData2 = "Seco" + OUString(CHAR_SOFTHYPHEN) + "nd";
+    OUString aData3 = OUString(CHAR_SOFTHYPHEN) + "Third";
+    OUString aData4 = "Fourth" + OUString(CHAR_SOFTHYPHEN);
+    OUString aData5 = "Fifth";
+    pWrtShell->Insert("We are inserting some text in the document to check the search feature ");
+    pWrtShell->Insert(aData1 + " ");
+    pWrtShell->Insert(aData2 + " ");
+    pWrtShell->Insert(aData3 + " ");
+    pWrtShell->Insert(aData4 + " ");
+    pWrtShell->Insert(aData5 + " ");
+    pWrtShell->Insert("Now we have enough text let's test search for all the cases");
+    //searching for all 5 strings entered with soft-hyphen, search string contains no soft-hyphen
+    css::util::SearchOptions2 searchOpt;
+    searchOpt.algorithmType = css::util::SearchAlgorithms_REGEXP;
+    searchOpt.searchFlag = css::util::SearchFlags::NORM_WORD_ONLY;
+    //case 1
+    searchOpt.searchString = "First";
+    CPPUNIT_ASSERT_EQUAL(sal_uLong(1), pWrtShell->SearchPattern(searchOpt,true,DOCPOS_START,DOCPOS_END));
+    //case 2
+    searchOpt.searchString = "Second";
+    CPPUNIT_ASSERT_EQUAL(sal_uLong(1), pWrtShell->SearchPattern(searchOpt,true,DOCPOS_START,DOCPOS_END));
+    //case 3
+    searchOpt.searchString = "Third";
+    CPPUNIT_ASSERT_EQUAL(sal_uLong(1), pWrtShell->SearchPattern(searchOpt,true,DOCPOS_START,DOCPOS_END));
+    //case 4
+    searchOpt.searchString = "Fourth";
+    CPPUNIT_ASSERT_EQUAL(sal_uLong(1), pWrtShell->SearchPattern(searchOpt,true,DOCPOS_START,DOCPOS_END));
+    //case 5
+    searchOpt.searchString = "Fifth";
+    CPPUNIT_ASSERT_EQUAL(sal_uLong(1), pWrtShell->SearchPattern(searchOpt,true,DOCPOS_START,DOCPOS_END));
 }
 
 void SwUiWriterTest::testNewDocModifiedState()
@@ -2341,6 +2392,30 @@ void SwUiWriterTest::testTdf90808()
     //only one bookmark of this type is allowed in each paragraph an exception of com.sun.star.lang.IllegalArgumentException must be thrown when inserting the other bookmark in same paragraph
     xCursor->gotoEndOfParagraph(true);
     CPPUNIT_ASSERT_THROW(xText->insertTextContent(xCursor, xNumBookmark2, true), css::lang::IllegalArgumentException);
+}
+
+void SwUiWriterTest::testTdf97601()
+{
+    // Instructions from the bugreport to trigger an infinite loop.
+    createDoc("tdf97601.odt");
+    uno::Reference<text::XTextEmbeddedObjectsSupplier> xEmbeddedObjectsSupplier(mxComponent, uno::UNO_QUERY);
+    uno::Reference<container::XNameAccess> xEmbeddedObjects = xEmbeddedObjectsSupplier->getEmbeddedObjects();
+    uno::Reference<beans::XPropertySet> xChart;
+    xEmbeddedObjects->getByName("myChart") >>= xChart;
+    uno::Reference<chart2::data::XDataSource> xChartComponent;
+    xChart->getPropertyValue("Component") >>= xChartComponent;
+    uno::Sequence< uno::Reference<chart2::data::XLabeledDataSequence> > aDataSequences = xChartComponent->getDataSequences();
+    uno::Reference<document::XEmbeddedObjectSupplier2> xChartState(xChart, uno::UNO_QUERY);
+    xChartState->getExtendedControlOverEmbeddedObject()->changeState(1);
+    uno::Reference<util::XModifiable> xDataSequenceModifiable(aDataSequences[2]->getValues(), uno::UNO_QUERY);
+    xDataSequenceModifiable->setModified(true);
+
+    // Make sure that the chart is marked as modified.
+    uno::Reference<util::XModifiable> xModifiable(xChartComponent, uno::UNO_QUERY);
+    CPPUNIT_ASSERT_EQUAL(true, bool(xModifiable->isModified()));
+    calcLayout();
+    // This never returned.
+    Scheduler::ProcessEventsToIdle();
 }
 
 void SwUiWriterTest::testTdf75137()
@@ -3172,6 +3247,40 @@ void SwUiWriterTest::testTdf96961()
     sal_Int32 nOther = parseDump("/root/page[1]/infos/bounds", "height").toInt32();
     sal_Int32 nLast = parseDump("/root/page[2]/infos/bounds", "height").toInt32();
     CPPUNIT_ASSERT(nLast > nOther);
+}
+
+namespace
+{
+
+int checkShells(SwDocShell* pSource, SwDocShell* pDestination)
+{
+    return int(SfxClassificationHelper::CheckPaste(pSource->getDocProperties(), pDestination->getDocProperties()));
+}
+
+}
+
+void SwUiWriterTest::testClassificationPaste()
+{
+    SwDocShell* pSourceShell = createDoc()->GetDocShell();
+    uno::Reference<lang::XComponent> xSourceComponent = mxComponent;
+    mxComponent.clear();
+
+    SwDocShell* pDestinationShell = createDoc()->GetDocShell();
+
+    // Not classified source, not classified destination.
+    CPPUNIT_ASSERT_EQUAL(int(SfxClassificationCheckPasteResult::None), checkShells(pSourceShell, pDestinationShell));
+
+    // Classified source, not classified destination.
+    uno::Sequence<beans::PropertyValue> aInternalOnly = comphelper::InitPropertySequence({{"Name", uno::makeAny(OUString("Internal Only"))}});
+    lcl_dispatchCommand(xSourceComponent, ".uno:ClassificationApply", aInternalOnly);
+    CPPUNIT_ASSERT_EQUAL(int(SfxClassificationCheckPasteResult::TargetDocNotClassified), checkShells(pSourceShell, pDestinationShell));
+
+    // Classified source and classified destination -- internal only has a higher level than confidential.
+    uno::Sequence<beans::PropertyValue> aConfidential = comphelper::InitPropertySequence({{"Name", uno::makeAny(OUString("Confidential"))}});
+    lcl_dispatchCommand(mxComponent, ".uno:ClassificationApply", aConfidential);
+    CPPUNIT_ASSERT_EQUAL(int(SfxClassificationCheckPasteResult::DocClassificationTooLow), checkShells(pSourceShell, pDestinationShell));
+
+    xSourceComponent->dispose();
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(SwUiWriterTest);

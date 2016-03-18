@@ -20,6 +20,7 @@
 #include <config_features.h>
 
 #include "scitems.hxx"
+#include <comphelper/lok.hxx>
 #include <sfx2/viewfrm.hxx>
 #include <sfx2/app.hxx>
 #include <sfx2/request.hxx>
@@ -165,17 +166,17 @@ static bool lcl_GetSortParam( const ScViewData* pData, ScSortParam& rSortParam )
     aExternalRange.aEnd.SetRow( nEndRow );
     aExternalRange.aEnd.SetCol( nEndCol );
 
-    if(( rSortParam.nCol1 == rSortParam.nCol2 && aExternalRange.aStart.Col() != aExternalRange.aEnd.Col() ) ||
-        ( rSortParam.nRow1 == rSortParam.nRow2 && aExternalRange.aStart.Row() != aExternalRange.aEnd.Row() ) )
+    // with LibreOfficeKit, don't try to interact with the user
+    if (!comphelper::LibreOfficeKit::isActive() &&
+        ((rSortParam.nCol1 == rSortParam.nCol2 && aExternalRange.aStart.Col() != aExternalRange.aEnd.Col()) ||
+         (rSortParam.nRow1 == rSortParam.nRow2 && aExternalRange.aStart.Row() != aExternalRange.aEnd.Row())))
     {
-        sal_uInt16 nFmt = SCA_VALID;
-
         pTabViewShell->AddHighlightRange( aExternalRange,Color( COL_LIGHTBLUE ) );
         ScRange rExtendRange( aExternalRange.aStart.Col(), aExternalRange.aStart.Row(), nTab, aExternalRange.aEnd.Col(), aExternalRange.aEnd.Row(), nTab );
-        OUString aExtendStr(rExtendRange.Format(nFmt, pDoc));
+        OUString aExtendStr(rExtendRange.Format(ScRefFlags::VALID, pDoc));
 
         ScRange rCurrentRange( rSortParam.nCol1, rSortParam.nRow1, nTab, rSortParam.nCol2, rSortParam.nRow2, nTab );
-        OUString aCurrentStr(rCurrentRange.Format(nFmt, pDoc));
+        OUString aCurrentStr(rCurrentRange.Format(ScRefFlags::VALID, pDoc));
 
         ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
@@ -977,7 +978,7 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                     OSL_ENSURE( pFact, "ScCellShell::ExecuteDB: SID_TEXT_TO_COLUMNS - pFact is null!" );
                     std::unique_ptr<AbstractScImportAsciiDlg> pDlg(pFact->CreateScImportAsciiDlg(
-                        nullptr, OUString(), &aStream, SC_TEXTTOCOLUMNS));
+                        OUString(), &aStream, SC_TEXTTOCOLUMNS));
                     OSL_ENSURE( pDlg, "ScCellShell::ExecuteDB: SID_TEXT_TO_COLUMNS - pDlg is null!" );
 
                     if ( pDlg->Execute() == RET_OK )

@@ -554,7 +554,7 @@ void OutputDevice::ImplRefreshFontData( const bool bNewFontLists )
             {
                 if( mpPDFWriter )
                 {
-                    mpFontCollection = pSVData->maGDIData.mpScreenFontList->Clone( true, true );
+                    mpFontCollection = pSVData->maGDIData.mpScreenFontList->Clone( true );
                     mpFontCache = new ImplFontCache();
                 }
                 else
@@ -577,10 +577,10 @@ void OutputDevice::ImplRefreshFontData( const bool bNewFontLists )
     }
 }
 
-void OutputDevice::ImplUpdateFontData( bool bNewFontLists )
+void OutputDevice::ImplUpdateFontData()
 {
-    ImplClearFontData( bNewFontLists );
-    ImplRefreshFontData( bNewFontLists );
+    ImplClearFontData( true/*bNewFontLists*/ );
+    ImplRefreshFontData( true/*bNewFontLists*/ );
 }
 
 void OutputDevice::ImplClearAllFontData(bool bNewFontLists)
@@ -725,15 +725,14 @@ sal_uInt16 OutputDevice::GetFontSubstituteCount()
 }
 
 bool ImplDirectFontSubstitution::FindFontSubstitute( OUString& rSubstName,
-    const OUString& rSearchName, AddFontSubstituteFlags nFlags ) const
+    const OUString& rSearchName ) const
 {
     // TODO: get rid of O(N) searches
     FontSubstList::const_iterator it = maFontSubstList.begin();
     for(; it != maFontSubstList.end(); ++it )
     {
         const ImplFontSubstEntry& rEntry = *it;
-        if( ((rEntry.mnFlags & nFlags) || nFlags == AddFontSubstituteFlags::NONE)
-        &&   (rEntry.maSearchName == rSearchName) )
+        if( (rEntry.mnFlags & AddFontSubstituteFlags::ALWAYS) && rEntry.maSearchName == rSearchName )
         {
             rSubstName = rEntry.maSearchReplaceName;
             return true;
@@ -752,7 +751,7 @@ void ImplFontSubstitute( OUString& rFontName )
 
     // apply user-configurable font replacement (eg, from the list in Tools->Options)
     const ImplDirectFontSubstitution* pSubst = ImplGetSVData()->maGDIData.mpDirectFontSubst;
-    if( pSubst && pSubst->FindFontSubstitute( aSubstFontName, rFontName, AddFontSubstituteFlags::ALWAYS ) )
+    if( pSubst && pSubst->FindFontSubstitute( aSubstFontName, rFontName ) )
     {
         rFontName = aSubstFontName;
         return;
@@ -1021,7 +1020,7 @@ bool OutputDevice::ImplNewFont() const
         const ImplSVData* pSVData = ImplGetSVData();
         if( mpFontCollection == pSVData->maGDIData.mpScreenFontList
         ||  mpFontCache == pSVData->maGDIData.mpScreenFontCache )
-            const_cast<OutputDevice&>(*this).ImplUpdateFontData( true );
+            const_cast<OutputDevice&>(*this).ImplUpdateFontData();
     }
 
     if ( !mbNewFont )
@@ -1419,7 +1418,7 @@ SalLayout* OutputDevice::ImplGlyphFallbackLayout( SalLayout* pSalLayout, ImplLay
             pMultiSalLayout->AddFallback( *pFallback,
                 rLayoutArgs.maRuns, aFontSelData.mpFontData );
             if (nFallbackLevel == MAX_FALLBACK-1)
-                pMultiSalLayout->SetIncomplete();
+                pMultiSalLayout->SetIncomplete(true);
         }
 
         mpFontCache->Release( pFallbackFont );

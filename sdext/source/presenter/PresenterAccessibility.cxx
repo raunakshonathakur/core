@@ -1568,16 +1568,14 @@ Sequence<css::beans::PropertyValue> SAL_CALL
 {
     ThrowIfDisposed();
 
-#if OSL_DEBUG_LEVEL > 1
-    OSL_TRACE("PresenterAccessible::AccessibleParagraph::getCharacterAttributes at %p,%d returns empty set\r",
-        this,nIndex);
-    for (sal_Int32 nAttributeIndex(0),nAttributeCount(rRequestedAttributes.getLength());
-         nAttributeIndex<nAttributeCount;
+#if OSL_DEBUG_LEVEL > 0
+    SAL_INFO( "sdext.presenter", OSL_THIS_FUNC << " at " << this << ", " << nIndex << " returns empty set" );
+    for (sal_Int32 nAttributeIndex(0), nAttributeCount(rRequestedAttributes.getLength());
+         nAttributeIndex < nAttributeCount;
          ++nAttributeIndex)
     {
-        OSL_TRACE("    requested attribute %d is %s\r",
-            nAttributeIndex,
-            OUStringToOString(rRequestedAttributes[nAttributeIndex], RTL_TEXTENCODING_UTF8).getStr());
+        SAL_INFO( "sdext.presenter",
+                  "    requested attribute " << nAttributeIndex << " is " << rRequestedAttributes[nAttributeIndex] );
     }
 #endif
 

@@ -1201,7 +1201,7 @@ void CopyTableWizard::impl_copyRows_throw( const Reference< XResultSet >& _rxSou
                 if ( ( nSourceColumn < 1 ) || ( nSourceColumn >= (sal_Int32)aSourceColTypes.size() ) )
                 {   // ( we have to check here against 1 because the parameters are 1 based)
                     ::dbtools::throwSQLException("Internal error: invalid column type index.",
-                                                 ::dbtools::SQL_INVALID_DESCRIPTOR_INDEX, *this);
+                                                 ::dbtools::StandardSQLState::INVALID_DESCRIPTOR_INDEX, *this);
                 }
 
                 switch ( aSourceColTypes[ nSourceColumn ] )
@@ -1285,7 +1285,7 @@ void CopyTableWizard::impl_copyRows_throw( const Reference< XResultSet >& _rxSou
 
                         ::dbtools::throwSQLException(
                             aMessage,
-                            ::dbtools::SQL_INVALID_SQL_DATA_TYPE,
+                            ::dbtools::StandardSQLState::INVALID_SQL_DATA_TYPE,
                             *this
                         );
                     }
@@ -1444,7 +1444,7 @@ OUString CopyTableWizard::impl_getServerSideCopyStatement_throw(const Reference<
             sColumns.append(sQuote + aDestColumnNames[aPosIter->second - 1] + sQuote);
         }
     }
-    const OUString sComposedTableName = ::dbtools::composeTableName( xDestMetaData, _xTable, ::dbtools::eInDataManipulation, false, false, true );
+    const OUString sComposedTableName = ::dbtools::composeTableName( xDestMetaData, _xTable, ::dbtools::EComposeRule::InDataManipulation, false, false, true );
     OUString sSql("INSERT INTO " + sComposedTableName + " ( " + sColumns.makeStringAndClear() + " ) ( " + m_pSourceObject->getSelectStatement() + " )");
 
     return sSql;

@@ -60,7 +60,7 @@ String STR_QUERY_LASTVERSION
 
 String STR_NO_WEBBROWSER_FOUND
 {
-    Text [ en-US ] = "%PRODUCTNAME could not find a web browser on your system. Please check your Desktop Preferences or install a web browser (for example, Firefox) in the default  location requested during the browser installation." ;
+    Text [ en-US ] = "Opening \"$(ARG1)\" failed with error code $(ARG2) and message: \"$(ARG3)\"\n(Maybe no web browser could be found on your system. In that case, please check your Desktop Preferences or install a web browser (for example, Firefox) in the default location requested during the browser installation.)" ;
 };
 
 String STR_NO_ABS_URI_REF
@@ -208,41 +208,6 @@ String STR_ISMODIFIED
     Text [ en-US ] = "Do you want to save the changes to %1?" ;
 };
 
-String RID_FULLSCREENTOOLBOX
-{
-    Text  = "" ;
-};
-
-ToolBox RID_FULLSCREENTOOLBOX
-{
-    HelpId = HID_FULLSCREENTOOLBOX ;
-    ButtonType = BUTTON_SYMBOL ;
-    LineSpacing = TRUE ;
-    Border = TRUE ;
-    Scroll = TRUE ;
-    SVLook = TRUE ;
-    Moveable = TRUE ;
-    Sizeable = TRUE ;
-    Closeable = TRUE ;
-    Zoomable = TRUE ;
-    Customize = TRUE ;
-    FloatingMode = TRUE ;
-    Hide = TRUE ;
-    _FloatingPosMapMode = MAP_APPFONT ;
-    _FloatingPosX = -50 ;
-    _FloatingPosY = -70 ;
-    FloatingLines = 1 ;
-    HideWhenDeactivate = TRUE ;
-    Align = BOXALIGN_TOP ;
-    ItemList =
-    {
-        ToolBoxItem
-        {
-            Identifier = SID_WIN_FULLSCREEN ;
-        };
-    };
-};
-
 String STR_QUITAPP
 {
     Text [ en-US ] = "E~xit %PRODUCTNAME" ;
@@ -261,11 +226,6 @@ String RID_STR_NOAUTOSTARTHELPAGENT
 String RID_STR_HLPFILENOTEXIST
 {
     Text [ en-US ] = "The help file for this topic is not installed." ;
-};
-
-String RID_ENVTOOLBOX
-{
-    Text [ en-US ] = "Function Bar" ;
 };
 
 String STR_QUICKSTART_EXIT

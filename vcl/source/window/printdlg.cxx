@@ -1344,7 +1344,7 @@ void PrintDialog::preparePreview( bool i_bNewPage, bool i_bMayUseCache )
 
         Size aCurPageSize = aPrt->PixelToLogic( aPrt->GetPaperSizePixel(), MapMode( MAP_100TH_MM ) );
         mpPreviewWindow->setPreview( aMtf, aCurPageSize,
-                                    aPrt->GetPaperName( false ),
+                                    aPrt->GetPaperName(),
                                     nPages > 0 ? OUString() : maNoPageStr,
                                     aPrt->GetDPIX(), aPrt->GetDPIY(),
                                     aPrt->GetPrinterOptions().IsConvertToGreyscales()
@@ -1950,11 +1950,9 @@ IMPL_LINK_TYPED( PrintProgressDialog, ClickHdl, Button*, pButton, void )
         mbCanceled = true;
 }
 
-void PrintProgressDialog::setProgress( int i_nCurrent, int i_nMax )
+void PrintProgressDialog::setProgress( int i_nCurrent )
 {
     mnCur = i_nCurrent;
-    if( i_nMax != -1 )
-        mnMax = i_nMax;
 
     if( mnMax < 1 )
         mnMax = 1;

@@ -72,10 +72,9 @@ void PDFWriter::DrawTextLine(
                              long nWidth,
                              FontStrikeout eStrikeout,
                              FontLineStyle eUnderline,
-                             FontLineStyle eOverline,
-                             bool bUnderlineAbove )
+                             FontLineStyle eOverline )
 {
-    xImplementation->drawTextLine( rPos, nWidth, eStrikeout, eUnderline, eOverline, bUnderlineAbove );
+    xImplementation->drawTextLine( rPos, nWidth, eStrikeout, eUnderline, eOverline, false/*bUnderlineAbove*/ );
 }
 
 void PDFWriter::DrawTextArray(
@@ -437,18 +436,18 @@ void PDFWriter::SetPageTransition( PDFWriter::PageTransition eType, sal_uInt32 n
     xImplementation->setPageTransition( eType, nMilliSec, nPageNr );
 }
 
-sal_Int32 PDFWriter::CreateControl( const PDFWriter::AnyWidget& rControl, sal_Int32 nPageNr )
+sal_Int32 PDFWriter::CreateControl( const PDFWriter::AnyWidget& rControl )
 {
-    return xImplementation->createControl( rControl, nPageNr );
+    return xImplementation->createControl( rControl );
 }
 
 PDFOutputStream::~PDFOutputStream()
 {
 }
 
-void PDFWriter::AddStream( const OUString& rMimeType, PDFOutputStream* pStream, bool bCompress )
+void PDFWriter::AddStream( const OUString& rMimeType, PDFOutputStream* pStream )
 {
-    xImplementation->addStream( rMimeType, pStream, bCompress );
+    xImplementation->addStream( rMimeType, pStream, false/*bCompress*/ );
 }
 
 std::set< PDFWriter::ErrorCode > PDFWriter::GetErrors()

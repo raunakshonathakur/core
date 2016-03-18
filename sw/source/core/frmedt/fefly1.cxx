@@ -282,12 +282,12 @@ SwFlyFrame* SwFEShell::GetCurrFlyFrame(const bool bCalcFrame) const
 }
 
 // Get selected fly, but if none Get current fly in which the cursor is positioned
-SwFlyFrame* SwFEShell::GetSelectedOrCurrFlyFrame(const bool bCalcFrame) const
+SwFlyFrame* SwFEShell::GetSelectedOrCurrFlyFrame() const
 {
     SwFlyFrame *pFly = GetSelectedFlyFrame();
     if (pFly)
         return pFly;
-    return GetCurrFlyFrame(bCalcFrame);
+    return GetCurrFlyFrame();
 }
 
 // Returns non-null pointer, if the current Fly could be anchored to another one (so it is inside)
@@ -934,9 +934,9 @@ void SwFEShell::GetPageObjs( std::vector<SwFrameFormat*>& rFillArr )
     }
 }
 
-void SwFEShell::SetPageObjsNewPage( std::vector<SwFrameFormat*>& rFillArr, int nOffset )
+void SwFEShell::SetPageObjsNewPage( std::vector<SwFrameFormat*>& rFillArr )
 {
-    if( rFillArr.empty() || !nOffset )
+    if( rFillArr.empty() )
         return;
 
     StartAllAction();
@@ -954,7 +954,7 @@ void SwFEShell::SetPageObjsNewPage( std::vector<SwFrameFormat*>& rFillArr, int n
 
             SwFormatAnchor aNewAnchor( pFormat->GetAnchor() );
             if ((FLY_AT_PAGE != aNewAnchor.GetAnchorId()) ||
-                0 >= ( nNewPage = aNewAnchor.GetPageNum() + nOffset ) )
+                0 >= ( nNewPage = aNewAnchor.GetPageNum() + 1 ) )
                 // chaos::Anchor has been changed or invalid page number,
                 // therefore: do not change!
                 continue;
@@ -1112,41 +1112,35 @@ bool SwFEShell::SetDrawingAttr( SfxItemSet& rSet )
     return bRet;
 }
 
-// Reset requested attributes or the ones contained in the set.
-bool SwFEShell::ResetFlyFrameAttr( sal_uInt16 nWhich, const SfxItemSet* pSet )
+// Reset attributes contained in the set.
+bool SwFEShell::ResetFlyFrameAttr( const SfxItemSet* pSet )
 {
     bool bRet = false;
 
-    if( RES_ANCHOR != nWhich && RES_CHAIN != nWhich && RES_CNTNT != nWhich )
+    SET_CURR_SHELL( this );
+
+    SwFlyFrame *pFly = GetSelectedOrCurrFlyFrame();
+    OSL_ENSURE( pFly, "SetFlyFrameAttr, no Fly selected." );
+    if( pFly )
     {
-        SET_CURR_SHELL( this );
+        StartAllAction();
 
-        SwFlyFrame *pFly = GetSelectedOrCurrFlyFrame();
-        OSL_ENSURE( pFly, "SetFlyFrameAttr, no Fly selected." );
-        if( pFly )
+        SfxItemIter aIter( *pSet );
+        const SfxPoolItem* pItem = aIter.FirstItem();
+        while( pItem )
         {
-            StartAllAction();
-
-            if( pSet )
+            if( !IsInvalidItem( pItem ) )
             {
-                SfxItemIter aIter( *pSet );
-                const SfxPoolItem* pItem = aIter.FirstItem();
-                while( pItem )
-                {
-                    if( !IsInvalidItem( pItem ) &&
-                        RES_ANCHOR != ( nWhich = pItem->Which() ) &&
-                        RES_CHAIN != nWhich && RES_CNTNT != nWhich )
-                        pFly->GetFormat()->ResetFormatAttr( nWhich );
-                    pItem = aIter.NextItem();
-                }
+                sal_uInt16 nWhich = pItem->Which();
+                if( RES_ANCHOR != nWhich && RES_CHAIN != nWhich && RES_CNTNT != nWhich )
+                    pFly->GetFormat()->ResetFormatAttr( nWhich );
             }
-            else
-                pFly->GetFormat()->ResetFormatAttr( nWhich );
-
-            bRet = true;
-            EndAllActionAndCall();
-            GetDoc()->getIDocumentState().SetModified();
+            pItem = aIter.NextItem();
         }
+
+        bRet = true;
+        EndAllActionAndCall();
+        GetDoc()->getIDocumentState().SetModified();
     }
     return bRet;
 }
@@ -1717,7 +1711,7 @@ ObjCntType SwFEShell::GetObjCntType( const Point &rPt, SdrObject *&rpObj ) const
     return eType;
 }
 
-ObjCntType SwFEShell::GetObjCntTypeOfSelection( SdrObject** ppObj ) const
+ObjCntType SwFEShell::GetObjCntTypeOfSelection() const
 {
     ObjCntType eType = OBJCNT_NONE;
 
@@ -1733,7 +1727,6 @@ ObjCntType SwFEShell::GetObjCntTypeOfSelection( SdrObject** ppObj ) const
             if( !i )
             {
                 eType = eTmp;
-                if( ppObj ) *ppObj = pObj;
             }
             else if( eTmp != eType )
             {
@@ -2004,7 +1997,7 @@ void SwFEShell::SetObjDescription( const OUString& rDescription )
     }
 }
 
-void SwFEShell::AlignFormulaToBaseline( const uno::Reference < embed::XEmbeddedObject >& xObj, SwFlyFrame * pFly )
+void SwFEShell::AlignFormulaToBaseline( const uno::Reference < embed::XEmbeddedObject >& xObj )
 {
 #if OSL_DEBUG_LEVEL > 0
     SvGlobalName aCLSID( xObj->getClassID() );
@@ -2015,8 +2008,7 @@ void SwFEShell::AlignFormulaToBaseline( const uno::Reference < embed::XEmbeddedO
         return;
 #endif
 
-    if (!pFly)
-        pFly = FindFlyFrame( xObj );
+    SwFlyFrame * pFly = FindFlyFrame( xObj );
     OSL_ENSURE( pFly , "No fly frame!" );
     SwFrameFormat * pFrameFormat = pFly ? pFly->GetFormat() : nullptr;
 

@@ -106,19 +106,19 @@ class AbstractFieldInputDlg : public VclAbstractTerminatedDialog
 public:
     //from class SalFrame
     virtual void         SetWindowState( const OString & rStr ) = 0;
-    virtual OString GetWindowState( sal_uLong nMask = WINDOWSTATE_MASK_ALL ) const = 0;
+    virtual OString      GetWindowState() const = 0;
     virtual void         EndDialog(long ) override = 0;
 };
 
 class AbstractInsFootNoteDlg : public VclAbstractDialog
 {
 public:
-    virtual OUString        GetFontName() = 0;
+    virtual OUString    GetFontName() = 0;
     virtual bool        IsEndNote() = 0;
-    virtual OUString        GetStr() = 0;
+    virtual OUString    GetStr() = 0;
     //from class Window
-    virtual void    SetHelpId( const OString& sHelpId ) = 0;
-    virtual void    SetText( const OUString& rStr ) = 0;
+    virtual void        SetHelpId( const OString& sHelpId ) = 0;
+    virtual void        SetText( const OUString& rStr ) = 0;
 };
 
 class AbstractInsTableDlg : public VclAbstractDialog
@@ -241,8 +241,8 @@ public:
 class AbstractDropDownFieldDialog : public VclAbstractDialog
 {
 public:
-     virtual OString GetWindowState( sal_uLong nMask = WINDOWSTATE_MASK_ALL ) const = 0; //this method inherit from SystemWindow
-     virtual void         SetWindowState( const OString & rStr ) =0;//this method inherit from SystemWindow
+     virtual OString GetWindowState() const = 0; //this method inherit from SystemWindow
+     virtual void    SetWindowState( const OString & rStr ) = 0; //this method inherit from SystemWindow
 };
 
 class AbstractSwLabDlg  : public SfxAbstractTabDialog
@@ -269,7 +269,7 @@ public:
 class AbstractSwFieldDlg : public SfxAbstractTabDialog
 {
 public:
-    virtual void                Start( bool bShow = true ) = 0;  //this method from sfxtabdialog
+    virtual void                Start() = 0;  //this method from sfxtabdialog
     virtual void                Initialize(SfxChildWinInfo *pInfo) = 0;
     virtual void                ReInitDlg() = 0;
     virtual void                ActivateDatabasePage() = 0;
@@ -329,8 +329,8 @@ public:
     virtual AbstractSwWordCountFloatDlg* CreateSwWordCountDialog(SfxBindings* pBindings,
         SfxChildWindow* pChild, vcl::Window *pParent, SfxChildWinInfo* pInfo) = 0;
 
-    virtual AbstractSwInsertAbstractDlg * CreateSwInsertAbstractDlg(vcl::Window* pParent) = 0;
-    virtual AbstractSwAsciiFilterDlg*  CreateSwAsciiFilterDlg ( vcl::Window* pParent, SwDocShell& rDocSh,
+    virtual AbstractSwInsertAbstractDlg * CreateSwInsertAbstractDlg() = 0;
+    virtual AbstractSwAsciiFilterDlg*  CreateSwAsciiFilterDlg ( SwDocShell& rDocSh,
                                                                 SvStream* pStream ) = 0;
     virtual VclAbstractDialog * CreateSwInsertBookmarkDlg( vcl::Window *pParent, SwWrtShell &rSh, SfxRequest& rReq, int nResId ) = 0;
 
@@ -347,11 +347,11 @@ public:
         const SwDBData& rData) = 0;
     virtual SfxAbstractTabDialog * CreateSwFootNoteOptionDlg(vcl::Window *pParent, SwWrtShell &rSh) = 0;
 
-    virtual AbstractDropDownFieldDialog * CreateDropDownFieldDialog(vcl::Window *pParent, SwWrtShell &rSh,
+    virtual AbstractDropDownFieldDialog * CreateDropDownFieldDialog(SwWrtShell &rSh,
         SwField* pField, bool bNextButton = false) = 0;
     virtual SfxAbstractTabDialog* CreateSwEnvDlg ( vcl::Window* pParent, const SfxItemSet& rSet, SwWrtShell* pWrtSh, Printer* pPrt, bool bInsert ) = 0;
 
-    virtual AbstractSwLabDlg* CreateSwLabDlg(vcl::Window* pParent, const SfxItemSet& rSet,
+    virtual AbstractSwLabDlg* CreateSwLabDlg(const SfxItemSet& rSet,
                                                      SwDBManager* pDBManager, bool bLabel) = 0;
 
     virtual SwLabDlgMethod GetSwLabDlgStaticMethod () =0;
@@ -364,7 +364,7 @@ public:
                                                     bool bDraw = false,
                                                     const OString& sDefPage = OString() ) = 0;
 
-    virtual AbstractSwSelGlossaryDlg * CreateSwSelGlossaryDlg(vcl::Window * pParent, const OUString &rShortName) = 0;
+    virtual AbstractSwSelGlossaryDlg * CreateSwSelGlossaryDlg(const OUString &rShortName) = 0;
 
     virtual VclAbstractDialog * CreateVclAbstractDialog ( vcl::Window * pParent, SwWrtShell &rSh, int nResId ) = 0;
     virtual AbstractSplitTableDialog * CreateSplitTableDialog ( vcl::Window * pParent, SwWrtShell &rSh ) = 0;
@@ -398,7 +398,6 @@ public:
     /// Identifies optional Slot by which the creation of the Template (Style) dialog is triggered.
     /// Currently used, if nRegion == SFX_STYLE_FAMILY_PAGE in order to activate certain dialog pane
     virtual SfxAbstractApplyTabDialog*  CreateTemplateDialog(
-                                                vcl::Window*             pParent,
                                                 SfxStyleSheetBase&  rBase,
                                                 sal_uInt16          nRegion,
                                                 const OString&      sPage = OString(),
@@ -442,14 +441,12 @@ public:
                                                        SfxBindings* pBindings,
                                                        SfxChildWindow* pChild,
                                                        vcl::Window *pParent,
-                                                       SfxChildWinInfo* pInfo,
-                                                       bool bNew=true) = 0;
+                                                       SfxChildWinInfo* pInfo) = 0;
     virtual AbstractMarkFloatDlg*       CreateAuthMarkFloatDlg(
                                                        SfxBindings* pBindings,
                                                        SfxChildWindow* pChild,
                                                        vcl::Window *pParent,
-                                                       SfxChildWinInfo* pInfo,
-                                                       bool bNew=true) = 0;
+                                                       SfxChildWinInfo* pInfo) = 0;
     virtual VclAbstractDialog *         CreateIndexMarkModalDlg(
                                                 vcl::Window *pParent, SwWrtShell& rSh, SwTOXMark* pCurTOXMark) = 0;
 

@@ -32,7 +32,7 @@
 #include <vcl/svapp.hxx>
 #include <osl/mutex.hxx>
 #include <tools/rcid.h>
-#include <jvmfwk/framework.h>
+#include <jvmfwk/framework.hxx>
 
 #include <svtools/restartdialog.hxx>
 #include <svtools/svtresid.hxx>
@@ -163,7 +163,7 @@ void SAL_CALL JavaInteractionHandler::handle( const Reference< XInteractionReque
             nResult = aQueryBox->Execute();
             if ( nResult == RET_YES )
             {
-                jfw_setEnabled(sal_True);
+                jfw_setEnabled(true);
             }
 
             m_nResult_JavaDisabled = nResult;

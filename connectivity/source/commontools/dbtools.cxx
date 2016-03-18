@@ -734,11 +734,11 @@ Sequence< OUString > getFieldNamesByCommandDescriptor( const Reference< XConnect
 }
 
 SQLException prependErrorInfo( const SQLException& _rChainedException, const Reference< XInterface >& _rxContext,
-    const OUString& _rAdditionalError, const StandardSQLState _eSQLState, const sal_Int32 _nErrorCode )
+    const OUString& _rAdditionalError, const StandardSQLState _eSQLState )
 {
     return SQLException( _rAdditionalError, _rxContext,
-        _eSQLState == SQL_ERROR_UNSPECIFIED ? OUString() : getStandardSQLState( _eSQLState ),
-        _nErrorCode, makeAny( _rChainedException ) );
+        _eSQLState == StandardSQLState::ERROR_UNSPECIFIED ? OUString() : getStandardSQLState( _eSQLState ),
+        0, makeAny( _rChainedException ) );
 }
 
 namespace
@@ -765,26 +765,26 @@ namespace
 
         switch ( _eComposeRule )
         {
-            case eInTableDefinitions:
+            case EComposeRule::InTableDefinitions:
                 pCatalogCall = &XDatabaseMetaData::supportsCatalogsInTableDefinitions;
                 pSchemaCall = &XDatabaseMetaData::supportsSchemasInTableDefinitions;
                 break;
-            case eInIndexDefinitions:
+            case EComposeRule::InIndexDefinitions:
                 pCatalogCall = &XDatabaseMetaData::supportsCatalogsInIndexDefinitions;
                 pSchemaCall = &XDatabaseMetaData::supportsSchemasInIndexDefinitions;
                 break;
-            case eInProcedureCalls:
+            case EComposeRule::InProcedureCalls:
                 pCatalogCall = &XDatabaseMetaData::supportsCatalogsInProcedureCalls;
                 pSchemaCall = &XDatabaseMetaData::supportsSchemasInProcedureCalls;
                 break;
-            case eInPrivilegeDefinitions:
+            case EComposeRule::InPrivilegeDefinitions:
                 pCatalogCall = &XDatabaseMetaData::supportsCatalogsInPrivilegeDefinitions;
                 pSchemaCall = &XDatabaseMetaData::supportsSchemasInPrivilegeDefinitions;
                 break;
-            case eComplete:
+            case EComposeRule::Complete:
                 bIgnoreMetaData = true;
                 break;
-            case eInDataManipulation:
+            case EComposeRule::InDataManipulation:
                 // already properly set above
                 break;
         }
@@ -1303,7 +1303,7 @@ OUString composeTableNameForSelect( const Reference< XConnection >& _rxConnectio
         bUseSchemaInSelect ? _rSchema : OUString(),
         _rName,
         true,
-        eInDataManipulation
+        EComposeRule::InDataManipulation
     );
 }
 

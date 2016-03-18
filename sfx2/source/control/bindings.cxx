@@ -874,9 +874,10 @@ void SfxBindings::Invalidate
 }
 
 
-bool SfxBindings::IsBound( sal_uInt16 nSlotId, sal_uInt16 nStartSearchAt )
+bool SfxBindings::IsBound( sal_uInt16 nSlotId )
 {
     DBG_ASSERT( pImp->pCaches != nullptr, "SfxBindings not initialized" );
+    sal_uInt16 nStartSearchAt = 0;
     return GetStateCache(nSlotId, &nStartSearchAt ) != nullptr;
 }
 
@@ -1037,7 +1038,7 @@ void SfxBindings::Release( SfxControllerItem& rItem )
 }
 
 
-const SfxPoolItem* SfxBindings::ExecuteSynchron( sal_uInt16 nId, const SfxPoolItem** ppItems, sal_uInt16 nModi,
+const SfxPoolItem* SfxBindings::ExecuteSynchron( sal_uInt16 nId, const SfxPoolItem** ppItems,
             const SfxPoolItem **ppInternalArgs )
 {
     DBG_ASSERT( pImp->pCaches != nullptr, "SfxBindings not initialized" );
@@ -1045,10 +1046,10 @@ const SfxPoolItem* SfxBindings::ExecuteSynchron( sal_uInt16 nId, const SfxPoolIt
     if( !nId || !pDispatcher )
         return nullptr;
 
-    return Execute_Impl( nId, ppItems, nModi, SfxCallMode::SYNCHRON, ppInternalArgs );
+    return Execute_Impl( nId, ppItems, 0, SfxCallMode::SYNCHRON, ppInternalArgs );
 }
 
-bool SfxBindings::Execute( sal_uInt16 nId, const SfxPoolItem** ppItems, sal_uInt16 nModi, SfxCallMode nCallMode,
+bool SfxBindings::Execute( sal_uInt16 nId, const SfxPoolItem** ppItems, SfxCallMode nCallMode,
                         const SfxPoolItem **ppInternalArgs )
 {
     DBG_ASSERT( pImp->pCaches != nullptr, "SfxBindings not initialized" );
@@ -1056,7 +1057,7 @@ bool SfxBindings::Execute( sal_uInt16 nId, const SfxPoolItem** ppItems, sal_uInt
     if( !nId || !pDispatcher )
         return false;
 
-    const SfxPoolItem* pRet = Execute_Impl( nId, ppItems, nModi, nCallMode, ppInternalArgs );
+    const SfxPoolItem* pRet = Execute_Impl( nId, ppItems, 0, nCallMode, ppInternalArgs );
     return ( pRet != nullptr );
 }
 
@@ -1963,16 +1964,9 @@ void SfxBindings::SetSubBindings_Impl( SfxBindings *pSub )
     }
 }
 
-SfxBindings* SfxBindings::GetSubBindings_Impl( bool bTop ) const
+SfxBindings* SfxBindings::GetSubBindings_Impl() const
 {
-    SfxBindings *pRet = pImp->pSubBindings;
-    if ( bTop )
-    {
-        while ( pRet->pImp->pSubBindings )
-            pRet = pRet->pImp->pSubBindings;
-    }
-
-    return pRet;
+    return pImp->pSubBindings;
 }
 
 void SfxBindings::SetWorkWindow_Impl( SfxWorkWindow* pWork )

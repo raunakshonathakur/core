@@ -45,7 +45,7 @@ OTableBorderWindow::OTableBorderWindow(vcl::Window* pParent) : Window(pParent,WB
     ,m_aHorzSplitter( VclPtr<Splitter>::Create(this) )
 {
 
-    ImplInitSettings( true, true, true );
+    ImplInitSettings();
     // Children erzeugen
     m_pEditorCtrl   = VclPtr<OTableEditorCtrl>::Create( this);
     m_pFieldDescWin = VclPtr<OTableFieldDescWin>::Create( this );
@@ -114,35 +114,26 @@ IMPL_LINK_TYPED( OTableBorderWindow, SplitHdl, Splitter*, pSplit, void )
     }
 }
 
-void OTableBorderWindow::ImplInitSettings( bool bFont, bool bForeground, bool bBackground )
+void OTableBorderWindow::ImplInitSettings()
 {
     const StyleSettings& rStyleSettings = GetSettings().GetStyleSettings();
 
     // FIXME RenderContext
 
-    if ( bFont )
-    {
-        vcl::Font aFont = rStyleSettings.GetAppFont();
-        if ( IsControlFont() )
-            aFont.Merge( GetControlFont() );
-        SetPointFont(*this,  aFont);
-    }
+    vcl::Font aFont = rStyleSettings.GetAppFont();
+    if ( IsControlFont() )
+        aFont.Merge( GetControlFont() );
+    SetPointFont(*this,  aFont);
 
-    if ( bFont || bForeground )
-    {
-        Color aTextColor = rStyleSettings.GetButtonTextColor();
-        if ( IsControlForeground() )
-            aTextColor = GetControlForeground();
-        SetTextColor( aTextColor );
-    }
+    Color aTextColor = rStyleSettings.GetButtonTextColor();
+    if ( IsControlForeground() )
+        aTextColor = GetControlForeground();
+    SetTextColor( aTextColor );
 
-    if ( bBackground )
-    {
-        if( IsControlBackground() )
-            SetBackground( GetControlBackground() );
-        else
-            SetBackground( rStyleSettings.GetFaceColor() );
-    }
+    if( IsControlBackground() )
+        SetBackground( GetControlBackground() );
+    else
+        SetBackground( rStyleSettings.GetFaceColor() );
 }
 
 void OTableBorderWindow::DataChanged( const DataChangedEvent& rDCEvt )
@@ -152,7 +143,7 @@ void OTableBorderWindow::DataChanged( const DataChangedEvent& rDCEvt )
     if ( (rDCEvt.GetType() == DataChangedEventType::SETTINGS) &&
          (rDCEvt.GetFlags() & AllSettingsFlags::STYLE) )
     {
-        ImplInitSettings( true, true, true );
+        ImplInitSettings();
         Invalidate();
     }
 }

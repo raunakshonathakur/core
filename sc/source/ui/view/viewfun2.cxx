@@ -155,10 +155,13 @@ bool ScViewFunc::AdjustBlockHeight( bool bPaint, ScMarkData* pMarkData )
     if ( bPaint && bAnyChanged )
         pDocSh->UpdateOle(&GetViewData());
 
+    if (bAnyChanged && comphelper::LibreOfficeKit::isActive() && rDoc.GetDrawLayer())
+        rDoc.GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, "");
+
     return bAnyChanged;
 }
 
-bool ScViewFunc::AdjustRowHeight( SCROW nStartRow, SCROW nEndRow, bool bPaint )
+bool ScViewFunc::AdjustRowHeight( SCROW nStartRow, SCROW nEndRow )
 {
     ScDocShell* pDocSh = GetViewData().GetDocShell();
     ScDocument& rDoc = pDocSh->GetDocument();
@@ -188,7 +191,7 @@ bool ScViewFunc::AdjustRowHeight( SCROW nStartRow, SCROW nEndRow, bool bPaint )
             bChanged = false;
     }
 
-    if ( bPaint && bChanged )
+    if ( bChanged )
         pDocSh->PostPaint( 0, nStartRow, nTab, MAXCOL, MAXROW, nTab,
                                             PAINT_GRID | PAINT_LEFT );
 
@@ -924,7 +927,7 @@ void ScViewFunc::SetPrintRanges( bool bEntireSheet, const OUString* pPrint,
                 do
                 {
                     const OUString aToken = pPrint->getToken(0, sep, nPos);
-                    if ( aRange.ParseAny( aToken, &rDoc, aDetails ) & SCA_VALID )
+                    if ( aRange.ParseAny( aToken, &rDoc, aDetails ) & ScRefFlags::VALID )
                         rDoc.AddPrintRange( nTab, aRange );
                 }
                 while (nPos >= 0);
@@ -956,7 +959,7 @@ void ScViewFunc::SetPrintRanges( bool bEntireSheet, const OUString* pPrint,
             if ( pRepCol->isEmpty() )
                 rDoc.SetRepeatColRange( nTab, nullptr );
             else
-                if ( aRange.ParseAny( *pRepCol, &rDoc, aDetails ) & SCA_VALID )
+                if ( aRange.ParseAny( *pRepCol, &rDoc, aDetails ) & ScRefFlags::VALID )
                     rDoc.SetRepeatColRange( nTab, &aRange );
         }
 
@@ -967,7 +970,7 @@ void ScViewFunc::SetPrintRanges( bool bEntireSheet, const OUString* pPrint,
             if ( pRepRow->isEmpty() )
                 rDoc.SetRepeatRowRange( nTab, nullptr );
             else
-                if ( aRange.ParseAny( *pRepRow, &rDoc, aDetails ) & SCA_VALID )
+                if ( aRange.ParseAny( *pRepRow, &rDoc, aDetails ) & ScRefFlags::VALID )
                     rDoc.SetRepeatRowRange( nTab, &aRange );
         }
     }
@@ -1144,7 +1147,7 @@ static bool lcl_extendMergeRange(ScCellMergeOption& rOption, const ScRange& rRan
     return bExtended;
 }
 
-bool ScViewFunc::RemoveMerge( bool bRecord )
+bool ScViewFunc::RemoveMerge()
 {
     ScRange aRange;
     ScEditableTester aTester( this );
@@ -1182,7 +1185,7 @@ bool ScViewFunc::RemoveMerge( bool bRecord )
         }
         while (bExtended);
 
-        bool bOk = pDocSh->GetDocFunc().UnmergeCells(aOption, bRecord );
+        bool bOk = pDocSh->GetDocFunc().UnmergeCells(aOption, true/*bRecord*/ );
         aExtended = aOption.getFirstSingleRange();
         MarkRange( aExtended );
 
@@ -1192,14 +1195,14 @@ bool ScViewFunc::RemoveMerge( bool bRecord )
     return true;        //! bOk ??
 }
 
-void ScViewFunc::FillSimple( FillDir eDir, bool bRecord )
+void ScViewFunc::FillSimple( FillDir eDir )
 {
     ScRange aRange;
     if (GetViewData().GetSimpleArea(aRange) == SC_MARK_SIMPLE)
     {
         ScDocShell* pDocSh = GetViewData().GetDocShell();
         const ScMarkData& rMark = GetViewData().GetMarkData();
-        bool bSuccess = pDocSh->GetDocFunc().FillSimple( aRange, &rMark, eDir, bRecord, false );
+        bool bSuccess = pDocSh->GetDocFunc().FillSimple( aRange, &rMark, eDir, true/*bRecord*/, false );
         if (bSuccess)
         {
             pDocSh->UpdateOle(&GetViewData());
@@ -1215,7 +1218,7 @@ void ScViewFunc::FillSimple( FillDir eDir, bool bRecord )
 }
 
 void ScViewFunc::FillSeries( FillDir eDir, FillCmd eCmd, FillDateCmd eDateCmd,
-                             double fStart, double fStep, double fMax, bool bRecord )
+                             double fStart, double fStep, double fMax )
 {
     ScRange aRange;
     if (GetViewData().GetSimpleArea(aRange) == SC_MARK_SIMPLE)
@@ -1224,7 +1227,7 @@ void ScViewFunc::FillSeries( FillDir eDir, FillCmd eCmd, FillDateCmd eDateCmd,
         const ScMarkData& rMark = GetViewData().GetMarkData();
         bool bSuccess = pDocSh->GetDocFunc().
                         FillSeries( aRange, &rMark, eDir, eCmd, eDateCmd,
-                                    fStart, fStep, fMax, bRecord, false );
+                                    fStart, fStep, fMax, true/*bRecord*/, false );
         if (bSuccess)
         {
             pDocSh->UpdateOle(&GetViewData());
@@ -1238,7 +1241,7 @@ void ScViewFunc::FillSeries( FillDir eDir, FillCmd eCmd, FillDateCmd eDateCmd,
 }
 
 void ScViewFunc::FillAuto( FillDir eDir, SCCOL nStartCol, SCROW nStartRow,
-                            SCCOL nEndCol, SCROW nEndRow, sal_uLong nCount, bool bRecord )
+                            SCCOL nEndCol, SCROW nEndRow, sal_uLong nCount )
 {
     SCTAB nTab = GetViewData().GetTabNo();
     ScRange aRange( nStartCol,nStartRow,nTab, nEndCol,nEndRow,nTab );
@@ -1246,7 +1249,7 @@ void ScViewFunc::FillAuto( FillDir eDir, SCCOL nStartCol, SCROW nStartRow,
     ScDocShell* pDocSh = GetViewData().GetDocShell();
     const ScMarkData& rMark = GetViewData().GetMarkData();
     bool bSuccess = pDocSh->GetDocFunc().
-                    FillAuto( aRange, &rMark, eDir, nCount, bRecord, false );
+                    FillAuto( aRange, &rMark, eDir, nCount, true/*bRecord*/, false );
     if (bSuccess)
     {
         MarkRange( aRange, false );         // aRange was modified in FillAuto
@@ -1610,7 +1613,7 @@ ScAutoFormatData* ScViewFunc::CreateAutoFormatData()
     return pData;
 }
 
-void ScViewFunc::AutoFormat( sal_uInt16 nFormatNo, bool bRecord )
+void ScViewFunc::AutoFormat( sal_uInt16 nFormatNo )
 {
     ScRange aRange;
     if (GetViewData().GetSimpleArea(aRange) == SC_MARK_SIMPLE)
@@ -1618,7 +1621,7 @@ void ScViewFunc::AutoFormat( sal_uInt16 nFormatNo, bool bRecord )
         ScDocShell* pDocSh = GetViewData().GetDocShell();
         ScMarkData& rMark = GetViewData().GetMarkData();
 
-        bool bSuccess = pDocSh->GetDocFunc().AutoFormat( aRange, &rMark, nFormatNo, bRecord, false );
+        bool bSuccess = pDocSh->GetDocFunc().AutoFormat( aRange, &rMark, nFormatNo, true/*bRecord*/, false );
         if (bSuccess)
             pDocSh->UpdateOle(&GetViewData());
     }
@@ -2553,7 +2556,7 @@ void ScViewFunc::MoveTable(
         SfxStringItem aTarget( SID_TARGETNAME, OUString("_blank") );
 
         const SfxPoolItem* pRetItem = GetViewData().GetDispatcher().Execute(
-                    SID_OPENDOC, SfxCallMode::API|SfxCallMode::SYNCHRON, &aItem, &aTarget, 0L );
+                    SID_OPENDOC, SfxCallMode::API|SfxCallMode::SYNCHRON, &aItem, &aTarget, 0 );
         if ( pRetItem )
         {
             if ( dynamic_cast<const SfxObjectItem*>( pRetItem) !=  nullptr )

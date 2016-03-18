@@ -92,12 +92,18 @@ certain functionality.
 @li @c cppu
 @li @c cppu.log
 @li @c cppu.threadpool
+@li @c cppu.typelib
 @li @c cppu.unsafebridge
 
 @section cppuhelper
 
 @li @c cppuhelper
 @li @c cppuhelper.shlib
+
+@section cpputools
+
+@li @c cpputools
+@li @c cpputools.unoexe
 
 @section cui
 
@@ -448,6 +454,7 @@ certain functionality.
 
 @li @c sw
 @li @c sw.core - Writer core
+@li @c sw.a11y - accessibility
 @li @c sw.createcopy
 @li @c sw.doc
 @li @c sw.docappend
@@ -547,6 +554,7 @@ certain functionality.
 @li @c svg
 @li @c test
 @li @c ucbhelper
+@li @c unodevtools
 @li @c unoidl
 @li @c unoxml
 @li @c uui

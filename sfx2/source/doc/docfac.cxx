@@ -40,7 +40,6 @@
 #include "arrdecl.hxx"
 #include <sfx2/app.hxx>
 #include <sfx2/module.hxx>
-#include <sfx2/mnumgr.hxx>
 #include <sfx2/sfxresid.hxx>
 #include <sfx2/sfxuno.hxx>
 #include "syspath.hxx"
@@ -52,6 +51,7 @@
 #include <tools/globname.hxx>
 
 #include <assert.h>
+#include <memory>
 
 using namespace ::com::sun::star;
 
@@ -75,7 +75,7 @@ struct SfxObjectFactory_Impl
 };
 
 
-SfxFilterContainer* SfxObjectFactory::GetFilterContainer( bool /*bForceLoad*/ ) const
+SfxFilterContainer* SfxObjectFactory::GetFilterContainer() const
 {
     return pImpl->pFilterContainer;
 }
@@ -308,13 +308,13 @@ OUString SfxObjectFactory::GetStandardTemplate( const OUString& rServiceName )
     return sTemplate;
 }
 
-const SfxFilter* SfxObjectFactory::GetTemplateFilter() const
+std::shared_ptr<const SfxFilter> SfxObjectFactory::GetTemplateFilter() const
 {
     sal_uInt16 nVersion=0;
     SfxFilterMatcher aMatcher ( OUString::createFromAscii( pShortName ) );
     SfxFilterMatcherIter aIter( aMatcher );
-    const SfxFilter *pFilter = nullptr;
-    const SfxFilter *pTemp = aIter.First();
+    std::shared_ptr<const SfxFilter> pFilter;
+    std::shared_ptr<const SfxFilter> pTemp = aIter.First();
     while ( pTemp )
     {
         if( pTemp->IsOwnFormat() && pTemp->IsOwnTemplateFormat() && ( pTemp->GetVersion() > nVersion ) )

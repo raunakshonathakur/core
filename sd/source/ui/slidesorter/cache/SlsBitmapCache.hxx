@@ -150,18 +150,10 @@ public:
     /** Return a list of sorted cache keys that represent an index into (a
         part of) the cache.  The entries of the index are sorted according
         to last access times with the least recently access time first.
-        @param bIncludePrecious
-            When this flag is <TRUE/> entries with the precious flag set are
-            included in the index.  When the flag is <FALSE/> these entries
-            are omitted.
-        @param bIncludeNoPreview
-            When this flag is <TRUE/> entries with that have no preview
-            bitmaps are included in the index.  When the flag is <FALSE/> these entries
-            are omitted.
+        Entries with the precious flag set are omitted.
+        Entries with that have no preview bitmaps are omitted.
     */
-    ::std::unique_ptr<CacheIndex> GetCacheIndex (
-        bool bIncludePrecious,
-        bool bIncludeNoPreview) const;
+    ::std::unique_ptr<CacheIndex> GetCacheIndex () const;
 
     /** Compress the specified preview bitmap with the given bitmap
         compressor.  A reference to the compressor is stored for later

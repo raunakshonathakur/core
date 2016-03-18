@@ -57,7 +57,7 @@ public:
     OUString        GetFactoryURL() const;  // shortcut for "private:factory/GetShortName()"
     OUString        GetFactoryName() const { return OUString::createFromAscii(pShortName); }
     OUString        GetModuleName() const;
-    SfxFilterContainer *GetFilterContainer( bool bForceLoad = true) const;
+    SfxFilterContainer *GetFilterContainer() const;
 
     // Views
     void            RegisterViewFactory(SfxViewFactory &rFactory);
@@ -68,7 +68,7 @@ public:
     SfxViewFactory* GetViewFactoryByViewName( const OUString& i_rViewName ) const;
 
     // Filter
-    const SfxFilter* GetTemplateFilter() const;
+    std::shared_ptr<const SfxFilter> GetTemplateFilter() const;
     static OUString GetStandardTemplate( const OUString& rServiceName );
     static void     SetStandardTemplate( const OUString& rServiceName, const OUString& rTemplateName );
     static void     SetSystemTemplate( const OUString& rServiceName, const OUString& rTemplateName );

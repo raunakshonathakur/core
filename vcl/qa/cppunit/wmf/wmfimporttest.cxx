@@ -31,7 +31,7 @@ class WmfTest : public test::BootstrapFixture, public XmlTestTools
 
     OUString getFullUrl(const OUString& sFileName)
     {
-        return getURLFromSrc(maDataUrl) + sFileName;
+        return m_directories.getURLFromSrc(maDataUrl) + sFileName;
     }
 
 public:
@@ -43,6 +43,7 @@ public:
     void testNonPlaceableWmf();
     void testSine();
     void testEmfProblem();
+    void testEmfLineStyles();
     void testWorldTransformFontSize();
     void testTdf93750();
 
@@ -50,6 +51,7 @@ public:
     CPPUNIT_TEST(testNonPlaceableWmf);
     CPPUNIT_TEST(testSine);
     CPPUNIT_TEST(testEmfProblem);
+    CPPUNIT_TEST(testEmfLineStyles);
     CPPUNIT_TEST(testWorldTransformFontSize);
     CPPUNIT_TEST(testTdf93750);
 
@@ -119,6 +121,66 @@ void WmfTest::testEmfProblem()
     assertXPath(pDoc, "/metafile/sectrectclipregion[1]", "bottom", "2823");
     assertXPath(pDoc, "/metafile/sectrectclipregion[1]", "right", "1876");
 }
+
+void WmfTest::testEmfLineStyles()
+{
+    SvFileStream aFileStream(getFullUrl("line_styles.emf"), StreamMode::READ);
+    GDIMetaFile aGDIMetaFile;
+    ReadWindowMetafile(aFileStream, aGDIMetaFile);
+
+    MetafileXmlDump dumper;
+    dumper.filterAllActionTypes();
+    dumper.filterActionType(MetaActionType::LINE, false);
+    dumper.filterActionType(MetaActionType::LINECOLOR, false);
+    xmlDocPtr pDoc = dumper.dumpAndParse(aGDIMetaFile);
+
+    CPPUNIT_ASSERT (pDoc);
+
+    assertXPath(pDoc, "/metafile/line", 4);
+    assertXPath(pDoc, "/metafile/linecolor", 5);
+
+    assertXPath(pDoc, "/metafile/linecolor[1]", "color", "#ffffff");
+    assertXPath(pDoc, "/metafile/linecolor[2]", "color", "#00ff00");
+    assertXPath(pDoc, "/metafile/linecolor[3]", "color", "#408080");
+    assertXPath(pDoc, "/metafile/linecolor[4]", "color", "#ff0000");
+    assertXPath(pDoc, "/metafile/linecolor[5]", "color", "#0000ff");
+
+    assertXPath(pDoc, "/metafile/line[1]", "style", "dash");
+    assertXPath(pDoc, "/metafile/line[1]", "dashlen", "528");
+    assertXPath(pDoc, "/metafile/line[1]", "dashcount", "1");
+    assertXPath(pDoc, "/metafile/line[1]", "dotlen", "176");
+    assertXPath(pDoc, "/metafile/line[1]", "dotcount", "0");
+    assertXPath(pDoc, "/metafile/line[1]", "distance", "176");
+    assertXPath(pDoc, "/metafile/line[1]", "join", "miter");
+    assertXPath(pDoc, "/metafile/line[1]", "cap", "butt");
+
+    assertXPath(pDoc, "/metafile/line[2]", "style", "dash");
+    assertXPath(pDoc, "/metafile/line[2]", "dashlen", "528");
+    assertXPath(pDoc, "/metafile/line[2]", "dashcount", "0");
+    assertXPath(pDoc, "/metafile/line[2]", "dotlen", "176");
+    assertXPath(pDoc, "/metafile/line[2]", "dotcount", "1");
+    assertXPath(pDoc, "/metafile/line[2]", "distance", "176");
+    assertXPath(pDoc, "/metafile/line[2]", "join", "miter");
+    assertXPath(pDoc, "/metafile/line[2]", "cap", "butt");
+
+    assertXPath(pDoc, "/metafile/line[3]", "style", "dash");
+    assertXPath(pDoc, "/metafile/line[3]", "dashlen", "528");
+    assertXPath(pDoc, "/metafile/line[3]", "dashcount", "1");
+    assertXPath(pDoc, "/metafile/line[3]", "dotlen", "176");
+    assertXPath(pDoc, "/metafile/line[3]", "dotcount", "1");
+    assertXPath(pDoc, "/metafile/line[3]", "distance", "176");
+    assertXPath(pDoc, "/metafile/line[3]", "join", "miter");
+    assertXPath(pDoc, "/metafile/line[3]", "cap", "butt");
+
+    assertXPath(pDoc, "/metafile/line[4]", "style", "dash");
+    assertXPath(pDoc, "/metafile/line[4]", "dashlen", "528");
+    assertXPath(pDoc, "/metafile/line[4]", "dashcount", "1");
+    assertXPath(pDoc, "/metafile/line[4]", "dotlen", "176");
+    assertXPath(pDoc, "/metafile/line[4]", "dotcount", "2");
+    assertXPath(pDoc, "/metafile/line[4]", "distance", "176");
+    assertXPath(pDoc, "/metafile/line[4]", "join", "miter");
+    assertXPath(pDoc, "/metafile/line[4]", "cap", "butt");
+};
 
 void WmfTest::testWorldTransformFontSize()
 {

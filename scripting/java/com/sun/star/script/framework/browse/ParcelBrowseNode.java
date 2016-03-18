@@ -20,11 +20,7 @@ package com.sun.star.script.framework.browse;
 
 import com.sun.star.beans.XIntrospectionAccess;
 
-import com.sun.star.container.NoSuchElementException;
-
 import com.sun.star.lang.XMultiComponentFactory;
-import com.sun.star.lang.WrappedTargetException;
-
 import com.sun.star.lib.uno.helper.PropertySet;
 
 import com.sun.star.script.XInvocation;
@@ -47,7 +43,6 @@ import com.sun.star.uno.XComponentContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 
 import javax.swing.JOptionPane;
 
@@ -207,8 +202,7 @@ public class ParcelBrowseNode extends PropertySet implements
 
                     String language = container.getLanguage();
 
-                    ScriptEntry entry = new ScriptEntry(language, languageName, "",
-                                                        new HashMap<String, String>());
+                    ScriptEntry entry = new ScriptEntry(language, languageName);
 
                     Parcel parcel = (Parcel)container.getByName(getName());
                     ScriptMetaData data = new ScriptMetaData(parcel, entry, source);

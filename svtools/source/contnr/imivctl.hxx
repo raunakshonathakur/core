@@ -224,7 +224,7 @@ class SvxIconChoiceCtrl_Impl
                         DECL_LINK_TYPED( VisRectChangedHdl, Idle*, void );
                         DECL_LINK_TYPED( CallSelectHdlHdl, Idle*, void );
 
-    void                AdjustScrollBars( bool bVirtSizeGrowedOnly = false);
+    void                AdjustScrollBars();
     void                PositionScrollBars( long nRealWidth, long nRealHeight );
     static long         GetScrollBarPageSize( long nVisibleRange )
                         {
@@ -321,14 +321,14 @@ public:
                         SvxIconChoiceCtrl_Impl( SvtIconChoiceCtrl* pView, WinBits nWinStyle );
                         ~SvxIconChoiceCtrl_Impl();
 
-    bool                SetChoiceWithCursor ( bool bDo = true ) { bool bOld = bChooseWithCursor; bChooseWithCursor = bDo; return bOld; }
+    bool                SetChoiceWithCursor() { bool bOld = bChooseWithCursor; bChooseWithCursor = true; return bOld; }
     void                Clear( bool bInCtor = false );
     void                SetStyle( WinBits nWinStyle );
     WinBits             GetStyle() const { return nWinBits; }
-    void                InsertEntry( SvxIconChoiceCtrlEntry*, size_t nPos, const Point* pPos=nullptr );
+    void                InsertEntry( SvxIconChoiceCtrlEntry*, size_t nPos );
     void                CreateAutoMnemonics( MnemonicGenerator* _pGenerator = nullptr );
     void                FontModified();
-    void                SelectAll( bool bSelect = true, bool bPaint = true );
+    void                SelectAll();
     void                SelectEntry(
                             SvxIconChoiceCtrlEntry*,
                             bool bSelect,
@@ -358,10 +358,7 @@ public:
 
     void                SetEntryPos(
                             SvxIconChoiceCtrlEntry* pEntry,
-                            const Point& rPos,
-                            bool bAdjustRow = false,
-                            bool bCheckScrollBars = false,
-                            bool bKeepGridMap = false
+                            const Point& rPos
                         );
 
     void                InvalidateEntry( SvxIconChoiceCtrlEntry* );
@@ -369,12 +366,7 @@ public:
     void                SetNoSelection();
 
     SvxIconChoiceCtrlEntry* GetCurEntry() const { return pCursor; }
-    void                SetCursor(
-                            SvxIconChoiceCtrlEntry*,
-                            // true == carry selection when single-selecting
-                            bool bSyncSingleSelection = true,
-                            bool bShowFocusAsync = false
-                        );
+    void                SetCursor( SvxIconChoiceCtrlEntry* );
 
     SvxIconChoiceCtrlEntry* GetEntry( const Point& rDocPos, bool bHit = false );
 
@@ -419,8 +411,7 @@ public:
                                       bool bIsBackgroundPainted = false);
 
     void                PaintItem(const Rectangle& rRect, IcnViewFieldType eItem, SvxIconChoiceCtrlEntry* pEntry,
-                            sal_uInt16 nPaintFlags, vcl::RenderContext& rRenderContext, const OUString* pStr = nullptr,
-                            vcl::ControlLayoutData* _pLayoutData = nullptr);
+                            sal_uInt16 nPaintFlags, vcl::RenderContext& rRenderContext);
 
     // recalculates all BoundingRects if bMustRecalcBoundingRects == true
     void                CheckBoundingRects() { if (bBoundRectsDirty) RecalcAllBoundingRectsSmart(); }
@@ -453,7 +444,7 @@ public:
                             bool bCallRectChangedHdl = true
                         );
 
-    void                AdjustEntryAtGrid( SvxIconChoiceCtrlEntry* pStart = nullptr );
+    void                AdjustEntryAtGrid();
 #ifdef DBG_UTIL
     void                SetEntryTextMode(
                             SvxIconChoiceCtrlTextMode,
@@ -463,7 +454,7 @@ public:
     bool                IsEntryEditingEnabled() const { return bEntryEditingEnabled; }
     bool                IsEntryEditing() const { return (pCurEditedEntry!=nullptr); }
     void                EditEntry( SvxIconChoiceCtrlEntry* pEntry );
-    void                StopEntryEditing( bool bCancel );
+    void                StopEntryEditing();
     size_t              GetEntryCount() const { return aEntries.size(); }
     SvxIconChoiceCtrlEntry* GetEntry( size_t nPos )
                             {
@@ -592,16 +583,16 @@ public:
 
     void                Clear();
 
-    GridId              GetGrid( const Point& rDocPos, bool* pbClipped = nullptr );
+    GridId              GetGrid( const Point& rDocPos );
     GridId              GetGrid( sal_uInt16 nGridX, sal_uInt16 nGridY );
-    GridId              GetUnoccupiedGrid( bool bOccupyFound=true );
+    GridId              GetUnoccupiedGrid();
 
-    void                OccupyGrids( const SvxIconChoiceCtrlEntry*, bool bOccupy = true );
-    void                OccupyGrid( GridId nId, bool bOccupy = true )
+    void                OccupyGrids( const SvxIconChoiceCtrlEntry* );
+    void                OccupyGrid( GridId nId )
                         {
                             DBG_ASSERT(!_pGridMap || nId<(sal_uLong)(_nGridCols*_nGridRows),"OccupyGrid: Bad GridId");
                             if(_pGridMap && nId < (sal_uLong)(_nGridCols *_nGridRows) )
-                                _pGridMap[ nId ] = bOccupy;
+                                _pGridMap[ nId ] = true;
                         }
 
     Rectangle           GetGridRect( GridId );

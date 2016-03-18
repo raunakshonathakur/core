@@ -38,7 +38,7 @@ private:
 
 bool BaseCheckNotTestFixtureSubclass(
     const CXXRecordDecl *BaseDefinition
-#if __clang_major__ == 3 && __clang_minor__ <= 7
+#if CLANG_VERSION < 30800
     , void *
 #endif
     )
@@ -67,7 +67,7 @@ std::string StaticMethods::getFilename(SourceLocation loc)
     return compiler.getSourceManager().getFilename(spellingLocation);
 }
 
-static bool startsWith(const std::string& rStr, const char* pSubStr) {
+bool startsWith(const std::string& rStr, const char* pSubStr) {
     return rStr.compare(0, strlen(pSubStr), pSubStr) == 0;
 }
 

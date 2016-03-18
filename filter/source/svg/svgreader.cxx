@@ -287,13 +287,42 @@ struct AnnotatingVisitor
                 uno::Reference<xml::dom::XNode> xNode(xAttributes->getNamedItem("href"));
                 if(xNode.is())
                 {
-                    const OUString sValue(xNode->getNodeValue());
+                    OUString sValue(xNode->getNodeValue());
                     ElementRefMapType::iterator aFound=maElementIdMap.end();
                     if ( sValue.copy(0,1) == "#" )
-                        aFound = maElementIdMap.find(sValue.copy(1));
-                    else
-                        aFound = maElementIdMap.find(sValue);
-                    if( aFound != maElementIdMap.end() )
+                        sValue = sValue.copy(1);
+                    aFound = maElementIdMap.find(sValue);
+                    bool bFound = aFound != maElementIdMap.end();
+                    if (bFound)
+                    {
+                        bool bSelfCycle = false;
+
+                        uno::Reference<xml::dom::XNode> xParentNode(xElem->getParentNode());
+                        if (xParentNode.is() && xParentNode->hasAttributes())
+                        {
+                            const uno::Reference<xml::dom::XNamedNodeMap> xParentAttributes = xParentNode->getAttributes();
+                            const sal_Int32 nFooNumAttrs(xParentAttributes->getLength());
+                            for (sal_Int32 i=0; i < nFooNumAttrs; ++i)
+                            {
+                                const sal_Int32 nTokenId(getTokenId(xParentAttributes->item(i)->getNodeName()));
+                                if (XML_ID == nTokenId)
+                                {
+                                    OUString sParentID = xParentAttributes->item(i)->getNodeValue();
+                                    bSelfCycle = sParentID == sValue;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (bSelfCycle)
+                        {
+                            //drop this invalid self-referencing "use" node
+                            maElementIdMap.erase(aFound);
+                            bFound = false;
+                        }
+                    }
+
+                    if (bFound)
                     {
                         uno::Reference<xml::dom::XElement> xRefElem(
                             maElementVector[aFound->second]->cloneNode(true), uno::UNO_QUERY);
@@ -2149,6 +2178,7 @@ bool SVGReader::parseAndConvert()
     xAttrs->AddAttribute( "xmlns:math", "http://www.w3.org/1998/Math/MathML");
     xAttrs->AddAttribute( "xmlns:form", OASIS_STR "form:1.0" );
     xAttrs->AddAttribute( "xmlns:script", OASIS_STR "script:1.0" );
+    xAttrs->AddAttribute( "xmlns:config", OASIS_STR "config:1.0" );
     xAttrs->AddAttribute( "xmlns:dom", "http://www.w3.org/2001/xml-events");
     xAttrs->AddAttribute( "xmlns:xforms", "http://www.w3.org/2002/xforms");
     xAttrs->AddAttribute( "xmlns:xsd", "http://www.w3.org/2001/XMLSchema");

@@ -719,7 +719,7 @@ void ImpEditView::CalcAnchorPoint()
     }
 }
 
-void ImpEditView::ShowCursor( bool bGotoCursor, bool bForceVisCursor, sal_uInt16 nShowCursorFlags )
+void ImpEditView::ShowCursor( bool bGotoCursor, bool bForceVisCursor )
 {
     // No ShowCursor in an empty View ...
     if ( ( aOutArea.Left() >= aOutArea.Right() ) && ( aOutArea.Top() >= aOutArea.Bottom() ) )
@@ -750,9 +750,7 @@ void ImpEditView::ShowCursor( bool bGotoCursor, bool bForceVisCursor, sal_uInt16
 
     const ParaPortion* pParaPortion = pEditEngine->GetParaPortions()[nPara];
 
-    nShowCursorFlags |= nExtraCursorFlags;
-
-    nShowCursorFlags |= GETCRSR_TXTONLY;
+    sal_uInt16 nShowCursorFlags = nExtraCursorFlags | GETCRSR_TXTONLY;
 
     // Use CursorBidiLevel 0/1 in meaning of
     // 0: prefer portion end, normal mode
@@ -1235,7 +1233,7 @@ bool ImpEditView::IsWrongSpelledWord( const EditPaM& rPaM, bool bMarkIfWrong )
     return bIsWrong;
 }
 
-OUString ImpEditView::SpellIgnoreOrAddWord( bool bAdd )
+OUString ImpEditView::SpellIgnoreWord()
 {
     OUString aWord;
     if ( pEditEngine->pImpEditEngine->GetSpeller().is() )
@@ -1257,16 +1255,9 @@ OUString ImpEditView::SpellIgnoreOrAddWord( bool bAdd )
 
         if ( !aWord.isEmpty() )
         {
-            if ( bAdd )
-            {
-                OSL_FAIL( "Sorry, AddWord not implemented" );
-            }
-            else // Ignore
-            {
-                Reference< XDictionary >  xDic( SvxGetIgnoreAllList(), UNO_QUERY );
-                if (xDic.is())
-                    xDic->add( aWord, sal_False, OUString() );
-            }
+            Reference< XDictionary >  xDic( SvxGetIgnoreAllList(), UNO_QUERY );
+            if (xDic.is())
+                xDic->add( aWord, sal_False, OUString() );
             EditDoc& rDoc = pEditEngine->GetEditDoc();
             sal_Int32 nNodes = rDoc.Count();
             for ( sal_Int32 n = 0; n < nNodes; n++ )

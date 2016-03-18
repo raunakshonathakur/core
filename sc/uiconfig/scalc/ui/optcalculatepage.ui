@@ -49,6 +49,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
+                    <property name="tooltip_markup" translatable="yes">Disable case sensitivity for interoperability with Microsoft Excel</property>
                     <property name="use_underline">True</property>
                     <property name="xalign">0</property>
                     <property name="draw_indicator">True</property>
@@ -81,6 +82,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
+                    <property name="tooltip_markup" translatable="yes">Enable this for interoperability with Microsoft Excel</property>
                     <property name="use_underline">True</property>
                     <property name="xalign">0</property>
                     <property name="draw_indicator">True</property>
@@ -92,14 +94,17 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkCheckButton" id="wildcards">
+                  <object class="GtkRadioButton" id="formulawildcards">
                     <property name="label" translatable="yes">Enable w_ildcards in formulas</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
+                    <property name="tooltip_markup" translatable="yes">Enable wildcards for interoperability with Microsoft Excel</property>
                     <property name="use_underline">True</property>
                     <property name="xalign">0</property>
+                    <property name="active">True</property>
                     <property name="draw_indicator">True</property>
+                    <property name="group">formularegex</property>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
@@ -108,18 +113,38 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkCheckButton" id="regex">
+                  <object class="GtkRadioButton" id="formularegex">
                     <property name="label" translatable="yes">Enable r_egular expressions in formulas</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
                     <property name="use_underline">True</property>
                     <property name="xalign">0</property>
+                    <property name="active">True</property>
                     <property name="draw_indicator">True</property>
+                    <property name="group">formulaliteral</property>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
                     <property name="top_attach">4</property>
+                    <property name="width">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkRadioButton" id="formulaliteral">
+                    <property name="label" translatable="yes">No wildcards or regular expressions in formulas</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="use_underline">True</property>
+                    <property name="xalign">0</property>
+                    <property name="active">True</property>
+                    <property name="draw_indicator">True</property>
+                    <property name="group">formulawildcard</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">5</property>
                     <property name="width">2</property>
                   </packing>
                 </child>
@@ -135,7 +160,7 @@
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">5</property>
+                    <property name="top_attach">6</property>
                     <property name="width">2</property>
                   </packing>
                 </child>
@@ -151,7 +176,7 @@
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">6</property>
+                    <property name="top_attach">7</property>
                   </packing>
                 </child>
                 <child>
@@ -191,7 +216,7 @@
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
-                    <property name="top_attach">5</property>
+                    <property name="top_attach">7</property>
                   </packing>
                 </child>
               </object>

@@ -518,7 +518,7 @@ SfxPrinter* ScPreviewShell::GetPrinter( bool bCreate )
     return pDocShell->GetPrinter(bCreate);
 }
 
-sal_uInt16 ScPreviewShell::SetPrinter( SfxPrinter *pNewPrinter, SfxPrinterChangeFlags nDiffFlags, bool )
+sal_uInt16 ScPreviewShell::SetPrinter( SfxPrinter *pNewPrinter, SfxPrinterChangeFlags nDiffFlags )
 {
     return pDocShell->SetPrinter( pNewPrinter, nDiffFlags );
 }
@@ -934,7 +934,7 @@ void ScPreviewShell::ReadUserData(const OUString& rData, bool /* bBrowse */)
     }
 }
 
-void ScPreviewShell::WriteUserDataSequence(uno::Sequence < beans::PropertyValue >& rSeq, bool /* bBrowse */)
+void ScPreviewShell::WriteUserDataSequence(uno::Sequence < beans::PropertyValue >& rSeq)
 {
     rSeq.realloc(3);
     beans::PropertyValue* pSeq = rSeq.getArray();
@@ -953,7 +953,7 @@ void ScPreviewShell::WriteUserDataSequence(uno::Sequence < beans::PropertyValue 
     }
 }
 
-void ScPreviewShell::ReadUserDataSequence(const uno::Sequence < beans::PropertyValue >& rSeq, bool /* bBrowse */)
+void ScPreviewShell::ReadUserDataSequence(const uno::Sequence < beans::PropertyValue >& rSeq)
 {
     sal_Int32 nCount(rSeq.getLength());
     if (nCount)

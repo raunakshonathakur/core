@@ -112,11 +112,11 @@ MacabCondition *MacabCommonStatement::analyseWhereClause(const OSQLParseNode *pP
             {
                 switch (pMiddle->getNodeType())
                 {
-                    case SQL_NODE_EQUAL:
+                    case SQLNodeType::Equal:
                         // WHERE 0 = 1
                         return new MacabConditionConstant(pLeft->getTokenValue() == pRight->getTokenValue());
 
-                    case SQL_NODE_NOTEQUAL:
+                    case SQLNodeType::NotEqual:
                         // WHERE 0 <> 1
                         // (might not be correct SQL... don't care, handling anyway)
                         return new MacabConditionConstant(pLeft->getTokenValue() != pRight->getTokenValue());
@@ -143,11 +143,11 @@ MacabCondition *MacabCommonStatement::analyseWhereClause(const OSQLParseNode *pP
 
                     switch (pMiddle->getNodeType())
                     {
-                        case SQL_NODE_EQUAL:
+                        case SQLNodeType::Equal:
                             // WHERE Name = 'Smith'
                             return new MacabConditionEqual(m_pHeader, sColumnName, sMatchString);
 
-                         case SQL_NODE_NOTEQUAL:
+                         case SQLNodeType::NotEqual:
                             // WHERE Name <> 'Jones'
                             return new MacabConditionDifferent(m_pHeader, sColumnName, sMatchString);
 
@@ -424,7 +424,7 @@ OSL_TRACE("Mac OS Address book - SQL Request: %s", OUtoCStr(sql));
     m_aSQLIterator.traverseAll();
     switch (m_aSQLIterator.getStatementType())
     {
-        case SQL_STATEMENT_SELECT:
+        case OSQLStatementType::Select:
             {
             OUString sTableName = getTableName(); // FROM which table ?
             if (sTableName.getLength() != 0) // a match

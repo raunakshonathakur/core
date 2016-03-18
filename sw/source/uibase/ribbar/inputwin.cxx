@@ -392,7 +392,7 @@ void  SwInputWindow::ApplyFormula()
     const SfxPoolItem* aArgs[2];
     aArgs[0] = &aParam;
     aArgs[1] = nullptr;
-    pView->GetViewFrame()->GetBindings().Execute( FN_EDIT_FORMULA, aArgs, 0, SfxCallMode::ASYNCHRON );
+    pView->GetViewFrame()->GetBindings().Execute( FN_EDIT_FORMULA, aArgs, SfxCallMode::ASYNCHRON );
 }
 
 void  SwInputWindow::CancelFormula()
@@ -458,7 +458,7 @@ IMPL_LINK_TYPED( SwInputWindow, SelTableCellsNotify, SwWrtShell&, rCaller, void 
         aEdit->GrabFocus();
 }
 
-void SwInputWindow::SetFormula( const OUString& rFormula, bool bDelFlag )
+void SwInputWindow::SetFormula( const OUString& rFormula )
 {
     OUString sEdit('=');
     if( !rFormula.isEmpty() )
@@ -471,7 +471,7 @@ void SwInputWindow::SetFormula( const OUString& rFormula, bool bDelFlag )
     aEdit->SetText( sEdit );
     aEdit->SetSelection( Selection( sEdit.getLength(), sEdit.getLength() ) );
     aEdit->Invalidate();
-    bDelSel = bDelFlag;
+    bDelSel = true;
 }
 
 IMPL_LINK_NOARG_TYPED(SwInputWindow, ModifyHdl, Edit&, void)

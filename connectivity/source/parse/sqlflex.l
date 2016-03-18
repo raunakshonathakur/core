@@ -72,11 +72,11 @@ OSQLScanner* xxx_pGLOBAL_SQLSCAN = NULL;
         SQLyylval.pParseNode = new OSQLInternalNode(text, token);
 
 #define SQL_NEW_KEYWORD(token)                      \
-        SQLyylval.pParseNode = new OSQLInternalNode("", SQL_NODE_KEYWORD, (token));       return token;
+        SQLyylval.pParseNode = new OSQLInternalNode("", SQLNodeType::Keyword, (token));       return token;
 
-#define SQL_NEW_INTNUM      SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_INTNUM); return SQL_TOKEN_INTNUM;
-#define SQL_NEW_APPROXNUM   SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_APPROXNUM); return SQL_TOKEN_APPROXNUM;
-#define SQL_NEW_DATE        SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_ACCESS_DATE); return SQL_TOKEN_ACCESS_DATE;
+#define SQL_NEW_INTNUM      SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::IntNum); return SQL_TOKEN_INTNUM;
+#define SQL_NEW_APPROXNUM   SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::ApproxNum); return SQL_TOKEN_APPROXNUM;
+#define SQL_NEW_DATE        SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::AccessDate); return SQL_TOKEN_ACCESS_DATE;
 
 #define YY_INPUT(buf,result,max_size)               \
 {                                                   \
@@ -403,14 +403,14 @@ YEAR                {SQL_NEW_KEYWORD(SQL_TOKEN_YEAR);  }
 
 ZONE                {SQL_NEW_KEYWORD(SQL_TOKEN_ZONE);  }
 
-"<"                 { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_LESS);return SQL_LESS;}
-">"                 { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_GREAT);return SQL_GREAT;}
-"="                 { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_EQUAL);return SQL_EQUAL;}
-"<="                { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_LESSEQ);return SQL_LESSEQ;}
-">="                { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_GREATEQ);return SQL_GREATEQ;}
-"<>"                { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
-"!="                { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
-"||"                { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQL_NODE_CONCAT);return SQL_CONCAT;}
+"<"                 { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::Less);return SQL_LESS;}
+">"                 { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::Great);return SQL_GREAT;}
+"="                 { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::Equal);return SQL_EQUAL;}
+"<="                { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::LessEq);return SQL_LESSEQ;}
+">="                { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::GreatEq);return SQL_GREATEQ;}
+"<>"                { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::NotEqual);return SQL_NOTEQUAL;}
+"!="                { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::NotEqual);return SQL_NOTEQUAL;}
+"||"                { SQL_NEW_NODE(::rtl::OUString(SQLyytext,strlen(SQLyytext),RTL_TEXTENCODING_UTF8), SQLNodeType::Concat);return SQL_CONCAT;}
 
 
 [-+*/:(),.;?{}]    { return SQLyytext[0]; }
@@ -497,9 +497,9 @@ inline bool checkeof(int c) { return c == 0 || c == EOF; }
  * Valid strings:
  *  ''  'a string'  'quote '' within string'
  *  ""  "a string"  "quote "" within string"
- * nTyp == 0 -> SQL_NODE_NAME
- * nTyp == 1 -> SQL_NODE_STRING
- * nTyp == 2 -> SQL_NODE_ACCESS_DATE
+ * nTyp == 0 -> SQLNodeType::Name
+ * nTyp == 1 -> SQLNodeType::String
+ * nTyp == 2 -> SQLNodeType::AccessDate
  */
 sal_Int32 gatherString(int delim, sal_Int32 nTyp)
 {
@@ -518,13 +518,13 @@ sal_Int32 gatherString(int delim, sal_Int32 nTyp)
                 switch(nTyp)
                 {
                 case 0:
-                    SQL_NEW_NODE(::rtl::OStringToOUString(sBuffer.makeStringAndClear(),RTL_TEXTENCODING_UTF8), SQL_NODE_NAME);
+                    SQL_NEW_NODE(::rtl::OStringToOUString(sBuffer.makeStringAndClear(),RTL_TEXTENCODING_UTF8), SQLNodeType::Name);
                     return SQL_TOKEN_NAME;
                 case 1:
-                    SQL_NEW_NODE(::rtl::OStringToOUString(sBuffer.makeStringAndClear(),RTL_TEXTENCODING_UTF8), SQL_NODE_STRING);
+                    SQL_NEW_NODE(::rtl::OStringToOUString(sBuffer.makeStringAndClear(),RTL_TEXTENCODING_UTF8), SQLNodeType::String);
                     return SQL_TOKEN_STRING;
                 case 2:
-                    SQL_NEW_NODE(::rtl::OStringToOUString(sBuffer.makeStringAndClear(),RTL_TEXTENCODING_UTF8), SQL_NODE_ACCESS_DATE);
+                    SQL_NEW_NODE(::rtl::OStringToOUString(sBuffer.makeStringAndClear(),RTL_TEXTENCODING_UTF8), SQLNodeType::AccessDate);
                     return SQL_TOKEN_ACCESS_DATE;
                 }
             }
@@ -550,30 +550,30 @@ sal_Int32 mapEnumToToken(IParseContext::InternationalKeyCode _eKeyCode )
     sal_Int32 nTokenID = 0;
     switch( _eKeyCode )
     {
-        case IParseContext::KEY_LIKE:       nTokenID = SQL_TOKEN_LIKE;      break;
-        case IParseContext::KEY_NOT:        nTokenID = SQL_TOKEN_NOT;       break;
-        case IParseContext::KEY_NULL:       nTokenID = SQL_TOKEN_NULL;      break;
-        case IParseContext::KEY_TRUE:       nTokenID = SQL_TOKEN_TRUE;      break;
-        case IParseContext::KEY_FALSE:      nTokenID = SQL_TOKEN_FALSE;     break;
-        case IParseContext::KEY_IS:         nTokenID = SQL_TOKEN_IS;        break;
-        case IParseContext::KEY_BETWEEN:    nTokenID = SQL_TOKEN_BETWEEN;   break;
-        case IParseContext::KEY_OR:         nTokenID = SQL_TOKEN_OR;        break;
-        case IParseContext::KEY_AND:        nTokenID = SQL_TOKEN_AND;       break;
-        case IParseContext::KEY_AVG:        nTokenID = SQL_TOKEN_AVG;       break;
-        case IParseContext::KEY_COUNT:      nTokenID = SQL_TOKEN_COUNT;     break;
-        case IParseContext::KEY_MAX:        nTokenID = SQL_TOKEN_MAX;       break;
-        case IParseContext::KEY_MIN:        nTokenID = SQL_TOKEN_MIN;       break;
-        case IParseContext::KEY_SUM:        nTokenID = SQL_TOKEN_SUM;       break;
-        case IParseContext::KEY_EVERY:      nTokenID = SQL_TOKEN_EVERY;     break;
-        case IParseContext::KEY_ANY:        nTokenID = SQL_TOKEN_ANY;       break;
-        case IParseContext::KEY_SOME:       nTokenID = SQL_TOKEN_SOME;      break;
-        case IParseContext::KEY_STDDEV_POP: nTokenID = SQL_TOKEN_STDDEV_POP; break;
-        case IParseContext::KEY_STDDEV_SAMP: nTokenID = SQL_TOKEN_STDDEV_SAMP; break;
-        case IParseContext::KEY_VAR_SAMP:   nTokenID = SQL_TOKEN_VAR_SAMP;  break;
-        case IParseContext::KEY_VAR_POP:    nTokenID = SQL_TOKEN_VAR_POP;   break;
-        case IParseContext::KEY_COLLECT:    nTokenID = SQL_TOKEN_COLLECT;   break;
-        case IParseContext::KEY_FUSION:     nTokenID = SQL_TOKEN_FUSION;    break;
-        case IParseContext::KEY_INTERSECTION: nTokenID = SQL_TOKEN_INTERSECTION; break;
+        case IParseContext::InternationalKeyCode::Like:       nTokenID = SQL_TOKEN_LIKE;      break;
+        case IParseContext::InternationalKeyCode::Not:        nTokenID = SQL_TOKEN_NOT;       break;
+        case IParseContext::InternationalKeyCode::Null:       nTokenID = SQL_TOKEN_NULL;      break;
+        case IParseContext::InternationalKeyCode::True:       nTokenID = SQL_TOKEN_TRUE;      break;
+        case IParseContext::InternationalKeyCode::False:      nTokenID = SQL_TOKEN_FALSE;     break;
+        case IParseContext::InternationalKeyCode::Is:         nTokenID = SQL_TOKEN_IS;        break;
+        case IParseContext::InternationalKeyCode::Between:    nTokenID = SQL_TOKEN_BETWEEN;   break;
+        case IParseContext::InternationalKeyCode::Or:         nTokenID = SQL_TOKEN_OR;        break;
+        case IParseContext::InternationalKeyCode::And:        nTokenID = SQL_TOKEN_AND;       break;
+        case IParseContext::InternationalKeyCode::Avg:        nTokenID = SQL_TOKEN_AVG;       break;
+        case IParseContext::InternationalKeyCode::Count:      nTokenID = SQL_TOKEN_COUNT;     break;
+        case IParseContext::InternationalKeyCode::Max:        nTokenID = SQL_TOKEN_MAX;       break;
+        case IParseContext::InternationalKeyCode::Min:        nTokenID = SQL_TOKEN_MIN;       break;
+        case IParseContext::InternationalKeyCode::Sum:        nTokenID = SQL_TOKEN_SUM;       break;
+        case IParseContext::InternationalKeyCode::Every:      nTokenID = SQL_TOKEN_EVERY;     break;
+        case IParseContext::InternationalKeyCode::Any:        nTokenID = SQL_TOKEN_ANY;       break;
+        case IParseContext::InternationalKeyCode::Some:       nTokenID = SQL_TOKEN_SOME;      break;
+        case IParseContext::InternationalKeyCode::StdDevPop: nTokenID = SQL_TOKEN_STDDEV_POP; break;
+        case IParseContext::InternationalKeyCode::StdDevSamp: nTokenID = SQL_TOKEN_STDDEV_SAMP; break;
+        case IParseContext::InternationalKeyCode::VarSamp:   nTokenID = SQL_TOKEN_VAR_SAMP;  break;
+        case IParseContext::InternationalKeyCode::VarPop:    nTokenID = SQL_TOKEN_VAR_POP;   break;
+        case IParseContext::InternationalKeyCode::Collect:    nTokenID = SQL_TOKEN_COLLECT;   break;
+        case IParseContext::InternationalKeyCode::Fusion:     nTokenID = SQL_TOKEN_FUSION;    break;
+        case IParseContext::InternationalKeyCode::Intersection: nTokenID = SQL_TOKEN_INTERSECTION; break;
         default:
             OSL_FAIL( "mapEnumToToken: unsupported key!" );
     }
@@ -591,35 +591,35 @@ sal_Int32 gatherName(const sal_Char* text)
     IParseContext::InternationalKeyCode eKeyCode = xxx_pGLOBAL_SQLSCAN->getInternationalTokenID(text);
     switch (eKeyCode)
     {
-        case IParseContext::KEY_LIKE:
-        case IParseContext::KEY_NOT:
-        case IParseContext::KEY_NULL:
-        case IParseContext::KEY_TRUE:
-        case IParseContext::KEY_FALSE:
-        case IParseContext::KEY_IS:
-        case IParseContext::KEY_BETWEEN:
-        case IParseContext::KEY_OR:
-        case IParseContext::KEY_AND:
-        case IParseContext::KEY_COUNT:
-        case IParseContext::KEY_AVG:
-        case IParseContext::KEY_MAX:
-        case IParseContext::KEY_MIN:
-        case IParseContext::KEY_SUM:
-        case IParseContext::KEY_EVERY:
-        case IParseContext::KEY_ANY:
-        case IParseContext::KEY_SOME:
-        case IParseContext::KEY_STDDEV_POP:
-        case IParseContext::KEY_STDDEV_SAMP:
-        case IParseContext::KEY_VAR_SAMP:
-        case IParseContext::KEY_VAR_POP:
-        case IParseContext::KEY_COLLECT:
-        case IParseContext::KEY_FUSION:
-        case IParseContext::KEY_INTERSECTION:
+        case IParseContext::InternationalKeyCode::Like:
+        case IParseContext::InternationalKeyCode::Not:
+        case IParseContext::InternationalKeyCode::Null:
+        case IParseContext::InternationalKeyCode::True:
+        case IParseContext::InternationalKeyCode::False:
+        case IParseContext::InternationalKeyCode::Is:
+        case IParseContext::InternationalKeyCode::Between:
+        case IParseContext::InternationalKeyCode::Or:
+        case IParseContext::InternationalKeyCode::And:
+        case IParseContext::InternationalKeyCode::Count:
+        case IParseContext::InternationalKeyCode::Avg:
+        case IParseContext::InternationalKeyCode::Max:
+        case IParseContext::InternationalKeyCode::Min:
+        case IParseContext::InternationalKeyCode::Sum:
+        case IParseContext::InternationalKeyCode::Every:
+        case IParseContext::InternationalKeyCode::Any:
+        case IParseContext::InternationalKeyCode::Some:
+        case IParseContext::InternationalKeyCode::StdDevPop:
+        case IParseContext::InternationalKeyCode::StdDevSamp:
+        case IParseContext::InternationalKeyCode::VarSamp:
+        case IParseContext::InternationalKeyCode::VarPop:
+        case IParseContext::InternationalKeyCode::Collect:
+        case IParseContext::InternationalKeyCode::Fusion:
+        case IParseContext::InternationalKeyCode::Intersection:
             nToken = mapEnumToToken(eKeyCode);
             SQL_NEW_KEYWORD(nToken);
             break;
         default:
-            SQL_NEW_NODE(::rtl::OUString(text,strlen(text),RTL_TEXTENCODING_UTF8), SQL_NODE_NAME);
+            SQL_NEW_NODE(::rtl::OUString(text,strlen(text),RTL_TEXTENCODING_UTF8), SQLNodeType::Name);
             return SQL_TOKEN_NAME;
     }
 }
@@ -635,30 +635,30 @@ sal_Int32 gatherNamePre(const sal_Char* text)
     IParseContext::InternationalKeyCode eKeyCode = xxx_pGLOBAL_SQLSCAN->getInternationalTokenID(text);
     switch (eKeyCode)
     {
-        case IParseContext::KEY_LIKE:
-        case IParseContext::KEY_NOT:
-        case IParseContext::KEY_NULL:
-        case IParseContext::KEY_TRUE:
-        case IParseContext::KEY_FALSE:
-        case IParseContext::KEY_IS:
-        case IParseContext::KEY_BETWEEN:
-        case IParseContext::KEY_OR:
-        case IParseContext::KEY_AND:
-        case IParseContext::KEY_COUNT:
-        case IParseContext::KEY_AVG:
-        case IParseContext::KEY_MAX:
-        case IParseContext::KEY_MIN:
-        case IParseContext::KEY_SUM:
-        case IParseContext::KEY_EVERY:
-        case IParseContext::KEY_ANY:
-        case IParseContext::KEY_SOME:
-        case IParseContext::KEY_STDDEV_POP:
-        case IParseContext::KEY_STDDEV_SAMP:
-        case IParseContext::KEY_VAR_SAMP:
-        case IParseContext::KEY_VAR_POP:
-        case IParseContext::KEY_COLLECT:
-        case IParseContext::KEY_FUSION:
-        case IParseContext::KEY_INTERSECTION:
+        case IParseContext::InternationalKeyCode::Like:
+        case IParseContext::InternationalKeyCode::Not:
+        case IParseContext::InternationalKeyCode::Null:
+        case IParseContext::InternationalKeyCode::True:
+        case IParseContext::InternationalKeyCode::False:
+        case IParseContext::InternationalKeyCode::Is:
+        case IParseContext::InternationalKeyCode::Between:
+        case IParseContext::InternationalKeyCode::Or:
+        case IParseContext::InternationalKeyCode::And:
+        case IParseContext::InternationalKeyCode::Count:
+        case IParseContext::InternationalKeyCode::Avg:
+        case IParseContext::InternationalKeyCode::Max:
+        case IParseContext::InternationalKeyCode::Min:
+        case IParseContext::InternationalKeyCode::Sum:
+        case IParseContext::InternationalKeyCode::Every:
+        case IParseContext::InternationalKeyCode::Any:
+        case IParseContext::InternationalKeyCode::Some:
+        case IParseContext::InternationalKeyCode::StdDevPop:
+        case IParseContext::InternationalKeyCode::StdDevSamp:
+        case IParseContext::InternationalKeyCode::VarSamp:
+        case IParseContext::InternationalKeyCode::VarPop:
+        case IParseContext::InternationalKeyCode::Collect:
+        case IParseContext::InternationalKeyCode::Fusion:
+        case IParseContext::InternationalKeyCode::Intersection:
             nToken = mapEnumToToken(eKeyCode);
             SQL_NEW_KEYWORD(nToken);
             break;
@@ -670,12 +670,12 @@ sal_Int32 gatherNamePre(const sal_Char* text)
             sal_Int32 nPos = xxx_pGLOBAL_SQLSCAN->GetCurrentPos() - nLength - 2;
             if (sStmt.getStr()[nPos] == ':')
             {
-                SQL_NEW_NODE(::rtl::OUString(text,nLength,RTL_TEXTENCODING_UTF8), SQL_NODE_NAME);
+                SQL_NEW_NODE(::rtl::OUString(text,nLength,RTL_TEXTENCODING_UTF8), SQLNodeType::Name);
                 nToken = SQL_TOKEN_NAME;
             }
             else
             {
-                SQL_NEW_NODE(::rtl::OUString(text,nLength,RTL_TEXTENCODING_UTF8), SQL_NODE_STRING);
+                SQL_NEW_NODE(::rtl::OUString(text,nLength,RTL_TEXTENCODING_UTF8), SQLNodeType::String);
                 nToken = SQL_TOKEN_STRING;
             }
         }
@@ -785,7 +785,7 @@ sal_Int32 OSQLScanner::SQLyygetc(void)
 IParseContext::InternationalKeyCode OSQLScanner::getInternationalTokenID(const sal_Char* sToken) const
 {
     OSL_ENSURE(m_pContext, "OSQLScanner::getInternationalTokenID: No Context set");
-    return (m_bInternational) ? m_pContext->getIntlKeyCode(::rtl::OString(sToken) ) : IParseContext::KEY_NONE;
+    return (m_bInternational) ? m_pContext->getIntlKeyCode(::rtl::OString(sToken) ) : IParseContext::InternationalKeyCode::None;
 }
 sal_Int32	OSQLScanner::GetGERRule()		{ return PREDICATE_GER; }
 sal_Int32	OSQLScanner::GetENGRule()		{ return PREDICATE_ENG; }

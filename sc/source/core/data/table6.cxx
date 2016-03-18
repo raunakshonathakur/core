@@ -35,8 +35,6 @@
 #include "postit.hxx"
 #include "stringutil.hxx"
 
-using ::com::sun::star::util::SearchOptions;
-
 namespace {
 
 bool lcl_GetTextWithBreaks( const EditTextObject& rData, ScDocument* pDoc, OUString& rVal )
@@ -727,10 +725,10 @@ bool ScTable::SearchAndReplace(
         else
         {
             //  SearchParam no longer needed - SearchOptions contains all settings
-            css::util::SearchOptions aSearchOptions = rSearchItem.GetSearchOptions();
+            css::util::SearchOptions2 aSearchOptions = rSearchItem.GetSearchOptions();
             aSearchOptions.Locale = *ScGlobal::GetLocale();
 
-            if (aSearchOptions.searchString.isEmpty())
+            if (aSearchOptions.searchString.isEmpty() || ( rSearchItem.GetRegExp() && aSearchOptions.searchString == "^$" ) )
             {
                 // Search for empty cells.
                 return SearchAndReplaceEmptyCells(rSearchItem, rCol, rRow, rMark, rMatchedRanges, rUndoStr, pUndoDoc);
@@ -744,7 +742,7 @@ bool ScTable::SearchAndReplace(
                     ( css::i18n::TransliterationModules_IGNORE_CASE |
                       css::i18n::TransliterationModules_IGNORE_WIDTH );
 
-            pSearchText = new utl::TextSearch( utl::TextSearch::UpgradeToSearchOptions2( aSearchOptions) );
+            pSearchText = new utl::TextSearch( aSearchOptions );
 
             if (nCommand == SvxSearchCmd::FIND)
                 bFound = Search(rSearchItem, rCol, rRow, rMark, rUndoStr, pUndoDoc);
@@ -786,15 +784,15 @@ bool ScTable::SearchAndReplaceEmptyCells(
         for ( size_t i = 0, n = aMarkedRanges.size(); i < n; ++i )
         {
             ScRange* p = aMarkedRanges[ i ];
-            if (p->aStart.Col() > nColEnd || p->aStart.Row() > nRowEnd)
+            if (p->aStart.Col() > nColEnd || p->aStart.Row() > nRowEnd || p->aEnd.Col() < nColStart || p->aEnd.Row() < nRowStart)
                 // This range is outside the data area.  Skip it.
                 continue;
 
             // Shrink the range into data area only.
             if (p->aStart.Col() < nColStart)
-                p->aStart.SetCol(rCol);
+                p->aStart.SetCol(nColStart);
             if (p->aStart.Row() < nRowStart)
-                p->aStart.SetRow(rRow);
+                p->aStart.SetRow(nRowStart);
 
             if (p->aEnd.Col() > nColEnd)
                 p->aEnd.SetCol(nColEnd);

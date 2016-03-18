@@ -99,6 +99,7 @@
 #include "interpre.hxx"
 #include <tokenstringcontext.hxx>
 #include "docsh.hxx"
+#include "clipoptions.hxx"
 #include <listenercontext.hxx>
 
 using namespace com::sun::star;
@@ -896,8 +897,8 @@ bool ScDocument::CopyTab( SCTAB nOldPos, SCTAB nNewPos, const ScMarkData* pOnlyM
         sc::SetFormulaDirtyContext aFormulaDirtyCxt;
         SetAllFormulasDirty(aFormulaDirtyCxt);
 
-        if (pDrawLayer)
-            DrawCopyPage( static_cast<sal_uInt16>(nOldPos), static_cast<sal_uInt16>(nNewPos) );
+        if (pDrawLayer) //  Skip cloning Note caption object
+            DrawCopyPage( static_cast<sal_uInt16>(nOldPos), static_cast<sal_uInt16>(nNewPos), true );
 
         if (pDPCollection)
             pDPCollection->CopyToTab(nOldPos, nNewPos);
@@ -1066,12 +1067,12 @@ void ScDocument::SetError( SCCOL nCol, SCROW nRow, SCTAB nTab, const sal_uInt16 
 }
 
 void ScDocument::SetFormula(
-    const ScAddress& rPos, const ScTokenArray& rArray, formula::FormulaGrammar::Grammar eGram )
+    const ScAddress& rPos, const ScTokenArray& rArray )
 {
     if (!TableExists(rPos.Tab()))
         return;
 
-    maTabs[rPos.Tab()]->SetFormula(rPos.Col(), rPos.Row(), rArray, eGram);
+    maTabs[rPos.Tab()]->SetFormula(rPos.Col(), rPos.Row(), rArray, formula::FormulaGrammar::GRAM_DEFAULT);
 }
 
 void ScDocument::SetFormula(

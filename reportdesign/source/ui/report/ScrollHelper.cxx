@@ -270,9 +270,9 @@ void OScrollWindowHelper::unmarkAllObjects(OSectionView* _pSectionView)
     m_aReportWindow->unmarkAllObjects(_pSectionView);
 }
 
-sal_Int32 OScrollWindowHelper::getMaxMarkerWidth(bool _bWithEnd) const
+sal_Int32 OScrollWindowHelper::getMaxMarkerWidth() const
 {
-    return m_aReportWindow->getMaxMarkerWidth(_bWithEnd);
+    return m_aReportWindow->getMaxMarkerWidth();
 }
 
 void OScrollWindowHelper::showRuler(bool _bShow)
@@ -347,9 +347,9 @@ bool OScrollWindowHelper::Notify( NotifyEvent& rNEvt )
     return OScrollWindowHelper_BASE::Notify(rNEvt);
 }
 
-void OScrollWindowHelper::alignMarkedObjects(sal_Int32 _nControlModification,bool _bAlignAtSection, bool bBoundRects)
+void OScrollWindowHelper::alignMarkedObjects(sal_Int32 _nControlModification,bool _bAlignAtSection)
 {
-    m_aReportWindow->alignMarkedObjects(_nControlModification, _bAlignAtSection, bBoundRects);
+    m_aReportWindow->alignMarkedObjects(_nControlModification, _bAlignAtSection);
 }
 
 void OScrollWindowHelper::ImplInitSettings()

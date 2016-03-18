@@ -20,6 +20,7 @@ $(eval $(call gb_UIConfig_add_menubarfiles,modules/scalc,\
 endif
 
 $(eval $(call gb_UIConfig_add_popupmenufiles,modules/scalc,\
+	sc/uiconfig/scalc/popupmenu/anchor \
 	sc/uiconfig/scalc/popupmenu/audit \
 	sc/uiconfig/scalc/popupmenu/cell \
 	sc/uiconfig/scalc/popupmenu/celledit \
@@ -50,6 +51,7 @@ $(eval $(call gb_UIConfig_add_toolbarfiles,modules/scalc,\
 	sc/uiconfig/scalc/toolbar/arrowshapes \
 	sc/uiconfig/scalc/toolbar/basicshapes \
 	sc/uiconfig/scalc/toolbar/calloutshapes \
+	sc/uiconfig/scalc/toolbar/classificationbar \
 	sc/uiconfig/scalc/toolbar/colorbar \
 	sc/uiconfig/scalc/toolbar/datastreams \
 	sc/uiconfig/scalc/toolbar/drawbar \
@@ -70,6 +72,7 @@ $(eval $(call gb_UIConfig_add_toolbarfiles,modules/scalc,\
 	sc/uiconfig/scalc/toolbar/graphicobjectbar \
 	sc/uiconfig/scalc/toolbar/insertbar \
 	sc/uiconfig/scalc/toolbar/insertcellsbar \
+	sc/uiconfig/scalc/toolbar/linesbar \
 	sc/uiconfig/scalc/toolbar/mediaobjectbar \
 	sc/uiconfig/scalc/toolbar/moreformcontrols \
 	sc/uiconfig/scalc/toolbar/previewbar \

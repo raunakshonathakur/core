@@ -78,7 +78,6 @@ FuDraw::FuDraw(ViewShell* pViewSh, ::sd::Window* pWin, ::sd::View* pView,
     , bDragHelpLine(false)
     , nHelpLine(0)
     , bPermanent(false)
-    , bIsImageSelected(false)
 {
 }
 
@@ -154,23 +153,6 @@ bool FuDraw::MouseButtonDown(const MouseEvent& rMEvt)
     bool bReturn = false;
     bDragHelpLine = false;
     aMDPos = mpWindow->PixelToLogic( rMEvt.GetPosPixel() );
-
-    // Check whether an image is selected
-    bIsImageSelected = false;
-    if (mpView->AreObjectsMarked())
-    {
-        const SdrMarkList& rMarkList = mpView->GetMarkedObjectList();
-        if (rMarkList.GetMarkCount() == 1)
-        {
-            SdrMark* pMark = rMarkList.GetMark(0);
-            // tdf#89758 Extra check to avoid interactive crop preview from being
-            // proportionally scaled by default.
-            if (mpView->GetDragMode() != SDRDRAG_CROP)
-            {
-                bIsImageSelected = pMark->GetMarkedSdrObj()->GetObjIdentifier() == OBJ_GRAF;
-            }
-        }
-    }
 
     if ( rMEvt.IsLeft() )
     {
@@ -259,7 +241,7 @@ bool FuDraw::MouseMove(const MouseEvent& rMEvt)
     if (mpView->IsAction())
     {
         // #i33136# and fdo#88339
-        if(bRestricted && (bIsImageSelected || doConstructOrthogonal()))
+        if(bRestricted && doConstructOrthogonal())
         {
             // Scale proportionally by default:
             // rectangle->quadrat, ellipse->circle, Images etc.

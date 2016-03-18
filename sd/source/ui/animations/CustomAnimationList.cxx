@@ -214,30 +214,54 @@ public:
                        const SvViewDataEntry* pView,const SvTreeListEntry& rEntry) override;
 private:
     VclPtr<CustomAnimationList> mpParent;
-    OUString        maDescription;
+    OUString        msDescription;
+    OUString        msEffectName;
     CustomAnimationEffectPtr mpEffect;
+    const CustomAnimationPresets* mpCustomAnimationPresets;
+    const long nIconWidth = 19;
+    const long nItemMinHeight = 38;
 };
 
 CustomAnimationListEntryItem::CustomAnimationListEntryItem( SvTreeListEntry* pEntry, sal_uInt16 nFlags, const OUString& aDescription, CustomAnimationEffectPtr pEffect, CustomAnimationList* pParent  )
 : SvLBoxString( pEntry, nFlags, aDescription )
 , mpParent( pParent )
-, maDescription( aDescription )
+, msDescription( aDescription )
+, msEffectName( OUString() )
 , mpEffect(pEffect)
+, mpCustomAnimationPresets(&CustomAnimationPresets::getCustomAnimationPresets())
 {
+    switch(mpEffect->getPresetClass())
+    {
+    case EffectPresetClass::ENTRANCE:
+        msEffectName = SD_RESSTR(STR_CUSTOMANIMATION_ENTRANCE); break;
+    case EffectPresetClass::EXIT:
+        msEffectName = SD_RESSTR(STR_CUSTOMANIMATION_EXIT); break;
+    case EffectPresetClass::EMPHASIS:
+        msEffectName = SD_RESSTR(STR_CUSTOMANIMATION_EMPHASIS); break;
+    case EffectPresetClass::MOTIONPATH:
+        msEffectName = SD_RESSTR(STR_CUSTOMANIMATION_MOTION_PATHS); break;
+    }
+    msEffectName = msEffectName.replaceFirst( "%1" , mpCustomAnimationPresets->getUINameForPresetId(mpEffect->getPresetId()));
 }
+
 
 CustomAnimationListEntryItem::~CustomAnimationListEntryItem()
 {
 }
+
 
 void CustomAnimationListEntryItem::InitViewData( SvTreeListBox* pView, SvTreeListEntry* pEntry, SvViewDataItem* pViewData )
 {
     if( !pViewData )
         pViewData = pView->GetViewDataItem( pEntry, this );
 
-    Size aSize(pView->GetTextWidth( maDescription ) + 2 * 19, pView->GetTextHeight() );
-    if( aSize.Height() < 19 )
-        aSize.Height() = 19;
+    long width = pView->GetTextWidth( msDescription ) + nIconWidth;
+    if( width < (pView->GetTextWidth( msEffectName ) + 2*nIconWidth))
+        width = pView->GetTextWidth( msEffectName ) + 2*nIconWidth;
+
+    Size aSize( width, pView->GetTextHeight() );
+    if( aSize.Height() < nItemMinHeight )
+        aSize.Height() = nItemMinHeight;
     pViewData->maSize = aSize;
 }
 
@@ -259,8 +283,17 @@ void CustomAnimationListEntryItem::Paint(const Point& rPos, SvTreeListBox& rDev,
     {
         rRenderContext.DrawImage(aPos, mpParent->getImage(IMG_CUSTOMANIMATION_AFTER_PREVIOUS));
     }
+    else if (nNodeType == EffectNodeType::WITH_PREVIOUS)
+    {
+        //FIXME With previous image not defined in CustomAnimation.src
+    }
 
-    aPos.X() += 19;
+    aPos.X() += nIconWidth;
+
+
+    rRenderContext.DrawText(aPos, rRenderContext.GetEllipsisString(msDescription, rDev.GetOutputSizePixel().Width() - aPos.X()));
+
+    aPos.Y() += nIconWidth;
 
     sal_uInt16 nImage;
     switch (mpEffect->getPresetClass())
@@ -295,14 +328,14 @@ void CustomAnimationListEntryItem::Paint(const Point& rPos, SvTreeListBox& rDev,
     {
         const Image& rImage = mpParent->getImage(nImage);
         Point aImagePos(aPos);
-        aImagePos.Y() += (aSize.Height() - rImage.GetSizePixel().Height()) >> 1;
+        aImagePos.Y() += (aSize.Height()/2 - rImage.GetSizePixel().Height()) >> 1;
         rRenderContext.DrawImage(aImagePos, rImage);
     }
 
-    aPos.X() += 19;
-    aPos.Y() += (aSize.Height() - rDev.GetTextHeight()) >> 1;
+    aPos.X() += nIconWidth;
+    aPos.Y() += (aSize.Height()/2 - rDev.GetTextHeight()) >> 1;
 
-    rRenderContext.DrawText(aPos, rRenderContext.GetEllipsisString(maDescription, rDev.GetOutputSizePixel().Width() - aPos.X()));
+    rRenderContext.DrawText(aPos, rRenderContext.GetEllipsisString(msEffectName, rDev.GetOutputSizePixel().Width() - aPos.X()));
 }
 
 SvLBoxItem* CustomAnimationListEntryItem::Create() const
@@ -352,11 +385,12 @@ public:
                        const SvViewDataEntry* pView, const SvTreeListEntry& rEntry) override;
 
 private:
-    OUString        maDescription;
+    OUString        msDescription;
+    const long nIconWidth = 19;
 };
 
 CustomAnimationTriggerEntryItem::CustomAnimationTriggerEntryItem( SvTreeListEntry* pEntry, sal_uInt16 nFlags, const OUString& aDescription )
-: SvLBoxString( pEntry, nFlags, aDescription ), maDescription( aDescription )
+: SvLBoxString( pEntry, nFlags, aDescription ), msDescription( aDescription )
 {
 }
 
@@ -369,9 +403,9 @@ void CustomAnimationTriggerEntryItem::InitViewData( SvTreeListBox* pView, SvTree
     if( !pViewData )
         pViewData = pView->GetViewDataItem( pEntry, this );
 
-    Size aSize(pView->GetTextWidth( maDescription ) + 2 * 19, pView->GetTextHeight() );
-    if( aSize.Height() < 19 )
-        aSize.Height() = 19;
+    Size aSize(pView->GetTextWidth( msDescription ) + 2 * nIconWidth, pView->GetTextHeight() );
+    if( aSize.Height() < nIconWidth )
+        aSize.Height() = nIconWidth;
     pViewData->maSize = aSize;
 }
 
@@ -409,7 +443,7 @@ void CustomAnimationTriggerEntryItem::Paint(const Point& rPos, SvTreeListBox& rD
     aOutRect.Top() += nVertBorder;
     aOutRect.Bottom() -= nVertBorder;
 
-    rRenderContext.DrawText(aOutRect, rRenderContext.GetEllipsisString(maDescription, aOutRect.GetWidth()));
+    rRenderContext.DrawText(aOutRect, rRenderContext.GetEllipsisString(msDescription, aOutRect.GetWidth()));
     rRenderContext.Pop();
 }
 
@@ -487,21 +521,21 @@ void CustomAnimationList::KeyInput( const KeyEvent& rKEvt )
 
 /** selects or deselects the given effect.
     Selections of other effects are not changed */
-void CustomAnimationList::select( CustomAnimationEffectPtr pEffect, bool bSelect /* = true */ )
+void CustomAnimationList::select( CustomAnimationEffectPtr pEffect )
 {
     CustomAnimationListEntry* pEntry = static_cast< CustomAnimationListEntry* >(First());
     while( pEntry )
     {
         if( pEntry->getEffect() == pEffect )
         {
-            Select( pEntry, bSelect );
+            Select( pEntry );
             MakeVisible( pEntry );
             break;
         }
         pEntry = static_cast< CustomAnimationListEntry* >(Next( pEntry ));
     }
 
-    if( !pEntry && bSelect )
+    if( !pEntry )
     {
         append( pEffect );
         select( pEffect );

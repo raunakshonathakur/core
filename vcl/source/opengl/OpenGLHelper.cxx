@@ -39,6 +39,7 @@
 #include <osl/conditn.h>
 #include <vcl/opengl/OpenGLWrapper.hxx>
 #include <vcl/opengl/OpenGLContext.hxx>
+#include <desktop/crashreport.hxx>
 
 #if defined UNX && !defined MACOSX && !defined IOS && !defined ANDROID
 #include "opengl/x11/X11DeviceInfo.hxx"
@@ -156,8 +157,8 @@ static void addPreamble(OString& rShaderSource, const OString& rPreamble)
         if (nVersionStrEndPos == -1)
             nVersionStrEndPos = nVersionStrStartPos + 8;
 
-        OString aVersionLine = rShaderSource.copy(0, nVersionStrEndPos - nVersionStrStartPos);
-        OString aShaderBody = rShaderSource.copy(nVersionStrEndPos - nVersionStrStartPos);
+        OString aVersionLine = rShaderSource.copy(0, nVersionStrEndPos);
+        OString aShaderBody = rShaderSource.copy(nVersionStrEndPos + 1);
 
         rShaderSource = aVersionLine + "\n" + rPreamble + "\n" + aShaderBody;
     }
@@ -1000,11 +1001,13 @@ bool OpenGLHelper::isVCLOpenGLEnabled()
 
         bRet = bEnable;
     }
+
     if (bRet)
     {
         if (!getenv("SAL_DISABLE_GL_WATCHDOG"))
             OpenGLWatchdogThread::start();
     }
+    CrashReporter::AddKeyValue("UseOpenGL", OUString::boolean(bRet));
 
     return bRet;
 }

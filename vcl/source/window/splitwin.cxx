@@ -1801,15 +1801,12 @@ void SplitWindow::ImplDrawButtonRect(vcl::RenderContext& rRenderContext, const R
     }
 }
 
-void SplitWindow::ImplDrawAutoHide(vcl::RenderContext& rRenderContext, bool bInPaint)
+void SplitWindow::ImplDrawAutoHide(vcl::RenderContext& rRenderContext)
 {
     if (mbAutoHide)
     {
         Rectangle aTempRect;
         ImplGetAutoHideRect( aTempRect );
-
-        if (!bInPaint)
-            rRenderContext.Erase( aTempRect );
 
         // load ImageListe, if not available
         ImplSVData* pSVData = ImplGetSVData();
@@ -1960,7 +1957,7 @@ void SplitWindow::ImplDrawGrip(vcl::RenderContext& rRenderContext, const Rectang
     rRenderContext.SetAntialiasing(nAA);
 }
 
-void SplitWindow::ImplDrawFadeIn(vcl::RenderContext& rRenderContext, bool bInPaint)
+void SplitWindow::ImplDrawFadeIn(vcl::RenderContext& rRenderContext)
 {
     if (mbFadeIn)
     {
@@ -1981,14 +1978,11 @@ void SplitWindow::ImplDrawFadeIn(vcl::RenderContext& rRenderContext, bool bInPai
             break;
         }
 
-        if (!bInPaint)
-            rRenderContext.Erase(aTempRect);
-
         ImplDrawGrip(rRenderContext, aTempRect, (meAlign == WindowAlign::Top) || (meAlign == WindowAlign::Bottom), bLeft);
     }
 }
 
-void SplitWindow::ImplDrawFadeOut(vcl::RenderContext& rRenderContext, bool bInPaint)
+void SplitWindow::ImplDrawFadeOut(vcl::RenderContext& rRenderContext)
 {
     if (mbFadeOut)
     {
@@ -2008,9 +2002,6 @@ void SplitWindow::ImplDrawFadeOut(vcl::RenderContext& rRenderContext, bool bInPa
             bLeft = true;
             break;
         }
-
-        if (!bInPaint)
-            rRenderContext.Erase(aTempRect);
 
         ImplDrawGrip(rRenderContext, aTempRect, (meAlign == WindowAlign::Top) || (meAlign == WindowAlign::Bottom), bLeft);
     }
@@ -2534,9 +2525,9 @@ void SplitWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
         ImplDrawBorder(rRenderContext);
 
     ImplDrawBorderLine(rRenderContext);
-    ImplDrawFadeOut(rRenderContext, true);
-    ImplDrawFadeIn(rRenderContext, true);
-    ImplDrawAutoHide(rRenderContext, true);
+    ImplDrawFadeOut(rRenderContext);
+    ImplDrawFadeIn(rRenderContext);
+    ImplDrawAutoHide(rRenderContext);
 
     // draw FrameSet-backgrounds
     ImplDrawBack(rRenderContext, mpMainSet);
@@ -2722,7 +2713,7 @@ void SplitWindow::InsertItem( sal_uInt16 nId, long nSize,
     InsertItem( nId, nullptr, nSize, nPos, nIntoSetId, nBits );
 }
 
-void SplitWindow::RemoveItem( sal_uInt16 nId, bool bHide )
+void SplitWindow::RemoveItem( sal_uInt16 nId )
 {
 #ifdef DBG_UTIL
     sal_uInt16 nDbgDummy;
@@ -2756,11 +2747,8 @@ void SplitWindow::RemoveItem( sal_uInt16 nId, bool bHide )
     if ( pWindow )
     {
         // restore window
-        if ( bHide || (pOrgParent != this) )
-        {
-            pWindow->Hide();
-            pWindow->SetParent( pOrgParent );
-        }
+        pWindow->Hide();
+        pWindow->SetParent( pOrgParent );
     }
 
     // Clear and delete
@@ -3159,9 +3147,9 @@ sal_uInt16 SplitWindow::GetItemPos( sal_uInt16 nId, sal_uInt16 nSetId ) const
     return nPos;
 }
 
-sal_uInt16 SplitWindow::GetItemId( sal_uInt16 nPos, sal_uInt16 nSetId ) const
+sal_uInt16 SplitWindow::GetItemId( sal_uInt16 nPos ) const
 {
-    ImplSplitSet* pSet = ImplFindSet( mpBaseSet, nSetId );
+    ImplSplitSet* pSet = ImplFindSet( mpBaseSet, 0/*nSetId*/ );
     if ( pSet && (nPos < pSet->mpItems.size()) )
         return pSet->mpItems[nPos]->mnId;
     else
@@ -3233,15 +3221,15 @@ void SplitWindow::ShowAutoHideButton( bool bShow )
     ImplUpdate();
 }
 
-void SplitWindow::ShowFadeInHideButton( bool bShow )
+void SplitWindow::ShowFadeInHideButton()
 {
-    mbFadeIn = bShow;
+    mbFadeIn = true;
     ImplUpdate();
 }
 
-void SplitWindow::ShowFadeOutButton( bool bShow )
+void SplitWindow::ShowFadeOutButton()
 {
-    mbFadeOut = bShow;
+    mbFadeOut = true;
     ImplUpdate();
 }
 

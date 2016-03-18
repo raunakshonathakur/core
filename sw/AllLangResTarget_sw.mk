@@ -25,10 +25,6 @@ $(eval $(call gb_AllLangResTarget_add_srs,sw,\
 
 $(eval $(call gb_SrsTarget_SrsTarget,sw/res))
 
-$(eval $(call gb_SrsTarget_use_srstargets,sw/res,\
-	svx/res \
-))
-
 $(eval $(call gb_SrsTarget_set_include,sw/res,\
     $$(INCLUDE) \
     -I$(SRCDIR)/sw/inc \
@@ -61,8 +57,6 @@ $(eval $(call gb_SrsTarget_set_include,sw/res,\
     -I$(SRCDIR)/sw/source/ui/utlui \
     -I$(SRCDIR)/sw/source/ui/web \
     -I$(SRCDIR)/sw/source/ui/wrtsh \
-    -I$(call gb_SrsTemplateTarget_get_include_dir,) \
-    -I$(call gb_SrsTemplateTarget_get_include_dir,sw) \
 ))
 
 $(eval $(call gb_SrsTarget_add_files,sw/res,\
@@ -108,7 +102,6 @@ $(eval $(call gb_SrsTarget_add_files,sw/res,\
     sw/source/ui/misc/glossary.src \
     sw/source/ui/misc/numberingtypelistbox.src \
     sw/source/ui/misc/swruler.src \
-    sw/source/ui/ribbar/tbxanchr.src \
     sw/source/ui/shells/shells.src \
     sw/source/ui/sidebar/PagePropertyPanel.src \
     sw/source/ui/utlui/poolfmt.src \
@@ -118,10 +111,6 @@ $(eval $(call gb_SrsTarget_add_files,sw/res,\
 
 $(eval $(call gb_SrsTarget_add_nonlocalizable_files,sw/res,\
     sw/source/ui/envelp/envprt.src \
-))
-
-$(eval $(call gb_SrsTarget_add_templates,sw/res,\
-    sw/source/uibase/inc/redline_tmpl.hrc \
 ))
 
 # vim: set noet sw=4 ts=4:

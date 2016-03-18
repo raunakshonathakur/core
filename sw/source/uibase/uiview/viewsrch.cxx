@@ -26,7 +26,7 @@
 
 #include <hintids.hxx>
 
-#include <com/sun/star/util/SearchOptions.hpp>
+#include <com/sun/star/util/SearchOptions2.hpp>
 #include <svl/cjkoptions.hxx>
 #include <svl/ctloptions.hxx>
 #include <svx/pageitem.hxx>
@@ -144,7 +144,7 @@ static void lcl_emitSearchResultCallbacks(SvxSearchItem* pSearchItem, SwWrtShell
     }
 }
 
-void SwView::ExecSearch(SfxRequest& rReq, bool bNoMessage)
+void SwView::ExecSearch(SfxRequest& rReq)
 {
     const SfxItemSet* pArgs = rReq.GetArgs();
     const SfxPoolItem* pItem = nullptr;
@@ -152,12 +152,10 @@ void SwView::ExecSearch(SfxRequest& rReq, bool bNoMessage)
     if(pArgs && SfxItemState::SET == pArgs->GetItemState(SID_SEARCH_QUIET, false, &pItem))
         bQuiet = static_cast<const SfxBoolItem*>( pItem)->GetValue();
 
-    bool bApi = bQuiet || bNoMessage;
-
     sal_uInt16 nSlot = rReq.GetSlot();
     if (nSlot == FN_REPEAT_SEARCH && !m_pSrchItem)
     {
-        if(bApi)
+        if(bQuiet)
         {
             rReq.SetReturnValue(SfxBoolItem(nSlot, false));
             nSlot = 0;
@@ -248,7 +246,7 @@ void SwView::ExecSearch(SfxRequest& rReq, bool bNoMessage)
             {
             case SvxSearchCmd::FIND:
             {
-                bool bRet = SearchAndWrap(bApi);
+                bool bRet = SearchAndWrap(bQuiet);
                 if( bRet )
                 {
                     Scroll(m_pWrtShell->GetCharRect().SVRect());
@@ -281,7 +279,7 @@ void SwView::ExecSearch(SfxRequest& rReq, bool bNoMessage)
                 if( !bRet )
                 {
 #if HAVE_FEATURE_DESKTOP
-                    if( !bApi )
+                    if( !bQuiet )
                     {
                         m_pWrtShell->libreOfficeKitCallback(LOK_CALLBACK_SEARCH_NOT_FOUND,
                                 m_pSrchItem->GetSearchString().toUtf8().getStr());
@@ -322,7 +320,7 @@ void SwView::ExecSearch(SfxRequest& rReq, bool bNoMessage)
                         if (bBack)
                             m_pWrtShell->Push();
                         OUString aReplace( m_pSrchItem->GetReplaceString() );
-                        SearchOptions aTmp( m_pSrchItem->GetSearchOptions() );
+                        SearchOptions2 aTmp( m_pSrchItem->GetSearchOptions() );
                         OUString *pBackRef = ReplaceBackReferences( aTmp, m_pWrtShell->GetCursor() );
                         if( pBackRef )
                             m_pSrchItem->SetReplaceString( *pBackRef );
@@ -345,7 +343,7 @@ void SwView::ExecSearch(SfxRequest& rReq, bool bNoMessage)
 
                     SvxSearchCmd nOldCmd = m_pSrchItem->GetCommand();
                     m_pSrchItem->SetCommand( nCmd );
-                    bool bRet = SearchAndWrap(bApi);
+                    bool bRet = SearchAndWrap(bQuiet);
                     if( bRet )
                         Scroll( m_pWrtShell->GetCharRect().SVRect());
                     m_pSrchItem->SetCommand( nOldCmd );
@@ -403,7 +401,7 @@ void SwView::ExecSearch(SfxRequest& rReq, bool bNoMessage)
                     if( !nFound )
                     {
 #if HAVE_FEATURE_DESKTOP
-                        if( !bApi )
+                        if( !bQuiet )
                         {
                             m_pWrtShell->libreOfficeKitCallback(LOK_CALLBACK_SEARCH_NOT_FOUND,
                                     m_pSrchItem->GetSearchString().toUtf8().getStr());
@@ -414,7 +412,7 @@ void SwView::ExecSearch(SfxRequest& rReq, bool bNoMessage)
                         return;
                     }
 
-                    if( !bApi && ULONG_MAX != nFound)
+                    if( !bQuiet && ULONG_MAX != nFound)
                     {
                         OUString aText( SW_RES( STR_NB_REPLACED ) );
                         aText = aText.replaceFirst("XX", OUString::number( nFound ));
@@ -666,7 +664,7 @@ bool SwView::SearchAndWrap(bool bApi)
     return m_bFound;
 }
 
-bool SwView::SearchAll(sal_uInt16* pFound)
+bool SwView::SearchAll()
 {
     SwWait aWait( *GetDocShell(), true );
     m_pWrtShell->StartAllAction();
@@ -685,8 +683,6 @@ bool SwView::SearchAll(sal_uInt16* pFound)
     }
     m_bExtra = false;
     sal_uInt16 nFound = (sal_uInt16)FUNC_Search( aOpts );
-    if(pFound)
-        *pFound = nFound;
     m_bFound = 0 != nFound;
 
     m_pWrtShell->EndAllAction();
@@ -850,7 +846,7 @@ sal_uLong SwView::FUNC_Search( const SwSearchOptions& rOptions )
 
     // build SearchOptions to be used
 
-    SearchOptions aSearchOpt( m_pSrchItem->GetSearchOptions() );
+    SearchOptions2 aSearchOpt( m_pSrchItem->GetSearchOptions() );
     aSearchOpt.Locale = GetAppLanguageTag().getLocale();
     if( !bDoReplace )
         aSearchOpt.replaceString.clear();

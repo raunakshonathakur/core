@@ -644,7 +644,7 @@ IMPL_LINK_TYPED(SfxTemplateManagerDlg, RepositoryMenuSelectHdl, Menu*, pMenu, bo
             }
         }
 
-        if (mpRemoteView->loadRepository(pRepository,false))
+        if (mpRemoteView->loadRepository(pRepository))
             switchMainView(false);
     }
 
@@ -1685,7 +1685,7 @@ static bool lcl_getServiceName ( const OUString &rFileURL, OUString &rName )
 
             SotClipboardFormatId nFormat = SotStorage::GetFormatID( xStorage );
 
-            const SfxFilter* pFilter = SfxGetpApp()->GetFilterMatcher().GetFilter4ClipBoardId( nFormat );
+            std::shared_ptr<const SfxFilter> pFilter = SfxGetpApp()->GetFilterMatcher().GetFilter4ClipBoardId( nFormat );
 
             if ( pFilter )
             {

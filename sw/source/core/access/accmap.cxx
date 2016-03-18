@@ -192,7 +192,7 @@ void SwDrawModellListener_Impl::Notify( SfxBroadcaster& /*rBC*/,
         }
         catch( uno::RuntimeException const & r )
         {
-            SAL_WARN( "sw.core", "Runtime exception caught while notifying shape.: " << r.Message );
+            SAL_WARN("sw.a11y", "Runtime exception caught while notifying shape: " << r.Message);
         }
     }
 }
@@ -1700,8 +1700,8 @@ SwAccessibleMap::~SwAccessibleMap()
     {
         osl::MutexGuard aGuard( maMutex );
 #if OSL_DEBUG_LEVEL > 0
-        OSL_ENSURE( !mpFrameMap || mpFrameMap->empty(),
-                "Frame map should be empty after disposing the root frame" );
+        assert((!mpFrameMap || mpFrameMap->empty()) &&
+                "Frame map should be empty after disposing the root frame");
         if( mpFrameMap )
         {
             SwAccessibleContextMap_Impl::iterator aIter = mpFrameMap->begin();
@@ -1717,8 +1717,8 @@ SwAccessibleMap::~SwAccessibleMap()
                 ++aIter;
             }
         }
-        OSL_ENSURE( !mpShapeMap || mpShapeMap->empty(),
-                "Object map should be empty after disposing the root frame" );
+        assert((!mpShapeMap || mpShapeMap->empty()) &&
+                "Object map should be empty after disposing the root frame");
         if( mpShapeMap )
         {
             SwAccessibleShapeMap_Impl::iterator aIter = mpShapeMap->begin();
@@ -1751,7 +1751,7 @@ SwAccessibleMap::~SwAccessibleMap()
     {
         osl::MutexGuard aGuard( maEventMutex );
 #if OSL_DEBUG_LEVEL > 0
-        OSL_ENSURE( !(mpEvents || mpEventMap), "pending events" );
+        assert(!(mpEvents || mpEventMap));
         if( mpEvents )
         {
             SwAccessibleEventList_Impl::iterator aIter = mpEvents->begin();
@@ -2834,8 +2834,7 @@ void SwAccessibleMap::SetCursorContext(
     mxCursorContext = xAcc;
 }
 
-void SwAccessibleMap::InvalidateStates( AccessibleStates _nStates,
-                                        const SwFrame* _pFrame )
+void SwAccessibleMap::InvalidateEditableStates( const SwFrame* _pFrame )
 {
     // Start with the frame or the first upper that is accessible
     SwAccessibleChild aFrameOrObj( _pFrame );
@@ -2852,13 +2851,13 @@ void SwAccessibleMap::InvalidateStates( AccessibleStates _nStates,
         SwAccessibleEvent_Impl aEvent( SwAccessibleEvent_Impl::CARET_OR_STATES,
                                        pAccImpl,
                                        SwAccessibleChild(pAccImpl->GetFrame()),
-                                       _nStates );
+                                       AccessibleStates::EDITABLE );
         AppendEvent( aEvent );
     }
     else
     {
         FireEvents();
-        pAccImpl->InvalidateStates( _nStates );
+        pAccImpl->InvalidateStates( AccessibleStates::EDITABLE );
     }
 }
 

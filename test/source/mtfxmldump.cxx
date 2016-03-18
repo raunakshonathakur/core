@@ -124,6 +124,29 @@ OUString convertLineStyleToString(LineStyle eAlign)
     return OUString();
 }
 
+OUString convertLineJoinToString(basegfx::B2DLineJoin eJoin)
+{
+    switch (eJoin)
+    {
+        default:
+        case basegfx::B2DLineJoin::NONE:    return OUString("none");
+        case basegfx::B2DLineJoin::Bevel:   return OUString("bevel");
+        case basegfx::B2DLineJoin::Miter:   return OUString("miter");
+        case basegfx::B2DLineJoin::Round:   return OUString("round");
+    }
+}
+
+OUString convertLineCapToString(css::drawing::LineCap eCap)
+{
+    switch (eCap)
+    {
+        default:
+        case css::drawing::LineCap_BUTT:   return OUString("butt");
+        case css::drawing::LineCap_ROUND:  return OUString("round");
+        case css::drawing::LineCap_SQUARE: return OUString("square");
+    }
+}
+
 OUString convertFontWeigthToString(FontWeight eFontWeight)
 {
     enum FontWeight { WEIGHT_DONTKNOW, WEIGHT_THIN, WEIGHT_ULTRALIGHT,
@@ -282,9 +305,12 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
                 rWriter.attribute("style", convertLineStyleToString(aLineInfo.GetStyle()));
                 rWriter.attribute("width", aLineInfo.GetWidth());
                 rWriter.attribute("dashlen", aLineInfo.GetDashLen());
+                rWriter.attribute("dashcount", aLineInfo.GetDashCount());
                 rWriter.attribute("dotlen", aLineInfo.GetDotLen());
+                rWriter.attribute("dotcount", aLineInfo.GetDotCount());
                 rWriter.attribute("distance", aLineInfo.GetDistance());
-
+                rWriter.attribute("join", convertLineJoinToString(aLineInfo.GetLineJoin()));
+                rWriter.attribute("cap", convertLineCapToString(aLineInfo.GetLineCap()));
                 rWriter.endElement();
             }
             break;
@@ -502,6 +528,30 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
                     rWriter.startElement("point");
                     rWriter.attribute("x", aPolygon[i].X());
                     rWriter.attribute("y", aPolygon[i].Y());
+                    rWriter.endElement();
+                }
+
+                rWriter.endElement();
+            }
+            break;
+
+            case MetaActionType::POLYPOLYGON:
+            {
+                MetaPolyPolygonAction *const pMPPAction(
+                        static_cast<MetaPolyPolygonAction*>(pAction));
+                rWriter.startElement(sCurrentElementTag);
+
+                tools::PolyPolygon const& rPoly(pMPPAction->GetPolyPolygon());
+                for (sal_uInt16 j = 0; j < rPoly.Count(); ++j)
+                {
+                    rWriter.startElement("polygon");
+                    for (sal_uInt16 i = 0; i < rPoly[j].GetSize(); i++)
+                    {
+                        rWriter.startElement("point");
+                        rWriter.attribute("x", rPoly[j][i].X());
+                        rWriter.attribute("y", rPoly[j][i].Y());
+                        rWriter.endElement();
+                    }
                     rWriter.endElement();
                 }
 

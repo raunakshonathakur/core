@@ -28,7 +28,6 @@
 #include <rtl/strbuf.hxx>
 #include <rtl/uri.hxx>
 #include <cppuhelper/bootstrap.hxx>
-#include <cppuhelper/detail/preinit.hxx>
 #include <comphelper/dispatchcommand.hxx>
 #include <comphelper/lok.hxx>
 #include <comphelper/processfactory.hxx>
@@ -48,8 +47,6 @@
 #include <com/sun/star/style/XStyleFamiliesSupplier.hpp>
 #include <com/sun/star/ucb/XContentProvider.hpp>
 #include <com/sun/star/ucb/XUniversalContentBroker.hpp>
-#include <com/sun/star/container/XContentEnumerationAccess.hpp>
-#include <com/sun/star/container/XHierarchicalNameAccess.hpp>
 #include <com/sun/star/util/URLTransformer.hpp>
 #include <com/sun/star/datatransfer/clipboard/XClipboard.hpp>
 #include <com/sun/star/text/TextContentAnchorType.hpp>
@@ -1367,49 +1364,24 @@ static char* getStyles(LibreOfficeKitDocument* pThis, const char* pCommand)
         {
             for (const OUString& rStyle: aWriterStyles)
             {
-                uno::Reference< beans::XPropertySet > xStyle;
-                xStyleFamily->getByName(rStyle) >>= xStyle;
-                OUString sName;
-                xStyle->getPropertyValue("DisplayName") >>= sName;
-                if( !sName.isEmpty() )
-                {
-                    aDefaultStyleNames.insert( sName );
+                aDefaultStyleNames.insert( rStyle );
 
-                    boost::property_tree::ptree aChild;
-                    aChild.put("", sName.toUtf8());
-                    aChildren.push_back(std::make_pair("", aChild));
-                }
+                boost::property_tree::ptree aChild;
+                aChild.put("", rStyle.toUtf8());
+                aChildren.push_back(std::make_pair("", aChild));
             }
         }
 
         uno::Sequence<OUString> aStyles = xStyleFamily->getElementNames();
         for (const OUString& rStyle: aStyles )
         {
-            uno::Reference< beans::XPropertySet > xStyle (xStyleFamily->getByName(rStyle), uno::UNO_QUERY);
-            bool bStyleInserted = false;
-            // Its possible that the style does not implement XPropertySet.
-            // For example, TableDesignFamily doesn't yet.
-            if (xStyle.is())
-            {
-                // Filter out the default styles - they are already at the top
-                // of the list
-                OUString sName;
-                xStyle->getPropertyValue("DisplayName") >>= sName;
-                if (!sName.isEmpty() && aDefaultStyleNames.find(sName) == aDefaultStyleNames.end())
-                {
-                    boost::property_tree::ptree aChild;
-                    aChild.put("", sName.toUtf8());
-                    aChildren.push_back(std::make_pair("", aChild));
-                    bStyleInserted = true;
-                }
-            }
-
-            // If XPropertySet is not implemented or DisplayName is empty string,
-            // fallback to LO internal names
-            if (!bStyleInserted)
+            // Filter out the default styles - they are already at the top
+            // of the list
+            if (aDefaultStyleNames.find(rStyle) == aDefaultStyleNames.end() ||
+                (sStyleFam != "ParagraphStyles" || doc_getDocumentType(pThis) != LOK_DOCTYPE_TEXT) )
             {
                 boost::property_tree::ptree aChild;
-                aChild.put("", rStyle);
+                aChild.put("", rStyle.toUtf8());
                 aChildren.push_back(std::make_pair("", aChild));
             }
         }
@@ -1920,8 +1892,27 @@ static int lo_initialize(LibreOfficeKit* pThis, const char* pAppPath, const char
             if (eStage == PRE_INIT)
             {
                 InitVCL();
+
                 // pre-load all component libraries.
-                cppu::preInitBootstrap(xContext);
+                if (!xContext.is())
+                    throw css::uno::DeploymentException("preInit: XComponentContext is not created");
+
+                css::uno::Reference< css::uno::XInterface > xService;
+                xContext->getValueByName("/singletons/com.sun.star.lang.theServiceManager") >>= xService;
+                if (!xService.is())
+                    throw css::uno::DeploymentException("preInit: XMultiComponentFactory is not created");
+
+                css::uno::Reference<css::lang::XInitialization> aService(
+                    xService, css::uno::UNO_QUERY_THROW);
+
+                // pre-requisites:
+                // In order to load implementations and invoke
+                // component factory it is required:
+                // 1) defaultBootstrap_InitialComponentContext()
+                // 2) comphelper::setProcessServiceFactory(xSFactory);
+                // 3) InitVCL()
+                aService->initialize({css::uno::makeAny<OUString>("preload")});
+
                 // Release Solar Mutex, lo_startmain thread should acquire it.
                 Application::ReleaseSolarMutex();
             }

@@ -87,7 +87,7 @@ bool Override::VisitCXXMethodDecl(CXXMethodDecl const * decl) {
         // depend on the following token at the spelling location where
         // "SAL_OVERRIDE" is inserted, not on the following token in the fully-
         // macro-expanded view:
-        bool addSpace;
+        bool addSpace = bool();
         SourceLocation loc;
         for (SourceLocation l(decl->getSourceRange().getBegin());;) {
             SourceLocation sl(compiler.getSourceManager().getSpellingLoc(l));
@@ -97,14 +97,14 @@ bool Override::VisitCXXMethodDecl(CXXMethodDecl const * decl) {
             //TODO: Looks like a Clang bug that in some cases like
             // (filter/source/svg/svgexport.cxx)
             //
-            // #define TEXT_FIELD_GET_CLASS_NAME_METHOD( class_name ) \
-            // virtual OUString getClassName() const                  \
-            // {                                                      \
-            //     static const char className[] = #class_name;       \
-            //     return OUString( className );                      \
-            // }
-            //
-            // TEXT_FIELD_GET_CLASS_NAME_METHOD( TextField )
+            // | #define TEXT_FIELD_GET_CLASS_NAME_METHOD( class_name ) \ |
+            // | virtual OUString getClassName() const                  \ |
+            // | {                                                      \ |
+            // |     static const char className[] = #class_name;       \ |
+            // |     return OUString( className );                      \ |
+            // | }                                                        |
+            // |                                                          |
+            // | TEXT_FIELD_GET_CLASS_NAME_METHOD( TextField )            |
             //
             // where "\<NL>" is followed directly by a real token without
             // intervening whitespace, tokens "\<NL>virtual" and "\<NL>{" are

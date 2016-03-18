@@ -418,7 +418,7 @@ void GalleryTransferable::InitData( bool bLazy )
 {
     switch( meObjectKind )
     {
-        case( SGA_OBJ_SVDRAW ):
+        case SGA_OBJ_SVDRAW:
         {
             if( !bLazy )
             {
@@ -444,10 +444,10 @@ void GalleryTransferable::InitData( bool bLazy )
         }
         break;
 
-        case( SGA_OBJ_ANIM ):
-        case( SGA_OBJ_BMP ):
-        case( SGA_OBJ_INET ):
-        case( SGA_OBJ_SOUND ):
+        case SGA_OBJ_ANIM:
+        case SGA_OBJ_BMP:
+        case SGA_OBJ_INET:
+        case SGA_OBJ_SOUND:
         {
             if( !mpURL )
             {
@@ -586,8 +586,7 @@ void GalleryTransferable::CopyToClipboard( vcl::Window* pWindow )
     TransferableHelper::CopyToClipboard( pWindow );
 }
 
-void GalleryTransferable::StartDrag( vcl::Window* pWindow, sal_Int8 nDragSourceActions,
-                                     sal_Int32 nDragPointer, sal_Int32 nDragImage )
+void GalleryTransferable::StartDrag( vcl::Window* pWindow, sal_Int8 nDragSourceActions )
 {
     INetURLObject aURL;
 
@@ -595,7 +594,7 @@ void GalleryTransferable::StartDrag( vcl::Window* pWindow, sal_Int8 nDragSourceA
     {
         mpTheme->SetDragging( true );
         mpTheme->SetDragPos( mnObjectPos );
-        TransferableHelper::StartDrag( pWindow, nDragSourceActions, nDragPointer, nDragImage );
+        TransferableHelper::StartDrag( pWindow, nDragSourceActions );
     }
 }
 

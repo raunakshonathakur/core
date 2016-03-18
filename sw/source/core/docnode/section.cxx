@@ -581,17 +581,13 @@ OUString SwSection::GetLinkFileName() const
     return m_Data.GetLinkFileName();
 }
 
-void SwSection::SetLinkFileName(const OUString& rNew, OUString const*const pPassWd)
+void SwSection::SetLinkFileName(const OUString& rNew)
 {
     if (m_RefLink.Is())
     {
         m_RefLink->SetLinkSourceName( rNew );
     }
     m_Data.SetLinkFileName(rNew);
-    if( pPassWd )
-    {
-        SetLinkFilePassword( *pPassWd );
-    }
 }
 
 // If it was a Linked Section, we need to make all Child Links visible
@@ -1018,10 +1014,10 @@ void SwSectionFormat::UpdateParent()
     }
 }
 
-SwSectionNode* SwSectionFormat::GetSectionNode(bool const bAlways)
+SwSectionNode* SwSectionFormat::GetSectionNode()
 {
     const SwNodeIndex* pIdx = GetContent(false).GetContentIdx();
-    if( pIdx && ( bAlways || &pIdx->GetNodes() == &GetDoc()->GetNodes() ))
+    if( pIdx && ( &pIdx->GetNodes() == &GetDoc()->GetNodes() ))
         return pIdx->GetNode().GetSectionNode();
     return nullptr;
 }
@@ -1250,7 +1246,7 @@ static void lcl_UpdateLinksInSect( SwBaseLink& rUpdLnk, SwSectionNode& rSectNd )
         break;
 
     case SotClipboardFormatId::RTF:
-        pRead = SwReaderWriter::GetReader( READER_WRITER_RTF );
+        pRead = SwReaderWriter::GetRtfReader();
         break;
 
     case SotClipboardFormatId::SIMPLE_FILE:

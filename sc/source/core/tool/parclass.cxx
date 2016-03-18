@@ -28,7 +28,7 @@
 #include <sal/macros.h>
 #include <string.h>
 
-#if OSL_DEBUG_LEVEL > 1
+#if DEBUG_SC_PARCLASSDOC
 // the documentation thingy
 #include <com/sun/star/sheet/FormulaLanguage.hpp>
 #include <rtl/strbuf.hxx>
@@ -212,6 +212,13 @@ const ScParameterClassification::RawData ScParameterClassification::pRawData[] =
     { ocNetWorkdays_MS,  {{ Value, Value, Value, Reference                       }, 0 }},
     { ocWorkday_MS,      {{ Value, Value, Value, Reference                       }, 0 }},
     { ocAggregate,       {{ Value, Value, Reference                              }, 1 }},
+    { ocForecast_ETS_ADD, {{ ForceArray, ForceArray, ForceArray, Value, Value, Value        }, 0 }},
+    { ocForecast_ETS_MUL, {{ ForceArray, ForceArray, ForceArray, Value, Value, Value        }, 0 }},
+    { ocForecast_ETS_PIA, {{ ForceArray, ForceArray, ForceArray, Value, Value, Value, Value }, 0 }},
+    { ocForecast_ETS_PIM, {{ ForceArray, ForceArray, ForceArray, Value, Value, Value, Value }, 0 }},
+    { ocForecast_ETS_SEA, {{ ForceArray, ForceArray, Value, Value                           }, 0 }},
+    { ocForecast_ETS_STA, {{ ForceArray, ForceArray, ForceArray, Value, Value, Value        }, 0 }},
+    { ocForecast_ETS_STM, {{ ForceArray, ForceArray, ForceArray, Value, Value, Value        }, 0 }},
     // Excel doubts:
     // ocN, ocT: Excel says (and handles) Reference, error? This means no
     // position dependent SingleRef if DoubleRef, and no array calculation,
@@ -245,12 +252,7 @@ void ScParameterClassification::Init()
         else
         {
             RunData* pRun = &pData[ pRaw->eOp ];
-#if OSL_DEBUG_LEVEL > 1
-            if ( pRun->aData.nParam[0] != Unknown )
-            {
-                OSL_TRACE( "already assigned: %d", pRaw->eOp);
-            }
-#endif
+            SAL_WARN_IF(pRun->aData.nParam[0] != Unknown,  "sc.core", "already assigned: " << (int)pRaw->eOp);
             memcpy( &(pRun->aData), &(pRaw->aData), sizeof(CommonData));
             // fill 0-initialized fields with real values
             if ( pRun->aData.nRepeatLast )
@@ -298,7 +300,7 @@ void ScParameterClassification::Init()
         }
     }
 
-#if OSL_DEBUG_LEVEL > 1
+#if DEBUG_SC_PARCLASSDOC
     GenerateDocumentation();
 #endif
 }
@@ -422,7 +424,7 @@ ScParameterClassification::GetExternalParameterType( const formula::FormulaToken
     return eRet;
 }
 
-#if OSL_DEBUG_LEVEL > 1
+#if DEBUG_SC_PARCLASSDOC
 
 // add remaining functions, all Value parameters
 void ScParameterClassification::MergeArgumentsFromFunctionResource()

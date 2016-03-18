@@ -432,26 +432,14 @@ long MultiSelection::ImplFwdUnselected()
         return SFX_ENDOFSELECTION;
 }
 
-long MultiSelection::FirstSelected( bool bInverse )
+long MultiSelection::FirstSelected()
 {
-    bInverseCur = bInverse;
+    bInverseCur = false;
     nCurSubSel = 0;
 
-    if ( bInverseCur )
-    {
-        bCurValid = nSelCount < sal_uIntPtr(aTotRange.Len());
-        if ( bCurValid )
-        {
-            nCurIndex = 0;
-            return ImplFwdUnselected();
-        }
-    }
-    else
-    {
-        bCurValid = !aSels.empty();
-        if ( bCurValid )
-            return nCurIndex = aSels[ 0 ]->Min();
-    }
+    bCurValid = !aSels.empty();
+    if ( bCurValid )
+        return nCurIndex = aSels[ 0 ]->Min();
 
     return SFX_ENDOFSELECTION;
 }
@@ -619,14 +607,14 @@ bool StringRangeEnumerator::insertRange( sal_Int32 i_nFirst, sal_Int32 i_nLast, 
 }
 
 bool StringRangeEnumerator::insertJoinedRanges(
-    const std::vector< sal_Int32 >& rNumbers, bool i_bStrict )
+    const std::vector< sal_Int32 >& rNumbers )
 {
     size_t nCount = rNumbers.size();
     if( nCount == 0 )
         return true;
 
     if( nCount == 1 )
-        return insertRange( rNumbers[0], -1, false, ! i_bStrict );
+        return insertRange( rNumbers[0], -1, false, true );
 
     for( size_t i = 0; i < nCount - 1; i++ )
     {
@@ -638,14 +626,13 @@ bool StringRangeEnumerator::insertJoinedRanges(
             else if( nFirst < nLast ) nFirst++;
         }
 
-        if ( ! insertRange( nFirst, nLast, nFirst != nLast, ! i_bStrict ) && i_bStrict)
-            return false;
+        insertRange( nFirst, nLast, nFirst != nLast, true );
     }
 
     return true;
 }
 
-bool StringRangeEnumerator::setRange( const OUString& i_rNewRange, bool i_bStrict )
+bool StringRangeEnumerator::setRange( const OUString& i_rNewRange )
 {
     mnCount = 0;
     maSequence.clear();
@@ -675,8 +662,7 @@ bool StringRangeEnumerator::setRange( const OUString& i_rNewRange, bool i_bStric
         {
             if( bSequence && !aNumbers.empty() )
                 aNumbers.push_back( mnMax );
-            if( ! insertJoinedRanges( aNumbers, i_bStrict ) && i_bStrict )
-                return false;
+            insertJoinedRanges( aNumbers );
 
             aNumbers.clear();
             bSequence = false;
@@ -690,8 +676,7 @@ bool StringRangeEnumerator::setRange( const OUString& i_rNewRange, bool i_bStric
     // insert last entries
     if( bSequence && !aNumbers.empty() )
         aNumbers.push_back( mnMax );
-    if( ! insertJoinedRanges( aNumbers, i_bStrict ) && i_bStrict )
-        return false;
+    insertJoinedRanges( aNumbers );
 
     return true;
 }

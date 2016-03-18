@@ -196,7 +196,7 @@ public:
 
     void appendAddress( const ScAddress &rPos )
     {
-        aMessage.append( rPos.Format( SCA_VALID ) );
+        aMessage.append( rPos.Format( ScRefFlags::VALID ) );
         appendSeparator();
     }
 
@@ -309,7 +309,6 @@ ScDocFuncSend::~ScDocFuncSend()
 void ScDocFuncSend::EnterListAction( sal_uInt16 nNameResId )
 {
     // Want to group these operations for the other side ...
-    OUString aUndo( ScGlobal::GetRscString( nNameResId ) );
     ScChangeOpWriter aOp( "enterListAction" );
     aOp.appendInt( nNameResId ); // nasty but translate-able ...
     SendMessage( aOp );
@@ -388,10 +387,10 @@ bool ScDocFuncSend::SetFormulaCell( const ScAddress& rPos, ScFormulaCell* pCell,
     return true; // needs some code auditing action
 }
 
-bool ScDocFuncSend::PutData( const ScAddress& rPos, ScEditEngineDefaulter& rEngine, bool bApi )
+void ScDocFuncSend::PutData( const ScAddress& rPos, ScEditEngineDefaulter& rEngine, bool bApi )
 {
     SAL_INFO( "sc.tubes", "PutData not implemented!" );
-    return ScDocFunc::PutData( rPos, rEngine, bApi );
+    ScDocFunc::PutData( rPos, rEngine, bApi );
 }
 
 bool ScDocFuncSend::SetCellText(

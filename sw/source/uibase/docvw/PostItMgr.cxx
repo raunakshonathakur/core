@@ -965,22 +965,20 @@ void SwPostItMgr::AutoScroll(const SwSidebarWin* pPostIt,const unsigned long aPa
     }
 }
 
-void SwPostItMgr::MakeVisible(const SwSidebarWin* pPostIt,long aPage )
+void SwPostItMgr::MakeVisible(const SwSidebarWin* pPostIt )
 {
-    if (aPage == -1)
+    long aPage = -1;
+    // we don't know the page yet, lets find it ourselves
+    for (unsigned long n=0;n<mPages.size();n++)
     {
-        // we don't know the page yet, lets find it ourselves
-        for (unsigned long n=0;n<mPages.size();n++)
+        if (mPages[n]->mList->size()>0)
         {
-            if (mPages[n]->mList->size()>0)
+            for(SwSidebarItem_iterator i = mPages[n]->mList->begin(); i != mPages[n]->mList->end(); ++i)
             {
-                for(SwSidebarItem_iterator i = mPages[n]->mList->begin(); i != mPages[n]->mList->end(); ++i)
+                if ((*i)->pPostIt==pPostIt)
                 {
-                    if ((*i)->pPostIt==pPostIt)
-                    {
-                        aPage = n+1;
-                        break;
-                    }
+                    aPage = n+1;
+                    break;
                 }
             }
         }
@@ -2057,7 +2055,7 @@ sal_uInt16 SwPostItMgr::Replace(SvxSearchItem* pItem)
     return aResult;
 }
 
-sal_uInt16 SwPostItMgr::FinishSearchReplace(const css::util::SearchOptions& rSearchOptions, bool bSrchForward)
+sal_uInt16 SwPostItMgr::FinishSearchReplace(const css::util::SearchOptions2& rSearchOptions, bool bSrchForward)
 {
     SwSidebarWin* pWin = GetActiveSidebarWin();
     SvxSearchItem aItem(SID_SEARCH_ITEM );
@@ -2069,7 +2067,7 @@ sal_uInt16 SwPostItMgr::FinishSearchReplace(const css::util::SearchOptions& rSea
     return aResult;
 }
 
-sal_uInt16 SwPostItMgr::SearchReplace(const SwFormatField &pField, const css::util::SearchOptions& rSearchOptions, bool bSrchForward)
+sal_uInt16 SwPostItMgr::SearchReplace(const SwFormatField &pField, const css::util::SearchOptions2& rSearchOptions, bool bSrchForward)
 {
     sal_uInt16 aResult = 0;
     SwSidebarWin* pWin = GetSidebarWin(&pField);

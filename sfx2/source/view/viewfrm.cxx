@@ -154,7 +154,7 @@ void SfxViewFrame::InitInterface_Impl()
 #endif
 }
 
-static bool AskPasswordToModify_Impl( const uno::Reference< task::XInteractionHandler >& xHandler, const OUString& aPath, const SfxFilter* pFilter, sal_uInt32 nPasswordHash, const uno::Sequence< beans::PropertyValue >& aInfo )
+static bool AskPasswordToModify_Impl( const uno::Reference< task::XInteractionHandler >& xHandler, const OUString& aPath, std::shared_ptr<const SfxFilter> pFilter, sal_uInt32 nPasswordHash, const uno::Sequence< beans::PropertyValue >& aInfo )
 {
     // TODO/LATER: In future the info should replace the direct hash completely
     bool bResult = ( !nPasswordHash && !aInfo.getLength() );
@@ -609,7 +609,7 @@ void SfxViewFrame::ExecReload_Impl( SfxRequest& rReq )
                 DELETEZ( xOldObj->Get_Impl()->pReloadTimer );
 
                 SfxItemSet* pNewSet = nullptr;
-                const SfxFilter *pFilter = pMedium->GetFilter();
+                std::shared_ptr<const SfxFilter> pFilter = pMedium->GetFilter();
                 if( pURLItem )
                 {
                     pNewSet = new SfxAllItemSet( pApp->GetPool() );
@@ -622,7 +622,7 @@ void SfxViewFrame::ExecReload_Impl( SfxRequest& rReq )
                         referer = refererItem->GetValue();
                     }
                     SfxMedium aMedium( pURLItem->GetValue(), referer, SFX_STREAM_READWRITE );
-                    SfxFilterMatcher().GuessFilter( aMedium, &pFilter );
+                    SfxFilterMatcher().GuessFilter( aMedium, pFilter );
                     if ( pFilter )
                         pNewSet->Put( SfxStringItem( SID_FILTER_NAME, pFilter->GetName() ) );
                     pNewSet->Put( *aMedium.GetItemSet() );
@@ -1044,7 +1044,7 @@ void SfxViewFrame::ReleaseObjectShell_Impl()
 {
     DBG_ASSERT( xObjSh.Is(), "no SfxObjectShell to release!" );
 
-    GetFrame().ReleasingComponent_Impl( true );
+    GetFrame().ReleasingComponent_Impl();
     if ( GetWindow().HasChildPathFocus( true ) )
     {
         DBG_ASSERT( !GetActiveChildFrame_Impl(), "Wrong active child frame!" );
@@ -1114,11 +1114,11 @@ bool SfxViewFrame::Close()
     return true;
 }
 
-void SfxViewFrame::DoActivate( bool bUI, SfxViewFrame* pOldFrame )
+void SfxViewFrame::DoActivate( bool bUI )
 {
     SfxGetpApp();
 
-    pDispatcher->DoActivate_Impl( bUI, pOldFrame );
+    pDispatcher->DoActivate_Impl( bUI, nullptr );
 
     // If this ViewFrame has got a parent and this is not a parent of the
     // old ViewFrames, it gets a ParentActivate.
@@ -1127,8 +1127,7 @@ void SfxViewFrame::DoActivate( bool bUI, SfxViewFrame* pOldFrame )
         SfxViewFrame *pFrame = GetParentViewFrame();
         while ( pFrame )
         {
-            if ( !pOldFrame || !pOldFrame->GetFrame().IsParent( &pFrame->GetFrame() ) )
-                pFrame->pDispatcher->DoParentActivate_Impl();
+            pFrame->pDispatcher->DoParentActivate_Impl();
             pFrame = pFrame->GetParentViewFrame();
         }
     }
@@ -1344,10 +1343,10 @@ void SfxViewFrame::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
                     }
                 }
 
-                if (SfxClassificationHelper::IsClassified(*xObjSh.get()))
+                if (SfxClassificationHelper::IsClassified(xObjSh->getDocProperties()))
                 {
                     // Document has BAILS properties, display an infobar accordingly.
-                    SfxClassificationHelper aHelper(*xObjSh.get());
+                    SfxClassificationHelper aHelper(xObjSh->getDocProperties());
                     aHelper.UpdateInfobar(*this);
                 }
 
@@ -1612,10 +1611,10 @@ SfxViewFrame* SfxViewFrame::GetParentViewFrame_Impl() const
     return nullptr;
 }
 
-void SfxViewFrame::ForceOuterResize_Impl(bool bOn)
+void SfxViewFrame::ForceOuterResize_Impl()
 {
     if ( !pImp->bDontOverwriteResizeInToOut )
-        pImp->bResizeInToOut = !bOn;
+        pImp->bResizeInToOut = true;
 }
 
 bool SfxViewFrame::IsResizeInToOut_Impl() const
@@ -1707,13 +1706,13 @@ bool SfxViewFrame::IsVisible() const
 }
 
 
-void SfxViewFrame::LockObjectShell_Impl( bool bLock )
+void SfxViewFrame::LockObjectShell_Impl()
 {
-    DBG_ASSERT( pImp->bObjLocked != bLock, "Wrong Locked status!" );
+    DBG_ASSERT( !pImp->bObjLocked, "Wrong Locked status!" );
 
     DBG_ASSERT( GetObjectShell(), "No Document!" );
-    GetObjectShell()->OwnerLock(bLock);
-    pImp->bObjLocked = bLock;
+    GetObjectShell()->OwnerLock(true);
+    pImp->bObjLocked = true;
 }
 
 
@@ -1914,9 +1913,9 @@ SfxViewFrame* SfxViewFrame::LoadDocument( SfxObjectShell& i_rDoc, const sal_uInt
     return LoadViewIntoFrame_Impl_NoThrow( i_rDoc, Reference< XFrame >(), i_nViewId, false );
 }
 
-SfxViewFrame* SfxViewFrame::LoadDocumentIntoFrame( SfxObjectShell& i_rDoc, const Reference< XFrame >& i_rTargetFrame, const sal_uInt16 i_nViewId )
+SfxViewFrame* SfxViewFrame::LoadDocumentIntoFrame( SfxObjectShell& i_rDoc, const Reference< XFrame >& i_rTargetFrame )
 {
-    return LoadViewIntoFrame_Impl_NoThrow( i_rDoc, i_rTargetFrame, i_nViewId, false );
+    return LoadViewIntoFrame_Impl_NoThrow( i_rDoc, i_rTargetFrame, 0, false );
 }
 
 SfxViewFrame* SfxViewFrame::LoadDocumentIntoFrame( SfxObjectShell& i_rDoc, const SfxFrameItem* i_pFrameItem, const sal_uInt16 i_nViewId )
@@ -1924,7 +1923,7 @@ SfxViewFrame* SfxViewFrame::LoadDocumentIntoFrame( SfxObjectShell& i_rDoc, const
     return LoadViewIntoFrame_Impl_NoThrow( i_rDoc, i_pFrameItem && i_pFrameItem->GetFrame() ? i_pFrameItem->GetFrame()->GetFrameInterface() : nullptr, i_nViewId, false );
 }
 
-SfxViewFrame* SfxViewFrame::DisplayNewDocument( SfxObjectShell& i_rDoc, const SfxRequest& i_rCreateDocRequest, const sal_uInt16 i_nViewId )
+SfxViewFrame* SfxViewFrame::DisplayNewDocument( SfxObjectShell& i_rDoc, const SfxRequest& i_rCreateDocRequest )
 {
     const SfxUnoFrameItem* pFrameItem = i_rCreateDocRequest.GetArg<SfxUnoFrameItem>(SID_FILLFRAME);
     const SfxBoolItem* pHiddenItem = i_rCreateDocRequest.GetArg<SfxBoolItem>(SID_HIDDEN);
@@ -1932,7 +1931,7 @@ SfxViewFrame* SfxViewFrame::DisplayNewDocument( SfxObjectShell& i_rDoc, const Sf
     return LoadViewIntoFrame_Impl_NoThrow(
         i_rDoc,
         pFrameItem ? pFrameItem->GetFrame() : nullptr,
-        i_nViewId,
+        0,
         pHiddenItem && pHiddenItem->GetValue()
     );
 }

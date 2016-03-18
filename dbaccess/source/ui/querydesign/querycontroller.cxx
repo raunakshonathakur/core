@@ -138,10 +138,10 @@ extern "C" void SAL_CALL createRegistryInfo_OViewControl()
 namespace dbaui
 {
     using namespace ::connectivity;
-#if OSL_DEBUG_LEVEL > 1
+#if OSL_DEBUG_LEVEL > 0
     namespace
     {
-        void insertParseTree(SvTreeListBox* _pBox,::connectivity::OSQLParseNode* _pNode,SvTreeListEntry* _pParent = NULL)
+        void insertParseTree(SvTreeListBox* _pBox,::connectivity::OSQLParseNode* _pNode,SvTreeListEntry* _pParent = nullptr)
         {
             OUString rString;
             if (!_pNode->isToken())
@@ -166,45 +166,45 @@ namespace dbaui
                 switch (_pNode->getNodeType())
                 {
 
-                case SQL_NODE_KEYWORD:
+                case SQLNodeType::Keyword:
                     {
                         rString += "SQL_KEYWORD:";
                         OString sT = OSQLParser::TokenIDToStr(_pNode->getTokenID());
                         rString += OStringToOUString(sT, RTL_TEXTENCODING_UTF8);
                      break;}
 
-                case SQL_NODE_COMPARISON:
+                case SQLNodeType::Comparison:
                     {
                         rString += "SQL_COMPARISON:" + _pNode->getTokenValue(); // append Nodevalue
                             // and start new line
                         break;}
 
-                case SQL_NODE_NAME:
+                case SQLNodeType::Name:
                     {
                         rString += "SQL_NAME:\"" + _pNode->getTokenValue() + "\"";
                         break;}
 
-                case SQL_NODE_STRING:
+                case SQLNodeType::String:
                     {
                         rString += "SQL_STRING:'" + _pNode->getTokenValue();
                         break;}
 
-                case SQL_NODE_INTNUM:
+                case SQLNodeType::IntNum:
                     {
                         rString += "SQL_INTNUM:" + _pNode->getTokenValue();
                         break;}
 
-                case SQL_NODE_APPROXNUM:
+                case SQLNodeType::ApproxNum:
                     {
                         rString += "SQL_APPROXNUM:" + _pNode->getTokenValue();
                         break;}
 
-                case SQL_NODE_PUNCTUATION:
+                case SQLNodeType::Punctuation:
                     {
                         rString += "SQL_PUNCTUATION:" + _pNode->getTokenValue(); // append Nodevalue
                         break;}
 
-                case SQL_NODE_AMMSC:
+                case SQLNodeType::AMMSC:
                     {
                         rString += "SQL_AMMSC:" + _pNode->getTokenValue(); // append Nodevalue
                         break;}
@@ -541,7 +541,7 @@ FeatureState OQueryController::GetState(sal_uInt16 _nId) const
             aReturn.bEnabled = true;
             aReturn.bChecked = getContainer() && getContainer()->getPreviewFrame().is();
             break;
-#if OSL_DEBUG_LEVEL > 1
+#if OSL_DEBUG_LEVEL > 0
         case ID_EDIT_QUERY_SQL:
             break;
         case ID_EDIT_QUERY_DESIGN:
@@ -628,7 +628,7 @@ void OQueryController::Execute(sal_uInt16 _nId, const Sequence< PropertyValue >&
                         else
                         {
                             const OSQLTables& xTabs = m_pSqlIterator->getTables();
-                            if ( m_pSqlIterator->getStatementType() != SQL_STATEMENT_SELECT || xTabs.begin() == xTabs.end() )
+                            if ( m_pSqlIterator->getStatementType() != OSQLStatementType::Select || xTabs.begin() == xTabs.end() )
                             {
                                 aError = SQLException(
                                     OUString( ModuleRes( STR_QRY_NOSELECT ) ),
@@ -749,7 +749,7 @@ void OQueryController::Execute(sal_uInt16 _nId, const Sequence< PropertyValue >&
             {
             }
             break;
-#if OSL_DEBUG_LEVEL > 1
+#if OSL_DEBUG_LEVEL > 0
         case ID_EDIT_QUERY_DESIGN:
         case ID_EDIT_QUERY_SQL:
             {
@@ -767,7 +767,7 @@ void OQueryController::Execute(sal_uInt16 _nId, const Sequence< PropertyValue >&
 
                     if ( _nId == ID_EDIT_QUERY_DESIGN )
                     {
-                        ::connectivity::OSQLParseNode* pTemp = pNode ? pNode->getChild(3)->getChild(1) : NULL;
+                        ::connectivity::OSQLParseNode* pTemp = pNode ? pNode->getChild(3)->getChild(1) : nullptr;
                         // no where clause found
                         if ( pTemp && !pTemp->isLeaf() )
                         {
@@ -954,7 +954,7 @@ void OQueryController::impl_initialize()
         bForceInitialDesign = true;
     }
 
-    if ( !ensureConnected( false ) )
+    if ( !ensureConnected() )
     {   // we have no connection so what else should we do
         m_bGraphicalDesign = false;
         if ( editingView() )
@@ -1137,7 +1137,7 @@ void OQueryController::describeSupportedFeatures()
     implDescribeSupportedFeature( ".uno:DBLimit",           SID_QUERY_LIMIT,            CommandGroup::FORMAT );
     implDescribeSupportedFeature( ".uno:DBQueryPropertiesDialog", SID_QUERY_PROP_DLG,         CommandGroup::FORMAT );
 
-#if OSL_DEBUG_LEVEL > 1
+#if OSL_DEBUG_LEVEL > 0
     implDescribeSupportedFeature( ".uno:DBShowParseTree",   ID_EDIT_QUERY_SQL );
     implDescribeSupportedFeature( ".uno:DBMakeDisjunct",    ID_EDIT_QUERY_DESIGN );
 #endif
@@ -1528,7 +1528,7 @@ bool OQueryController::doSaveAsDoc(bool _bSaveAs)
                     xViewProps.set( xElements->getByName( m_sName ), UNO_QUERY );
 
                 if ( !xViewProps.is() ) // correct name and try again
-                    m_sName = ::dbtools::composeTableName( getMetaData(), xQuery, ::dbtools::eInDataManipulation, false, false, false );
+                    m_sName = ::dbtools::composeTableName( getMetaData(), xQuery, ::dbtools::EComposeRule::InDataManipulation, false, false, false );
 
                 OSL_ENSURE( xElements->hasByName( m_sName ), "OQueryController::doSaveAsDoc: newly created view does not exist!" );
 

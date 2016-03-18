@@ -27,8 +27,10 @@
 #include <stack>
 
 #include <svtools/treelistbox.hxx>
+#include <svtools/iconview.hxx>
 #include <svtools/svlbitm.hxx>
 #include <svimpbox.hxx>
+#include <iconviewimpl.hxx>
 #include <rtl/instance.hxx>
 #include <svtools/svtresid.hxx>
 #include <tools/wintypes.hxx>
@@ -39,25 +41,22 @@
 #include <svtools/treelistentry.hxx>
 #include <svtools/viewdataentry.hxx>
 
-#define NODE_BMP_TABDIST_NOTVALID   -2000000
-#define FIRST_ENTRY_TAB             1
-
 // #i27063# (pl), #i32300# (pb) never access VCL after DeInitVCL - also no destructors
 Image*  SvImpLBox::s_pDefCollapsed      = nullptr;
 Image*  SvImpLBox::s_pDefExpanded       = nullptr;
 sal_Int32 SvImpLBox::s_nImageRefCount   = 0;
 
 SvImpLBox::SvImpLBox( SvTreeListBox* pLBView, SvTreeList* pLBTree, WinBits nWinStyle)
-    : aVerSBar(VclPtr<ScrollBar>::Create(pLBView, WB_DRAG | WB_VSCROLL))
-    , aHorSBar(VclPtr<ScrollBar>::Create(pLBView, WB_DRAG | WB_HSCROLL))
+    : aHorSBar(VclPtr<ScrollBar>::Create(pLBView, WB_DRAG | WB_HSCROLL))
     , aScrBarBox(VclPtr<ScrollBarBox>::Create(pLBView))
-    , aOutputSize(0, 0)
-    , aSelEng(pLBView, nullptr)
     , aFctSet(this, &aSelEng, pLBView)
-    , nNextVerVisSize(0)
-    , nExtendedWinBits(0)
     , bAreChildrenTransient(true)
     , m_pStringSorter(nullptr)
+    , aVerSBar(VclPtr<ScrollBar>::Create(pLBView, WB_DRAG | WB_VSCROLL))
+    , aOutputSize(0, 0)
+    , nExtendedWinBits(0)
+    , aSelEng(pLBView, nullptr)
+    , nNextVerVisSize(0)
 {
     osl_atomic_increment(&s_nImageRefCount);
     pView = pLBView;
@@ -466,7 +465,7 @@ void SvImpLBox::PageUp( sal_uInt16 nDelta )
     ShowCursor( true );
 }
 
-void SvImpLBox::KeyUp( bool bPageUp, bool bNotifyScroll )
+void SvImpLBox::KeyUp( bool bPageUp )
 {
     if( !aVerSBar->IsVisible() )
         return;
@@ -486,8 +485,7 @@ void SvImpLBox::KeyUp( bool bPageUp, bool bNotifyScroll )
         return;
 
     nFlags &= (~F_FILLING);
-    if( bNotifyScroll )
-        BeginScroll();
+    BeginScroll();
 
     aVerSBar->SetThumbPos( nThumbPos - nDelta );
     if( bPageUp )
@@ -495,12 +493,11 @@ void SvImpLBox::KeyUp( bool bPageUp, bool bNotifyScroll )
     else
         CursorUp();
 
-    if( bNotifyScroll )
-        EndScroll();
+    EndScroll();
 }
 
 
-void SvImpLBox::KeyDown( bool bPageDown, bool bNotifyScroll )
+void SvImpLBox::KeyDown( bool bPageDown )
 {
     if( !aVerSBar->IsVisible() )
         return;
@@ -523,8 +520,7 @@ void SvImpLBox::KeyDown( bool bPageDown, bool bNotifyScroll )
         return;
 
     nFlags &= (~F_FILLING);
-    if( bNotifyScroll )
-        BeginScroll();
+    BeginScroll();
 
     aVerSBar->SetThumbPos( nThumbPos+nDelta );
     if( bPageDown )
@@ -532,8 +528,7 @@ void SvImpLBox::KeyDown( bool bPageDown, bool bNotifyScroll )
     else
         CursorDown();
 
-    if( bNotifyScroll )
-        EndScroll();
+    EndScroll();
 }
 
 
@@ -827,7 +822,7 @@ SvTreeListEntry* SvImpLBox::GetEntry( const Point& rPoint ) const
 }
 
 
-SvTreeListEntry* SvImpLBox::MakePointVisible(const Point& rPoint, bool bNotifyScroll)
+SvTreeListEntry* SvImpLBox::MakePointVisible(const Point& rPoint)
 {
     if( !pCursor )
         return nullptr;
@@ -845,9 +840,9 @@ SvTreeListEntry* SvImpLBox::MakePointVisible(const Point& rPoint, bool bNotifySc
             pView->SetEntryFocus( pCursor, false );
 
         if( nY < 0 )
-            KeyUp( false, bNotifyScroll );
+            KeyUp( false );
         else
-            KeyDown( false, bNotifyScroll );
+            KeyDown( false );
     }
     else
     {
@@ -945,7 +940,7 @@ void SvImpLBox::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect
     for(sal_uInt16 n=0; n< nCount && pEntry; n++)
     {
         /*long nMaxRight=*/
-        pView->PaintEntry1(*pEntry, nY, rRenderContext, SvLBoxTabFlags::ALL, true );
+        pView->PaintEntry1(*pEntry, nY, rRenderContext );
         nY += nEntryHeight;
         pEntry = pView->NextVisible(pEntry);
     }
@@ -2154,16 +2149,13 @@ bool SvImpLBox::KeyInput( const KeyEvent& rKEvt)
             // if there is no next entry, take the current one
             // this ensures that in case of _one_ entry in the list, this entry is selected when pressing
             // the cursor key
-            if ( !pNewCursor && pCursor )
+            if (!pNewCursor)
                 pNewCursor = pCursor;
 
-            if( pNewCursor )
-            {
-                aSelEng.CursorPosChanging( bShift, bMod1 );
-                SetCursor( pNewCursor, bMod1 );     // no selection, when Ctrl is on
-                if( !IsEntryInView( pNewCursor ) )
-                    KeyUp( false );
-            }
+            aSelEng.CursorPosChanging( bShift, bMod1 );
+            SetCursor( pNewCursor, bMod1 );     // no selection, when Ctrl is on
+            if( !IsEntryInView( pNewCursor ) )
+                KeyUp( false );
             break;
 
         case KEY_DOWN:

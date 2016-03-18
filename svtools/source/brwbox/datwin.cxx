@@ -47,7 +47,7 @@ void ButtonFrame::Draw( OutputDevice& rDev )
     {
         vcl::Window *pWin = static_cast<vcl::Window*>( &rDev );
         if( bPressed )
-            pWin->DrawSelectionBackground( aRect, 0, true, false, false );
+            pWin->DrawSelectionBackground( aRect, 0, true, false );
     }
     else
     {
@@ -254,7 +254,7 @@ void BrowserDataWin::LeaveUpdateLock()
     }
 }
 
-void InitSettings_Impl(vcl::Window* pWin, bool bFont, bool bForeground, bool bBackground)
+void InitSettings_Impl(vcl::Window* pWin, bool bFont, bool bForeground)
 {
     const StyleSettings& rStyleSettings = pWin->GetSettings().GetStyleSettings();
 
@@ -264,8 +264,7 @@ void InitSettings_Impl(vcl::Window* pWin, bool bFont, bool bForeground, bool bBa
     if (bFont || bForeground)
         pWin->ApplyControlForeground(*pWin, rStyleSettings.GetWindowTextColor());
 
-    if (bBackground)
-        pWin->ApplyControlBackground(*pWin, rStyleSettings.GetWindowColor());
+    pWin->ApplyControlBackground(*pWin, rStyleSettings.GetWindowColor());
 }
 
 

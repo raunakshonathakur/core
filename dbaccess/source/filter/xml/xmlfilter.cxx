@@ -114,7 +114,7 @@ sal_Int32 ReadThroughComponent(
     }
     catch (const SAXParseException& r)
     {
-#if OSL_DEBUG_LEVEL > 1
+#if OSL_DEBUG_LEVEL > 0
         SAL_WARN("dbaccess", "SAX parse exception catched while importing:\n" << r.Message << r.LineNumber << "," << r.ColumnNumber);
 #else
         (void)r;
@@ -734,7 +734,7 @@ SvXMLImportContext* ODBFilter::CreateStylesContext(sal_uInt16 _nPrefix,const OUS
 
 SvXMLImportContext* ODBFilter::CreateScriptContext( const OUString& _rLocalName )
 {
-    return new XMLScriptContext( *this, XML_NAMESPACE_OFFICE, _rLocalName, GetModel() );
+    return new XMLScriptContext( *this, _rLocalName, GetModel() );
 }
 
 

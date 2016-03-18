@@ -102,6 +102,17 @@ enum ScIterFuncIfs
     ifCOUNTIFS    // Multi-Conditional count
 };
 
+enum ScETSType
+{
+    etsAdd,
+    etsMult,
+    etsSeason,
+    etsPIAdd,
+    etsPIMult,
+    etsStatAdd,
+    etsStatMult
+};
+
 struct FormulaTokenRef_less
 {
     bool operator () ( const formula::FormulaConstTokenRef& r1, const formula::FormulaConstTokenRef& r2 ) const
@@ -314,12 +325,10 @@ void PopDoubleRef( ScRange & rRange, short & rParam, size_t & rRefInList );
 void PopDoubleRef( ScRange&, bool bDontCheckForTableOp = false );
 void DoubleRefToVars( const formula::FormulaToken* p,
         SCCOL& rCol1, SCROW &rRow1, SCTAB& rTab1,
-        SCCOL& rCol2, SCROW &rRow2, SCTAB& rTab2,
-        bool bDontCheckForTableOp = false );
+        SCCOL& rCol2, SCROW &rRow2, SCTAB& rTab2 );
 ScDBRangeBase* PopDBDoubleRef();
 void PopDoubleRef(SCCOL& rCol1, SCROW &rRow1, SCTAB& rTab1,
-                          SCCOL& rCol2, SCROW &rRow2, SCTAB& rTab2,
-                          bool bDontCheckForTableOp = false );
+                          SCCOL& rCol2, SCROW &rRow2, SCTAB& rTab2 );
 void PopExternalSingleRef(sal_uInt16& rFileId, OUString& rTabName, ScSingleRefData& rRef);
 void PopExternalSingleRef(ScExternalRefCache::TokenRef& rToken, ScExternalRefCache::CellFormat* pFmt = nullptr);
 void PopExternalSingleRef(sal_uInt16& rFileId, OUString& rTabName, ScSingleRefData& rRef,
@@ -763,6 +772,7 @@ bool CheckMatrix(bool _bLOG,sal_uInt8& nCase,SCSIZE& nCX,SCSIZE& nCY,SCSIZE& nRX
 void ScLinest();
 void ScLogest();
 void ScForecast();
+void ScForecast_Ets( ScETSType eETSType );
 void ScNoName();
 void ScBadName();
 // Statistics:
@@ -773,6 +783,7 @@ public:
 static SC_DLLPUBLIC double phi(double x);
 static SC_DLLPUBLIC double integralPhi(double x);
 static SC_DLLPUBLIC double gaussinv(double x);
+static SC_DLLPUBLIC double GetPercentile( ::std::vector<double> & rArray, double fPercentile );
 
 private:
 double GetBetaDist(double x, double alpha, double beta);  //cumulative distribution function
@@ -842,7 +853,6 @@ void ScSkew();
 void ScSkewp();
 void ScMedian();
 double GetMedian( ::std::vector<double> & rArray );
-double GetPercentile( ::std::vector<double> & rArray, double fPercentile );
 double GetPercentileExclusive( ::std::vector<double> & rArray, double fPercentile );
 void GetNumberSequenceArray( sal_uInt8 nParamCount, ::std::vector<double>& rArray, bool bConvertTextInArray );
 void GetSortArray( sal_uInt8 nParamCount, ::std::vector<double>& rSortArray, ::std::vector<long>* pIndexOrder, bool bConvertTextInArray, bool bAllowEmptyArray );

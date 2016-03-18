@@ -70,7 +70,7 @@ protected:
     bool                IsInSelection( const TextPaM& rPaM );
 
     void                ImpPaint(vcl::RenderContext& rRenderContext, const Point& rStartPos, Rectangle const* pPaintArea, TextSelection const* pPaintRange = nullptr, TextSelection const* pSelection = nullptr);
-    void                ImpPaint(vcl::RenderContext& rRenderContext, const Rectangle& rRect, bool bUseVirtDev);
+    void                ImpPaint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
     void                ImpShowCursor( bool bGotoCursor, bool bForceVisCursor, bool bEndKey );
     void                ImpHighlight( const TextSelection& rSel );
     void                ImpSetSelection( const TextSelection& rSelection );
@@ -122,7 +122,7 @@ public:
     OUString            GetSelected( LineEnd aSeparator );
     void                DeleteSelected();
 
-    void                InsertText( const OUString& rNew, bool bSelect = false );
+    void                InsertText( const OUString& rNew );
 
     bool                KeyInput( const KeyEvent& rKeyEvent );
     void                Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);

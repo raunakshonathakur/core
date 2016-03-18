@@ -113,9 +113,9 @@ void XclExpString::Assign( const OUString& rString, XclStrFlags nFlags, sal_uInt
     Build( rString.getStr(), rString.getLength(), nFlags, nMaxLen );
 }
 
-void XclExpString::Assign( sal_Unicode cChar, XclStrFlags nFlags, sal_uInt16 nMaxLen )
+void XclExpString::Assign( sal_Unicode cChar )
 {
-    Build( &cChar, 1, nFlags, nMaxLen );
+    Build( &cChar, 1, EXC_STR_DEFAULT, EXC_STR_MAXLEN );
 }
 
 void XclExpString::AssignByte(
@@ -178,12 +178,21 @@ void XclExpString::LimitFormatCount( sal_uInt16 nMaxCount )
         maFormats.erase( maFormats.begin() + nMaxCount, maFormats.end() );
 }
 
-sal_uInt16 XclExpString::RemoveLeadingFont()
+sal_uInt16 XclExpString::GetLeadingFont()
 {
     sal_uInt16 nFontIdx = EXC_FONT_NOTFOUND;
     if( !maFormats.empty() && (maFormats.front().mnChar == 0) )
     {
         nFontIdx = maFormats.front().mnFontIdx;
+    }
+    return nFontIdx;
+}
+
+sal_uInt16 XclExpString::RemoveLeadingFont()
+{
+    sal_uInt16 nFontIdx = GetLeadingFont();
+    if( nFontIdx != EXC_FONT_NOTFOUND )
+    {
         maFormats.erase( maFormats.begin() );
     }
     return nFontIdx;

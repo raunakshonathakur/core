@@ -599,7 +599,7 @@ void SvxRectCtlAccessibleContext::FireChildFocus( RECT_POINT eButton )
     else
         mnSelectedChild = NOCHILDSELECTED;
 }
-void SvxRectCtlAccessibleContext::selectChild( long nNew, bool bFireFocus )
+void SvxRectCtlAccessibleContext::selectChild( long nNew )
 {
     ::osl::MutexGuard   aGuard( m_aMutex );
     if( nNew != mnSelectedChild )
@@ -612,7 +612,7 @@ void SvxRectCtlAccessibleContext::selectChild( long nNew, bool bFireFocus )
             {   // deselect old selected child if one is selected
                 pChild = mpChildren[ mnSelectedChild ];
                 if( pChild )
-                    pChild->setStateChecked( false, bFireFocus );
+                    pChild->setStateChecked( false );
             }
 
             // select new child
@@ -622,7 +622,7 @@ void SvxRectCtlAccessibleContext::selectChild( long nNew, bool bFireFocus )
             {
                 pChild = mpChildren[ nNew ];
                 if( pChild )
-                    pChild->setStateChecked( true, bFireFocus );
+                    pChild->setStateChecked( true );
             }
         }
         else
@@ -630,10 +630,10 @@ void SvxRectCtlAccessibleContext::selectChild( long nNew, bool bFireFocus )
     }
 }
 
-void SvxRectCtlAccessibleContext::selectChild(RECT_POINT eButton, bool bFireFocus )
+void SvxRectCtlAccessibleContext::selectChild(RECT_POINT eButton )
 {
     // no guard -> is done in next selectChild
-    selectChild(PointToIndex( eButton, mbAngleMode ), bFireFocus);
+    selectChild(PointToIndex( eButton, mbAngleMode ));
 }
 
 void SvxRectCtlAccessibleContext::CommitChange( const AccessibleEventObject& rEvent )
@@ -1081,7 +1081,7 @@ Rectangle SvxRectCtlChildAccessibleContext::GetBoundingBox() throw( RuntimeExcep
     return *mpBoundingBox;
 }
 
-void SvxRectCtlChildAccessibleContext::setStateChecked( bool bChecked, bool bFireFocus )
+void SvxRectCtlChildAccessibleContext::setStateChecked( bool bChecked )
 {
     if( mbIsChecked != bChecked )
     {
@@ -1093,12 +1093,10 @@ void SvxRectCtlChildAccessibleContext::setStateChecked( bool bChecked, bool bFir
         Any                             aNew;
         Any&                            rMod = bChecked? aNew : aOld;
 
-        if( bFireFocus )
-        {
-            //Send the STATE_CHANGED(Focused) event to accessible
-            rMod <<= AccessibleStateType::FOCUSED;
-            CommitChange( AccessibleEventObject( xSource, AccessibleEventId::STATE_CHANGED, aNew, aOld ) );
-        }
+        //Send the STATE_CHANGED(Focused) event to accessible
+        rMod <<= AccessibleStateType::FOCUSED;
+        CommitChange( AccessibleEventObject( xSource, AccessibleEventId::STATE_CHANGED, aNew, aOld ) );
+
         rMod <<= AccessibleStateType::CHECKED;
 
         CommitChange( AccessibleEventObject( xSource, AccessibleEventId::STATE_CHANGED, aNew, aOld ) );

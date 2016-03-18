@@ -14,6 +14,7 @@ $(eval $(call gb_UIConfig_add_menubarfiles,modules/swriter,\
 ))
 
 $(eval $(call gb_UIConfig_add_popupmenufiles,modules/swriter,\
+	sw/uiconfig/swriter/popupmenu/anchor \
 	sw/uiconfig/swriter/popupmenu/annotation \
 	sw/uiconfig/swriter/popupmenu/draw \
 	sw/uiconfig/swriter/popupmenu/drawtext \
@@ -40,6 +41,7 @@ $(eval $(call gb_UIConfig_add_toolbarfiles,modules/swriter,\
 	sw/uiconfig/swriter/toolbar/bezierobjectbar \
 	sw/uiconfig/swriter/toolbar/calloutshapes \
 	sw/uiconfig/swriter/toolbar/changes \
+	sw/uiconfig/swriter/toolbar/classificationbar \
 	sw/uiconfig/swriter/toolbar/colorbar \
 	sw/uiconfig/swriter/toolbar/drawbar \
 	sw/uiconfig/swriter/toolbar/drawingobjectbar \

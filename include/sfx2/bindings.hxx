@@ -159,7 +159,7 @@ public:
     bool             IsInUpdate() const;
     void             SetVisibleState( sal_uInt16 nId, bool bShow );
 
-    bool             IsBound( sal_uInt16 nMsgId, sal_uInt16 nStartSearchAt = 0 );
+    bool             IsBound( sal_uInt16 nMsgId );
 
     SfxStateCache*   GetStateCache( sal_uInt16 nId);
     SAL_DLLPRIVATE SfxStateCache* GetAnyStateCache_Impl( sal_uInt16 nId );
@@ -170,11 +170,9 @@ public:
 
     const SfxPoolItem*  ExecuteSynchron( sal_uInt16 nSlot,
                                  const SfxPoolItem **pArgs = nullptr,
-                                 sal_uInt16 nModi = 0,
                                  const SfxPoolItem **pInternalArgs = nullptr);
     bool             Execute( sal_uInt16 nSlot,
                                  const SfxPoolItem **pArgs = nullptr,
-                                 sal_uInt16 nModi = 0,
                                  SfxCallMode nCall = SfxCallMode::SLOT,
                                  const SfxPoolItem **pInternalArgs = nullptr);
 
@@ -200,7 +198,7 @@ public:
     SAL_DLLPRIVATE void Register_Impl( SfxControllerItem& rBinding, bool );
     SAL_DLLPRIVATE SfxWorkWindow* GetWorkWindow_Impl() const;
     SAL_DLLPRIVATE void SetWorkWindow_Impl( SfxWorkWindow* );
-    SAL_DLLPRIVATE SfxBindings* GetSubBindings_Impl( bool bTop = false ) const;
+    SAL_DLLPRIVATE SfxBindings* GetSubBindings_Impl() const;
     SAL_DLLPRIVATE void InvalidateUnoControllers_Impl();
     SAL_DLLPRIVATE void RegisterUnoController_Impl( SfxUnoControllerItem* );
     SAL_DLLPRIVATE void ReleaseUnoController_Impl( SfxUnoControllerItem* );

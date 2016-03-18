@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <com/sun/star/util/SearchOptions.hpp>
+#include <com/sun/star/util/SearchOptions2.hpp>
 #include <com/sun/star/text/XTextRange.hpp>
 
 #include <hintids.hxx>
@@ -230,7 +230,7 @@ void SwCursorShell::StartAction()
 
 void SwCursorShell::EndAction( const bool bIdleEnd, const bool DoSetPosX )
 {
-    comphelper::FlagRestorationGuard g(mbSelectAll, StartsWithTable() && ExtendedSelectedAll(/*bFootnotes =*/ false));
+    comphelper::FlagRestorationGuard g(mbSelectAll, StartsWithTable() && ExtendedSelectedAll());
     bool bVis = m_bSVCursorVis;
 
     sal_uInt16 eFlags = SwCursorShell::CHKRANGE;
@@ -611,10 +611,10 @@ void SwCursorShell::ExtendedSelectAll(bool bFootnotes)
     pPos->nContent.Assign( pCNd, pCNd ? pCNd->Len() : 0 );
 }
 
-bool SwCursorShell::ExtendedSelectedAll(bool bFootnotes)
+bool SwCursorShell::ExtendedSelectedAll()
 {
     SwNodes& rNodes = GetDoc()->GetNodes();
-    SwNodeIndex nNode = bFootnotes ? rNodes.GetEndOfPostIts() : rNodes.GetEndOfAutotext();
+    SwNodeIndex nNode = rNodes.GetEndOfAutotext();
     SwContentNode* pStart = rNodes.GoNext(&nNode);
 
     nNode = rNodes.GetEndOfContent();
@@ -1263,7 +1263,7 @@ bool SwCursorShell::GoPrevCursor()
 
 void SwCursorShell::Paint(vcl::RenderContext& rRenderContext, const Rectangle &rRect)
 {
-    comphelper::FlagRestorationGuard g(mbSelectAll, StartsWithTable() && ExtendedSelectedAll(/*bFootnotes =*/ false));
+    comphelper::FlagRestorationGuard g(mbSelectAll, StartsWithTable() && ExtendedSelectedAll());
     SET_CURR_SHELL( this );
 
     // always switch off all cursors when painting
@@ -2176,21 +2176,19 @@ void SwCursorShell::HideCursor()
     }
 }
 
-void SwCursorShell::ShLooseFcs()
+void SwCursorShell::ShellLoseFocus()
 {
     if( !m_bBasicHideCursor )
         HideCursors();
     m_bHasFocus = false;
 }
 
-void SwCursorShell::ShGetFcs( bool bUpdate )
+void SwCursorShell::ShellGetFocus()
 {
     m_bHasFocus = true;
     if( !m_bBasicHideCursor && VisArea().Width() )
     {
-        UpdateCursor( static_cast<sal_uInt16>( bUpdate ?
-                    SwCursorShell::CHKRANGE|SwCursorShell::SCROLLWIN
-                    : SwCursorShell::CHKRANGE ) );
+        UpdateCursor( static_cast<sal_uInt16>( SwCursorShell::CHKRANGE ) );
         ShowCursors( m_bSVCursorVis );
     }
 }
@@ -3127,9 +3125,9 @@ bool SwCursorShell::IsInVerticalText( const Point* pPt ) const
     return FRMDIR_VERT_TOP_RIGHT == nDir || FRMDIR_VERT_TOP_LEFT == nDir;
 }
 
-bool SwCursorShell::IsInRightToLeftText( const Point* pPt ) const
+bool SwCursorShell::IsInRightToLeftText() const
 {
-    const short nDir = GetTextDirection( pPt );
+    const short nDir = GetTextDirection();
     // GetTextDirection uses FRMDIR_VERT_TOP_LEFT to indicate RTL in
     // vertical environment
     return FRMDIR_VERT_TOP_LEFT == nDir || FRMDIR_HORI_RIGHT_TOP == nDir;
@@ -3165,7 +3163,7 @@ bool SwCursorShell::SelectHiddenRange()
     return bRet;
 }
 
-sal_uLong SwCursorShell::Find( const SearchOptions& rSearchOpt,
+sal_uLong SwCursorShell::Find( const SearchOptions2& rSearchOpt,
                              bool bSearchInNotes,
                              SwDocPositions eStart, SwDocPositions eEnd,
                              bool& bCancel,
@@ -3207,7 +3205,7 @@ sal_uLong SwCursorShell::Find( const SfxItemSet& rSet,
                              SwDocPositions eStart, SwDocPositions eEnd,
                              bool& bCancel,
                              FindRanges eRng,
-                             const SearchOptions* pSearchOpt,
+                             const SearchOptions2* pSearchOpt,
                              const SfxItemSet* rReplSet )
 {
     if( m_pTableCursor )

@@ -220,13 +220,13 @@ public:
 
     void            SetVisAreaOrSize( const Rectangle& rVisArea, bool bModifyStart );
 
-    virtual VclPtr<SfxDocumentInfoDialog> CreateDocumentInfoDialog( vcl::Window *pParent,
-                                                              const SfxItemSet &rSet ) override;
+    virtual VclPtr<SfxDocumentInfoDialog> CreateDocumentInfoDialog( const SfxItemSet &rSet ) override;
 
     void    GetDocStat( ScDocStat& rDocStat );
 
     ScDocument&     GetDocument()   { return aDocument; }
     ScDocFunc&      GetDocFunc()    { return *pDocFunc; }
+    void            SetDocFunc( ScDocFunc *pDF ) { pDocFunc = pDF; }
 
     SfxPrinter*     GetPrinter( bool bCreateIfNotExist = true );
     sal_uInt16      SetPrinter( SfxPrinter* pNewPrinter, SfxPrinterChangeFlags nDiffFlags = SFX_PRINTER_ALL );
@@ -331,8 +331,8 @@ public:
                                                        SCCOL nEndCol, SCROW nEndRow, SCTAB nEndTab );
     void            UpdatePaintExt( sal_uInt16& rExtFlags, const ScRange& rRange );
 
-    void            SetDocumentModified( bool bIsModified = true );
-    void            SetDrawModified( bool bIsModified = true );
+    void            SetDocumentModified();
+    void            SetDrawModified();
 
     void            LockPaint();
     void            UnlockPaint();

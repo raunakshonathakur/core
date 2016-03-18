@@ -263,7 +263,7 @@ protected:
     virtual void exportStyleAttributes(
         const css::uno::Reference< css::style::XStyle > & rStyle ) override;
 
-    void exportPageFrames( bool bAutoStyles, bool bProgress );
+    void exportPageFrames( bool bProgress );
     void exportFrameFrames( bool bAutoStyles, bool bProgress,
             const css::uno::Reference< css::text::XTextFrame > *pParentTxtFrame = nullptr );
 
@@ -435,8 +435,7 @@ public:
     void Add(
         sal_uInt16 nFamily,
         MultiPropertySetHelper& rPropSetHelper,
-        const css::uno::Reference< css::beans::XPropertySet > & rPropSet,
-        const XMLPropertyState** pAddState = nullptr );
+        const css::uno::Reference< css::beans::XPropertySet > & rPropSet );
     void Add(
         sal_uInt16 nFamily,
         const css::uno::Reference< css::beans::XPropertySet > & rPropSet,
@@ -470,9 +469,8 @@ public:
     void exportTextDeclarations(
         const css::uno::Reference< css::text::XText > & rText );
 
-    /// true: export only those declarations that are used;
-    /// false: export all declarations
-    void exportUsedDeclarations( bool bOnlyUsed );
+    /// export all declarations
+    void exportUsedDeclarations();
 
     /// Export the list of change information (enclosed by <tracked-changes>)
     /// (or the necessary automatic styles)
@@ -501,8 +499,7 @@ public:
     // This method exports the given OUString
     void exportText(
         const OUString& rText,
-        bool& rPrevCharWasSpace,
-        TextPNS eExtensionNS = TextPNS::ODF);
+        bool& rPrevCharWasSpace);
 
     // This method collects all automatic styles for the given XText
     void collectTextAutoStyles(
@@ -516,10 +513,9 @@ public:
     void collectTextAutoStyles(
         const css::uno::Reference< css::text::XText > & rText,
         const css::uno::Reference< css::text::XTextSection > & rBaseSection,
-        bool bIsProgress = false,
-        bool bExportParagraph = true )
+        bool bIsProgress = false )
     {
-        exportText( rText, rBaseSection, true, bIsProgress, bExportParagraph );
+        exportText( rText, rBaseSection, true, bIsProgress, true/*bExportParagraph*/ );
     }
 
     // It the model implements the xAutoStylesSupplier interface, the automatic
@@ -549,15 +545,14 @@ public:
         const css::uno::Reference< css::text::XText > & rText,
         const css::uno::Reference< css::text::XTextSection > & rBaseSection,
         bool bIsProgress = false,
-        bool bExportParagraph = true,
         TextPNS eExtensionNS = TextPNS::ODF)
     {
-        exportText( rText, rBaseSection, false, bIsProgress, bExportParagraph, eExtensionNS );
+        exportText( rText, rBaseSection, false, bIsProgress, true/*bExportParagraph*/, eExtensionNS );
     }
 
     void exportFramesBoundToPage( bool bIsProgress = false )
     {
-        exportPageFrames( false, bIsProgress );
+        exportPageFrames( bIsProgress );
     }
     void exportFramesBoundToFrame(
             const css::uno::Reference< css::text::XTextFrame >& rParentTxtFrame,

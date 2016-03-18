@@ -32,6 +32,8 @@ namespace svgio { namespace svgreader {
     class SvgGradientNode;
     class SvgPatternNode;
     class SvgMarkerNode;
+    class SvgClipPathNode;
+    class SvgMaskNode;
 }}
 
 
@@ -215,7 +217,9 @@ namespace svgio
 
             /// link to content. If set, the node can be fetched on demand
             OUString               maClipPathXLink;
+            const SvgClipPathNode* mpClipPathXLink;
             OUString               maMaskXLink;
+            const SvgMaskNode*     mpMaskXLink;
 
             /// link to markers. If set, the node can be fetched on demand
             OUString               maMarkerStartXLink;
@@ -228,7 +232,7 @@ namespace svgio
             /// fill rule
             FillRule                    maFillRule;
 
-            // ClipRule setting (only valid wne mbIsClipPathContent == true, default is FillRule_nonzero)
+            // ClipRule setting (only valid when mbIsClipPathContent == true, default is FillRule_nonzero)
             FillRule                    maClipRule;
 
             // BaselineShift: Type and number (in case of BaselineShift_Percentage or BaselineShift_Length)
@@ -442,9 +446,11 @@ namespace svgio
 
             // ClipPathXLink content
             OUString getClipPathXLink() const;
+            const SvgClipPathNode* accessClipPathXLink() const;
 
             // MaskXLink content
-            const OUString getMaskXLink() const { return maMaskXLink; }
+            OUString getMaskXLink() const;
+            const SvgMaskNode* accessMaskXLink() const;
 
             // MarkerStartXLink content
             OUString getMarkerStartXLink() const;

@@ -105,21 +105,18 @@ namespace psp
         OUString translateValue(
             const OUString& i_rKey,
             const OUString& i_rOption,
-            const OUString& i_rValue,
-            const css::lang::Locale& i_rLocale = css::lang::Locale()
+            const OUString& i_rValue
             ) const;
 
         OUString translateOption( const OUString& i_rKey,
-                                       const OUString& i_rOption,
-                                       const css::lang::Locale& i_rLocale = css::lang::Locale() ) const
+                                       const OUString& i_rOption ) const
         {
-            return translateValue( i_rKey, i_rOption, OUString(), i_rLocale );
+            return translateValue( i_rKey, i_rOption, OUString()  );
         }
 
-        OUString translateKey( const OUString& i_rKey,
-                                    const css::lang::Locale& i_rLocale = css::lang::Locale() ) const
+        OUString translateKey( const OUString& i_rKey ) const
         {
-            return translateValue( i_rKey, OUString(), OUString(), i_rLocale );
+            return translateValue( i_rKey, OUString(), OUString() );
         }
     };
 
@@ -192,8 +189,7 @@ namespace psp
     OUString PPDTranslator::translateValue(
         const OUString& i_rKey,
         const OUString& i_rOption,
-        const OUString& i_rValue,
-        const css::lang::Locale& i_rLocale
+        const OUString& i_rValue
         ) const
     {
         OUString aResult;
@@ -218,7 +214,7 @@ namespace psp
             {
                 const translation_map& rMap( it->second );
 
-                css::lang::Locale aLoc( normalizeInputLocale( i_rLocale, true ) );
+                css::lang::Locale aLoc( normalizeInputLocale( css::lang::Locale(), true ) );
                 /* FIXME-BCP47: use LanguageTag::getFallbackStrings()? */
                 for( int nTry = 0; nTry < 4; nTry++ )
                 {
@@ -374,8 +370,9 @@ OString PPDDecompressStream::ReadLine()
     return o_rLine;
 }
 
-static osl::FileBase::RC resolveLink( const OUString& i_rURL, OUString& o_rResolvedURL, OUString& o_rBaseName, osl::FileStatus::Type& o_rType, int nLinkLevel = 10 )
+static osl::FileBase::RC resolveLink( const OUString& i_rURL, OUString& o_rResolvedURL, OUString& o_rBaseName, osl::FileStatus::Type& o_rType)
 {
+    int nLinkLevel = 10;
     salhelper::LinkResolver aResolver(osl_FileStatus_Mask_FileName |
                                       osl_FileStatus_Mask_Type |
                                       osl_FileStatus_Mask_FileURL);
@@ -1479,20 +1476,18 @@ void PPDParser::getDefaultResolution( int& rXRes, int& rYRes ) const
     rYRes = 300;
 }
 
-OUString PPDParser::translateKey( const OUString& i_rKey,
-                                       const css::lang::Locale& i_rLocale ) const
+OUString PPDParser::translateKey( const OUString& i_rKey ) const
 {
-    OUString aResult( m_pTranslator->translateKey( i_rKey, i_rLocale ) );
+    OUString aResult( m_pTranslator->translateKey( i_rKey ) );
     if( aResult.isEmpty() )
         aResult = i_rKey;
     return aResult;
 }
 
 OUString PPDParser::translateOption( const OUString& i_rKey,
-                                          const OUString& i_rOption,
-                                          const css::lang::Locale& i_rLocale ) const
+                                          const OUString& i_rOption ) const
 {
-    OUString aResult( m_pTranslator->translateOption( i_rKey, i_rOption, i_rLocale ) );
+    OUString aResult( m_pTranslator->translateOption( i_rKey, i_rOption ) );
     if( aResult.isEmpty() )
         aResult = i_rOption;
     return aResult;

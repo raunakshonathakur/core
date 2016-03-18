@@ -268,13 +268,13 @@ EditPaM ImpEditEngine::DeleteSelected(const EditSelection& rSel)
     return aPaM;
 }
 
-OUString ImpEditEngine::GetSelected( const EditSelection& rSel, const LineEnd eEnd  ) const
+OUString ImpEditEngine::GetSelected( const EditSelection& rSel  ) const
 {
     OUString aText;
     if ( !rSel.HasRange() )
         return aText;
 
-    OUString aSep = EditDoc::GetSepStr( eEnd );
+    OUString aSep = EditDoc::GetSepStr( LINEEND_LF );
 
     EditSelection aSel( rSel );
     aSel.Adjust( aEditDoc );
@@ -1396,7 +1396,7 @@ EditPaM ImpEditEngine::PageDown( const EditPaM& rPaM, EditView* pView )
     return GetPaM( aBottomRight );
 }
 
-EditPaM ImpEditEngine::WordLeft( const EditPaM& rPaM, sal_Int16 nWordType )
+EditPaM ImpEditEngine::WordLeft( const EditPaM& rPaM )
 {
     const sal_Int32 nCurrentPos = rPaM.GetIndex();
     EditPaM aNewPaM( rPaM );
@@ -1422,10 +1422,10 @@ EditPaM ImpEditEngine::WordLeft( const EditPaM& rPaM, sal_Int16 nWordType )
 
         uno::Reference < i18n::XBreakIterator > _xBI( ImplGetBreakIterator() );
         i18n::Boundary aBoundary =
-            _xBI->getWordBoundary(aNewPaM.GetNode()->GetString(), nCurrentPos, aLocale, nWordType, true);
+            _xBI->getWordBoundary(aNewPaM.GetNode()->GetString(), nCurrentPos, aLocale, css::i18n::WordType::ANYWORD_IGNOREWHITESPACES, true);
         if ( aBoundary.startPos >= nCurrentPos )
             aBoundary = _xBI->previousWord(
-                aNewPaM.GetNode()->GetString(), nCurrentPos, aLocale, nWordType);
+                aNewPaM.GetNode()->GetString(), nCurrentPos, aLocale, css::i18n::WordType::ANYWORD_IGNOREWHITESPACES);
         aNewPaM.SetIndex( ( aBoundary.startPos != (-1) ) ? aBoundary.startPos : 0 );
     }
 
@@ -1464,7 +1464,7 @@ EditPaM ImpEditEngine::WordRight( const EditPaM& rPaM, sal_Int16 nWordType )
     return aNewPaM;
 }
 
-EditPaM ImpEditEngine::StartOfWord( const EditPaM& rPaM, sal_Int16 nWordType )
+EditPaM ImpEditEngine::StartOfWord( const EditPaM& rPaM )
 {
     EditPaM aNewPaM( rPaM );
 
@@ -1477,13 +1477,13 @@ EditPaM ImpEditEngine::StartOfWord( const EditPaM& rPaM, sal_Int16 nWordType )
 
     uno::Reference < i18n::XBreakIterator > _xBI( ImplGetBreakIterator() );
     i18n::Boundary aBoundary = _xBI->getWordBoundary(
-        rPaM.GetNode()->GetString(), rPaM.GetIndex(), aLocale, nWordType, true);
+        rPaM.GetNode()->GetString(), rPaM.GetIndex(), aLocale, css::i18n::WordType::ANYWORD_IGNOREWHITESPACES, true);
 
     aNewPaM.SetIndex( aBoundary.startPos );
     return aNewPaM;
 }
 
-EditPaM ImpEditEngine::EndOfWord( const EditPaM& rPaM, sal_Int16 nWordType )
+EditPaM ImpEditEngine::EndOfWord( const EditPaM& rPaM )
 {
     EditPaM aNewPaM( rPaM );
 
@@ -1496,7 +1496,7 @@ EditPaM ImpEditEngine::EndOfWord( const EditPaM& rPaM, sal_Int16 nWordType )
 
     uno::Reference < i18n::XBreakIterator > _xBI( ImplGetBreakIterator() );
     i18n::Boundary aBoundary = _xBI->getWordBoundary(
-        rPaM.GetNode()->GetString(), rPaM.GetIndex(), aLocale, nWordType, true);
+        rPaM.GetNode()->GetString(), rPaM.GetIndex(), aLocale, css::i18n::WordType::ANYWORD_IGNOREWHITESPACES, true);
 
     aNewPaM.SetIndex( aBoundary.endPos );
     return aNewPaM;
@@ -2035,7 +2035,7 @@ SvxCellVerJustify ImpEditEngine::GetVerJustification( sal_Int32 nPara ) const
 }
 
 //  Text changes
-void ImpEditEngine::ImpRemoveChars( const EditPaM& rPaM, sal_Int32 nChars, EditUndoRemoveChars* pCurUndo )
+void ImpEditEngine::ImpRemoveChars( const EditPaM& rPaM, sal_Int32 nChars )
 {
     if ( IsUndoEnabled() && !IsInUndo() )
     {
@@ -2057,10 +2057,7 @@ void ImpEditEngine::ImpRemoveChars( const EditPaM& rPaM, sal_Int32 nChars, EditU
                 break;  // for
             }
         }
-        if ( pCurUndo && ( CreateEditPaM( pCurUndo->GetEPaM() ) == rPaM ) )
-            pCurUndo->GetStr() += aStr;
-        else
-            InsertUndo(new EditUndoRemoveChars(pEditEngine, CreateEPaM(rPaM), aStr));
+        InsertUndo(new EditUndoRemoveChars(pEditEngine, CreateEPaM(rPaM), aStr));
     }
 
     aEditDoc.RemoveChars( rPaM, nChars );
@@ -2776,7 +2773,7 @@ EditPaM ImpEditEngine::ImpInsertFeature(const EditSelection& rCurSel, const SfxP
     return aPaM;
 }
 
-EditPaM ImpEditEngine::ImpInsertParaBreak( const EditSelection& rCurSel, bool bKeepEndingAttribs )
+EditPaM ImpEditEngine::ImpInsertParaBreak( const EditSelection& rCurSel )
 {
     EditPaM aPaM;
     if ( rCurSel.HasRange() )
@@ -2784,7 +2781,7 @@ EditPaM ImpEditEngine::ImpInsertParaBreak( const EditSelection& rCurSel, bool bK
     else
         aPaM = rCurSel.Max();
 
-    return ImpInsertParaBreak( aPaM, bKeepEndingAttribs );
+    return ImpInsertParaBreak( aPaM );
 }
 
 EditPaM ImpEditEngine::ImpInsertParaBreak( EditPaM& rPaM, bool bKeepEndingAttribs )
@@ -4275,10 +4272,10 @@ void ImpEditEngine::IndentBlock( EditView* pEditView, bool bRight )
     }
 }
 
-rtl::Reference<SvxForbiddenCharactersTable> ImpEditEngine::GetForbiddenCharsTable( bool bGetInternal ) const
+rtl::Reference<SvxForbiddenCharactersTable> ImpEditEngine::GetForbiddenCharsTable() const
 {
     rtl::Reference<SvxForbiddenCharactersTable> xF = xForbiddenCharsTable;
-    if ( !xF.is() && bGetInternal )
+    if ( !xF.is() )
         xF = EE_DLL().GetGlobalData()->GetForbiddenCharsTable();
     return xF;
 }

@@ -126,7 +126,7 @@ public:
     const sdr::table::TableStyleSettings& getTableStyleSettings() const;
     void setTableStyleSettings( const sdr::table::TableStyleSettings& rStyle );
 
-    TableHitKind CheckTableHit( const Point& rPos, sal_Int32& rnX, sal_Int32& rnY, int nTol ) const;
+    TableHitKind CheckTableHit( const Point& rPos, sal_Int32& rnX, sal_Int32& rnY ) const;
 
     void uno_lock();
     void uno_unlock();
@@ -190,7 +190,7 @@ public:
     virtual void SetChanged() override;
 
     virtual bool AdjustTextFrameWidthAndHeight(Rectangle& rR, bool bHgt = true, bool bWdt = true) const override;
-    virtual bool AdjustTextFrameWidthAndHeight(bool bHgt = true, bool bWdt = true) override;
+    virtual bool AdjustTextFrameWidthAndHeight() override;
     virtual OUString TakeObjNameSingul() const override;
     virtual OUString TakeObjNamePlural() const override;
     virtual SdrTableObj* Clone() const override;

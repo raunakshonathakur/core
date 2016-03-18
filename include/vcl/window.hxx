@@ -157,11 +157,10 @@ enum class PosSizeFlags
     PosSize          = Pos | Size,
     All              = PosSize,
     Dropdown         = 0x0010,
-    ByDrag           = 0x0020,
 };
 namespace o3tl
 {
-    template<> struct typed_flags<PosSizeFlags> : is_typed_flags<PosSizeFlags, 0x003f> {};
+    template<> struct typed_flags<PosSizeFlags> : is_typed_flags<PosSizeFlags, 0x001f> {};
 }
 
 // Flags for Show()
@@ -297,10 +296,11 @@ enum class StartTrackingFlags
     ButtonRepeat         = 0x0010,
     MouseButtonDown      = 0x0020,
     FocusCancel          = 0x0040,
+    UseToolKitDrag       = 0x0080,
 };
 namespace o3tl
 {
-    template<> struct typed_flags<StartTrackingFlags> : is_typed_flags<StartTrackingFlags, 0x007f> {};
+    template<> struct typed_flags<StartTrackingFlags> : is_typed_flags<StartTrackingFlags, 0x00ff> {};
 }
 
 // Flags for StartAutoScroll()
@@ -576,7 +576,7 @@ public:
     SAL_DLLPRIVATE void                 ImplNotifyKeyMouseCommandEventListeners( NotifyEvent& rNEvt );
     SAL_DLLPRIVATE void                 ImplNotifyIconifiedState( bool bIconified );
 
-    SAL_DLLPRIVATE void                 ImplUpdateAll( bool bOverlapWindows = true );
+    SAL_DLLPRIVATE void                 ImplUpdateAll();
 
     SAL_DLLPRIVATE void                 ImplControlFocus( GetFocusFlags nFlags = GetFocusFlags::NONE );
 
@@ -603,7 +603,7 @@ protected:
 
     SAL_DLLPRIVATE void                 ImplInvalidateParentFrameRegion( vcl::Region& rRegion );
     SAL_DLLPRIVATE void                 ImplValidateFrameRegion( const vcl::Region* rRegion, ValidateFlags nFlags );
-    SAL_DLLPRIVATE void                 ImplValidate( const vcl::Region* rRegion, ValidateFlags nFlags );
+    SAL_DLLPRIVATE void                 ImplValidate();
     SAL_DLLPRIVATE void                 ImplMoveInvalidateRegion( const Rectangle& rRect, long nHorzScroll, long nVertScroll, bool bChildren );
     SAL_DLLPRIVATE void                 ImplMoveAllInvalidateRegions( const Rectangle& rRect, long nHorzScroll, long nVertScroll, bool bChildren );
 
@@ -680,7 +680,7 @@ private:
     SAL_DLLPRIVATE void                 ImplIntersectAndUnionOverlapWindows2( const vcl::Region& rInterRegion, vcl::Region& rRegion );
     SAL_DLLPRIVATE void                 ImplCalcOverlapRegionOverlaps( const vcl::Region& rInterRegion, vcl::Region& rRegion );
     SAL_DLLPRIVATE void                 ImplCalcOverlapRegion( const Rectangle& rSourceRect, vcl::Region& rRegion,
-                                                               bool bChildren, bool bParent, bool bSiblings );
+                                                               bool bChildren, bool bSiblings );
 
     /** Invoke the actual painting.
 
@@ -744,7 +744,7 @@ private:
     SAL_DLLPRIVATE void                 ImplPaintToDevice( ::OutputDevice* pTargetOutDev, const Point& rPos );
 
     SAL_DLLPRIVATE css::uno::Reference< css::rendering::XCanvas >
-                                        ImplGetCanvas( const Size& rFullscreenSize, bool bFullscreen, bool bSpriteCanvas ) const;
+                                        ImplGetCanvas( bool bSpriteCanvas ) const;
 
 public:
     virtual vcl::Region                 GetActiveClipRegion() const override;
@@ -844,7 +844,7 @@ public:
 
     void                                IncrementLockCount();
     void                                DecrementLockCount();
-    bool                                IsLocked( bool bChildren = false ) const;
+    bool                                IsLocked() const;
 
                                         // returns the input language used for the last key stroke
                                         // may be LANGUAGE_DONTKNOW if not supported by the OS
@@ -871,7 +871,7 @@ public:
     /// Enable/disable double-buffering of the frame window and all its children.
     void                                RequestDoubleBuffering(bool bRequest);
 
-    void                                EnableAllResize( bool bEnable = true );
+    void                                EnableAllResize();
 
     void                                SetBorderStyle( WindowBorderStyle nBorderStyle );
     WindowBorderStyle                   GetBorderStyle() const;
@@ -905,7 +905,7 @@ public:
 
     void                                SetInputContext( const InputContext& rInputContext );
     const InputContext&                 GetInputContext() const;
-    void                                EndExtTextInput( EndExtTextInputFlags nFlags );
+    void                                EndExtTextInput();
     void                                SetCursorRect( const Rectangle* pRect = nullptr, long nExtTextInputWidth = 0 );
     const Rectangle*                    GetCursorRect() const;
     long                                GetCursorExtTextInputWidth() const;
@@ -974,8 +974,7 @@ public:
     bool                                IsEnabled() const;
 
     void                                EnableInput( bool bEnable = true, bool bChild = true );
-    void                                EnableInput( bool bEnable, bool bChild, bool bSysWin,
-                                                     const vcl::Window* pExcludeWindow = nullptr );
+    void                                EnableInput( bool bEnable, const vcl::Window* pExcludeWindow );
     bool                                IsInputEnabled() const;
 
     /** Override <code>EnableInput</code>. This can be necessary due to other people
@@ -1074,7 +1073,7 @@ public:
     //  window extents including border and decoration
     Rectangle                           GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const;
     // window extents of the client window, coordinates to be used in SetPosPixel
-    Rectangle                           GetClientWindowExtentsRelative( vcl::Window *pRelativeWindow ) const;
+    Rectangle                           GetClientWindowExtentsRelative() const;
 
     bool                                IsScrollable() const;
     virtual void                        Scroll( long nHorzScroll, long nVertScroll,
@@ -1084,7 +1083,7 @@ public:
     virtual void                        Invalidate( InvalidateFlags nFlags = InvalidateFlags::NONE );
     virtual void                        Invalidate( const Rectangle& rRect, InvalidateFlags nFlags = InvalidateFlags::NONE );
     virtual void                        Invalidate( const vcl::Region& rRegion, InvalidateFlags nFlags = InvalidateFlags::NONE );
-    void                                Validate( ValidateFlags nFlags = ValidateFlags::NONE );
+    void                                Validate();
     bool                                HasPaintEvent() const;
     void                                Update();
     void                                Flush();
@@ -1186,9 +1185,9 @@ public:
     void                                HideFocus();
 
     // transparent background for selected or checked items in toolboxes etc.
-    void                                DrawSelectionBackground( const Rectangle& rRect, sal_uInt16 highlight, bool bChecked, bool bDrawBorder, bool bDrawExtBorderOnly );
+    void                                DrawSelectionBackground( const Rectangle& rRect, sal_uInt16 highlight, bool bChecked, bool bDrawBorder );
     // support rounded edges in the selection rect
-    void                                DrawSelectionBackground( const Rectangle& rRect, sal_uInt16 highlight, bool bChecked, bool bDrawBorder, bool bDrawExtBorderOnly, long nCornerRadius, Color* pSelectionTextColor, Color* pPaintColor );
+    void                                DrawSelectionBackground( const Rectangle& rRect, sal_uInt16 highlight, bool bChecked, bool bDrawBorder, bool bDrawExtBorderOnly, Color* pSelectionTextColor, Color* pPaintColor );
 
     void                                ShowTracking( const Rectangle& rRect,
                                                       sal_uInt16 nFlags = SHOWTRACK_SMALL );
@@ -1297,8 +1296,6 @@ private:
 
     SAL_DLLPRIVATE bool                 ImplIsAccessibleCandidate() const;
     SAL_DLLPRIVATE bool                 ImplIsAccessibleNativeFrame() const;
-    SAL_DLLPRIVATE sal_uInt16           ImplGetAccessibleCandidateChildWindowCount( GetWindowType nFirstWindowType ) const;
-    SAL_DLLPRIVATE vcl::Window*         ImplGetAccessibleCandidateChild( sal_uInt16 nChild, sal_uInt16& rChildCount, GetWindowType nFirstWindowType, bool bTopLevel = true ) const;
     ///@}
 
     /*

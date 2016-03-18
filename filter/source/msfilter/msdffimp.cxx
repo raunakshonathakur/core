@@ -3290,7 +3290,7 @@ bool SvxMSDffManager::SeekToRec( SvStream& rSt, sal_uInt16 nRecId, sal_uLong nMa
     return bRet;
 }
 
-bool SvxMSDffManager::SeekToRec2( sal_uInt16 nRecId1, sal_uInt16 nRecId2, sal_uLong nMaxFilePos, DffRecordHeader* pRecHd, sal_uLong nSkipCount ) const
+bool SvxMSDffManager::SeekToRec2( sal_uInt16 nRecId1, sal_uInt16 nRecId2, sal_uLong nMaxFilePos ) const
 {
     bool bRet = false;
     sal_uLong nFPosMerk = rStCtrl.Tell();   // remember FilePos for conditionally later restoration
@@ -3301,22 +3301,12 @@ bool SvxMSDffManager::SeekToRec2( sal_uInt16 nRecId1, sal_uInt16 nRecId2, sal_uL
             break;
         if ( aHd.nRecType == nRecId1 || aHd.nRecType == nRecId2 )
         {
-            if ( nSkipCount )
-                nSkipCount--;
-            else
+            bRet = true;
+            bool bSeekSuccess = aHd.SeekToBegOfRecord(rStCtrl);
+            if (!bSeekSuccess)
             {
-                bRet = true;
-                if ( pRecHd )
-                    *pRecHd = aHd;
-                else
-                {
-                    bool bSeekSuccess = aHd.SeekToBegOfRecord(rStCtrl);
-                    if (!bSeekSuccess)
-                    {
-                        bRet = false;
-                        break;
-                    }
-                }
+                bRet = false;
+                break;
             }
         }
         if ( !bRet )
@@ -6926,7 +6916,7 @@ css::uno::Reference < css::embed::XEmbeddedObject >  SvxMSDffManager::CheckForCo
     if ( sStarName.getLength() )
     {
         //TODO/MBA: check if (and when) storage and stream will be destroyed!
-        const SfxFilter* pFilter = nullptr;
+        std::shared_ptr<const SfxFilter> pFilter;
         std::unique_ptr<SvMemoryStream> xMemStream (new SvMemoryStream);
         if ( pName )
         {
@@ -7121,7 +7111,7 @@ SdrOle2Obj* SvxMSDffManager::CreateSdrOLEFromStorage(
                         aObj.SetGraphic( rGrf, OUString() );
 
                         // TODO/MBA: check setting of PersistName
-                        pRet = new SdrOle2Obj( aObj, OUString(), rBoundRect, false);
+                        pRet = new SdrOle2Obj( aObj, OUString(), rBoundRect);
                         // we have the Object, don't create another
                         bValidStorage = false;
                     }
@@ -7213,7 +7203,7 @@ SdrOle2Obj* SvxMSDffManager::CreateSdrOLEFromStorage(
                 // TODO/LATER: need MediaType
                 aObj.SetGraphic( rGrf, OUString() );
 
-                pRet = new SdrOle2Obj( aObj, aDstStgName, rBoundRect, false);
+                pRet = new SdrOle2Obj( aObj, aDstStgName, rBoundRect);
             }
         }
     }

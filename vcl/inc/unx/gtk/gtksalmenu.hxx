@@ -44,20 +44,22 @@ private:
     std::vector< GtkSalMenuItem* >  maItems;
 
     bool                            mbMenuBar;
+    GtkWidget*                      mpMenuBarWidget;
+    GtkWidget*                      mpCloseButton;
     Menu*                           mpVCLMenu;
     GtkSalMenu*                     mpParentSalMenu;
-    const GtkSalFrame*              mpFrame;
+    GtkSalFrame*                    mpFrame;
 
     // GMenuModel and GActionGroup attributes
     GMenuModel*                     mpMenuModel;
     GActionGroup*                   mpActionGroup;
 
-    GtkSalMenu*                 GetMenuForItemCommand( gchar* aCommand, gboolean bGetSubmenu );
-    void                        ImplUpdate( gboolean bRecurse );
+    GtkSalMenu*                 GetMenuForItemCommand( gchar* aCommand, int& rDupsToSkip, gboolean bGetSubmenu );
+    void                        ImplUpdate(bool bRecurse, bool bRemoveDisabledEntries);
     void                        ActivateAllSubmenus(Menu* pMenuBar);
 
 public:
-    GtkSalMenu( bool bMenuBar );
+    GtkSalMenu(bool bMenuBar, GActionGroup* pActionGroup);
     virtual ~GtkSalMenu();
 
     virtual bool                VisibleMenuBar() override;   // must return TRUE to actually DISPLAY native menu bars
@@ -78,14 +80,14 @@ public:
 
     void                        SetMenu( Menu* pMenu ) { mpVCLMenu = pMenu; }
     Menu*                       GetMenu() { return mpVCLMenu; }
-    void                        SetMenuModel( GMenuModel* pMenuModel ) { mpMenuModel = pMenuModel; }
+    void                        SetMenuModel(GMenuModel* pMenuModel);
     unsigned                    GetItemCount() { return maItems.size(); }
     GtkSalMenuItem*             GetItemAtPos( unsigned nPos ) { return maItems[ nPos ]; }
     void                        SetActionGroup( GActionGroup* pActionGroup ) { mpActionGroup = pActionGroup; }
     bool                        IsItemVisible( unsigned nPos );
 
     void                        NativeSetItemText( unsigned nSection, unsigned nItemPos, const OUString& rText );
-    void                        NativeSetItemCommand( unsigned nSection,
+    bool                        NativeSetItemCommand( unsigned nSection,
                                                       unsigned nItemPos,
                                                       sal_uInt16 nId,
                                                       const gchar* aCommand,
@@ -99,10 +101,16 @@ public:
     void                        DispatchCommand( gint itemId, const gchar* aCommand );
     void                        Activate( const gchar* aMenuCommand = nullptr );
     void                        Deactivate( const gchar* aMenuCommand );
-    void                        Display( bool bVisible );
+    void                        EnableUnity(bool bEnable);
     bool                        PrepUpdate();
     virtual void                Update() override;  // Update this menu only.
     void                        UpdateFull();       // Update full menu hierarchy from this menu.
+
+    void CreateMenuBarWidget();
+    void DestroyMenuBarWidget();
+
+    virtual bool ShowNativePopupMenu(FloatingWindow * pWin, const Rectangle& rRect, FloatWinPopupFlags nFlags) override;
+    virtual void ShowCloseButton(bool bShow) override;
 };
 
 class GtkSalMenuItem : public SalMenuItem

@@ -441,6 +441,7 @@ protected:
 private:
 
 #ifdef DBG_UTIL
+    void dumpCellProperties();
     void dumpColumnInformationPixel();
     void dumpColumnInformationHmm();
     void dumpGraphicInformation();

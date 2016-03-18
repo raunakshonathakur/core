@@ -656,7 +656,7 @@ void SwWrtShell::CalcAndSetScale( svt::EmbeddedObjectRef& xObj,
                 aSz.Width = aSize.Width();
                 aSz.Height = aSize.Height();
 
-                // Action 'setVisualAreaSize' doesn't have to change the
+                // Action 'setVisualAreaSize' doesn't have to turn on the
                 // modified state of the document, either.
                 bool bModified = false;
                 uno::Reference<util::XModifiable> xModifiable(xObj->getComponent(), uno::UNO_QUERY);
@@ -664,7 +664,7 @@ void SwWrtShell::CalcAndSetScale( svt::EmbeddedObjectRef& xObj,
                     bModified = xModifiable->isModified();
                 xObj->setVisualAreaSize( nAspect, aSz );
                 xModifiable.set(xObj->getComponent(), uno::UNO_QUERY);
-                if (xModifiable.is())
+                if (xModifiable.is() && xModifiable->isModified() && !bModified)
                     xModifiable->setModified(bModified);
 
                 // #i48419# - action 'UpdateReplacement' doesn't
@@ -1514,9 +1514,9 @@ void SwWrtShell::SetPageStyle(const OUString &rCollName)
 
 // Access templates
 
-OUString SwWrtShell::GetCurPageStyle( const bool bCalcFrame ) const
+OUString SwWrtShell::GetCurPageStyle() const
 {
-    return GetPageDesc(GetCurPageDesc( bCalcFrame )).GetName();
+    return GetPageDesc(GetCurPageDesc( false/*bCalcFrame*/ )).GetName();
 }
 
 // Change the current template referring to the existing change.
@@ -1580,7 +1580,7 @@ void SwWrtShell::AutoUpdateFrame( SwFrameFormat* pFormat, const SfxItemSet& rSty
 {
     StartAction();
 
-    ResetFlyFrameAttr( 0, &rStyleSet );
+    ResetFlyFrameAttr( &rStyleSet );
     pFormat->SetFormatAttr( rStyleSet );
 
     EndAction();

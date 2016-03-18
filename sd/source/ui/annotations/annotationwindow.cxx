@@ -56,7 +56,6 @@
 #include <sfx2/viewfrm.hxx>
 #include <sfx2/bindings.hxx>
 #include <sfx2/dispatch.hxx>
-#include <sfx2/mnumgr.hxx>
 
 #include <vcl/vclenum.hxx>
 #include <vcl/edit.hxx>
@@ -524,7 +523,7 @@ TextApiObject* getTextApiObject( const Reference< XAnnotation >& xAnnotation )
     return nullptr;
 }
 
-void AnnotationWindow::setAnnotation( const Reference< XAnnotation >& xAnnotation, bool bGrabFocus )
+void AnnotationWindow::setAnnotation( const Reference< XAnnotation >& xAnnotation )
 {
     if( (xAnnotation != mxAnnotation) && xAnnotation.is() )
     {
@@ -560,9 +559,6 @@ void AnnotationWindow::setAnnotation( const Reference< XAnnotation >& xAnnotatio
            sMeta += sDateTime;
         }
         mpMeta->SetText(sMeta);
-
-        if( bGrabFocus )
-            GrabFocus();
     }
 }
 

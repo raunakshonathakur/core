@@ -50,6 +50,7 @@ struct FileFormat
 #define HTML_FORMAT_TYPE ( SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN )
 #define PDF_FORMAT_TYPE  ( SfxFilterFlags::STARONEFILTER | SfxFilterFlags::ALIEN | SfxFilterFlags::IMPORT | SfxFilterFlags::PREFERED )
 #define FODG_FORMAT_TYPE  (SfxFilterFlags::STARONEFILTER | SfxFilterFlags::OWN | SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT)
+#define FODP_FORMAT_TYPE  (SfxFilterFlags::STARONEFILTER | SfxFilterFlags::OWN | SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT)
 
 /** List of file formats we support in Impress unit tests.
 
@@ -67,6 +68,7 @@ FileFormat aFileFormats[] =
     { "html", "graphic_HTML", "graphic_HTML", "", HTML_FORMAT_TYPE },
     { "pdf",  "draw_pdf_import", "pdf_Portable_Document_Format", "", PDF_FORMAT_TYPE },
     { "fodg",  "OpenDocument Drawing Flat XML", "Flat XML ODF Drawing", "", FODG_FORMAT_TYPE },
+    { "fodp",  "OpenDocument Presentation Flat XML", "Flat XML ODF Presentation", "", FODP_FORMAT_TYPE },
     { nullptr, nullptr, nullptr, nullptr, SfxFilterFlags::NONE }
 };
 
@@ -76,6 +78,7 @@ FileFormat aFileFormats[] =
 #define HTML 3
 #define PDF  4
 #define FODG 5
+#define FODP 6
 
 /// Base class for filter tests loading or roundtriping a document, and asserting the document model.
 class SdModelTestBase : public test::BootstrapFixture, public unotest::MacrosTest
@@ -113,17 +116,18 @@ protected:
         SotClipboardFormatId nOptions = SotClipboardFormatId::NONE;
         if (pFmt->nFormatType != SfxFilterFlags::NONE)
             nOptions = SotClipboardFormatId::STARCALC_8;
-        SfxFilter* aFilter = new SfxFilter(
+        SfxFilter* pFilter = new SfxFilter(
             OUString::createFromAscii( pFmt->pFilterName ),
             OUString(), pFmt->nFormatType, nOptions,
             OUString::createFromAscii( pFmt->pTypeName ),
             0, OUString(),
             OUString::createFromAscii( pFmt->pUserData ),
             OUString("private:factory/simpress*") );
-        aFilter->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
+        pFilter->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
+        std::shared_ptr<const SfxFilter> pFilt(pFilter);
 
         ::sd::DrawDocShellRef xDocShRef = new ::sd::DrawDocShell();
-        SfxMedium* pSrcMed = new SfxMedium(rURL, STREAM_STD_READ, aFilter, pParams);
+        SfxMedium* pSrcMed = new SfxMedium(rURL, STREAM_STD_READ, pFilt, pParams);
         if ( !xDocShRef->DoLoad(pSrcMed) || !xDocShRef.Is() )
         {
             if (xDocShRef.Is())
@@ -149,14 +153,14 @@ protected:
         SotClipboardFormatId nExportFormat = SotClipboardFormatId::NONE;
         if (pFormat->nFormatType == ODP_FORMAT_TYPE)
             nExportFormat = SotClipboardFormatId::STARCALC_8;
-        SfxFilter* pExportFilter = new SfxFilter(
+        std::shared_ptr<const SfxFilter> pExportFilter(new SfxFilter(
                                         OUString::createFromAscii(pFormat->pFilterName),
                                         OUString(), pFormat->nFormatType, nExportFormat,
                                         OUString::createFromAscii(pFormat->pTypeName),
                                         0, OUString(),
                                         OUString::createFromAscii(pFormat->pUserData),
-                                        OUString("private:factory/simpress*") );
-        pExportFilter->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
+                                        OUString("private:factory/simpress*") ));
+        const_cast<SfxFilter*>(pExportFilter.get())->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
         aStoreMedium.SetFilter(pExportFilter);
         pShell->ConvertTo(aStoreMedium);
         pShell->DoClose();
@@ -168,14 +172,14 @@ protected:
         SotClipboardFormatId nExportFormat = SotClipboardFormatId::NONE;
         if (pFormat->nFormatType == ODP_FORMAT_TYPE)
             nExportFormat = SotClipboardFormatId::STARCHART_8;
-        SfxFilter* pExportFilter = new SfxFilter(
+        std::shared_ptr<const SfxFilter> pExportFilter(new SfxFilter(
                                         OUString::createFromAscii(pFormat->pFilterName),
                                         OUString(), pFormat->nFormatType, nExportFormat,
                                         OUString::createFromAscii(pFormat->pTypeName),
                                         0, OUString(),
                                         OUString::createFromAscii(pFormat->pUserData),
-                                        OUString("private:factory/simpress*") );
-        pExportFilter->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
+                                        OUString("private:factory/simpress*") ));
+        const_cast<SfxFilter*>(pExportFilter.get())->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
         aStoreMedium.SetFilter(pExportFilter);
         pShell->DoSaveAs(aStoreMedium);
         pShell->DoClose();
@@ -248,7 +252,7 @@ protected:
                         OUStringToOString(aString, RTL_TEXTENCODING_UTF8).getStr(),
                         static_cast<int>(aString.getLength()),
                         OUStringToOString(
-                            getPathFromSrc("/sd/qa/unit/data/tolerance.xml"),
+                            m_directories.getPathFromSrc("/sd/qa/unit/data/tolerance.xml"),
                             RTL_TEXTENCODING_UTF8).getStr());
             }
         }

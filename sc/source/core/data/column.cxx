@@ -494,7 +494,7 @@ void ScColumn::ApplyPattern( SCROW nRow, const ScPatternAttr& rPatAttr )
 
     //  true = keep old content
 
-    const ScPatternAttr* pNewPattern = static_cast<const ScPatternAttr*>( &aCache.ApplyTo( *pPattern, true ) );
+    const ScPatternAttr* pNewPattern = static_cast<const ScPatternAttr*>( &aCache.ApplyTo( *pPattern ) );
     ScDocumentPool::CheckRef( *pPattern );
     ScDocumentPool::CheckRef( *pNewPattern );
 
@@ -1693,12 +1693,12 @@ void ScColumn::CopyToColumn(
 
 void ScColumn::UndoToColumn(
     sc::CopyToDocContext& rCxt, SCROW nRow1, SCROW nRow2, InsertDeleteFlags nFlags, bool bMarked,
-    ScColumn& rColumn, const ScMarkData* pMarkData ) const
+    ScColumn& rColumn ) const
 {
     if (nRow1 > 0)
         CopyToColumn(rCxt, 0, nRow1-1, InsertDeleteFlags::FORMULA, false, rColumn);
 
-    CopyToColumn(rCxt, nRow1, nRow2, nFlags, bMarked, rColumn, pMarkData);      //TODO: bMarked ????
+    CopyToColumn(rCxt, nRow1, nRow2, nFlags, bMarked, rColumn);      //TODO: bMarked ????
 
     if (nRow2 < MAXROW)
         CopyToColumn(rCxt, nRow2+1, MAXROW, InsertDeleteFlags::FORMULA, false, rColumn);
@@ -2790,23 +2790,25 @@ struct SetDirtyIfPostponedHandler
 
 struct CalcAllHandler
 {
+#define DEBUG_SC_CHECK_FORMULATREE_CALCULATION 0
     void operator() (size_t /*nRow*/, ScFormulaCell* pCell)
     {
-#if OSL_DEBUG_LEVEL > 1
+#if DEBUG_SC_CHECK_FORMULATREE_CALCULATION
         // after F9 ctrl-F9: check the calculation for each FormulaTree
         double nOldVal, nNewVal;
         nOldVal = pCell->GetValue();
 #endif
         pCell->Interpret();
-#if OSL_DEBUG_LEVEL > 1
+#if DEBUG_SC_CHECK_FORMULATREE_CALCULATION
         if (pCell->GetCode()->IsRecalcModeNormal())
             nNewVal = pCell->GetValue();
         else
             nNewVal = nOldVal;  // random(), jetzt() etc.
 
-        OSL_ENSURE(nOldVal == nNewVal, "CalcAll: nOldVal != nNewVal");
+        assert(nOldVal == nNewVal);
 #endif
     }
+#undef DEBUG_SC_CHECK_FORMULATREE_CALCULATION
 };
 
 class CompileAllHandler

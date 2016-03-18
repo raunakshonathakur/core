@@ -140,7 +140,7 @@ public:
     virtual double      GetStep() const = 0;
     virtual double      GetMax() const = 0;
     virtual OUString    GetStartStr() const = 0;
-    virtual void        SetEdStartValEnabled(bool bFlag=false) = 0;
+    virtual void        SetEdStartValEnabled(bool bFlag) = 0;
 };
 
 class AbstractScGroupDlg :  public VclAbstractDialog
@@ -205,7 +205,7 @@ public:
 class AbstractScMetricInputDlg : public VclAbstractDialog
 {
 public:
-    virtual long GetInputValue( FieldUnit eUnit = FUNIT_TWIP ) const = 0;
+    virtual long GetInputValue() const = 0;
 };
 
 class AbstractScMoveTableDlg : public VclAbstractDialog
@@ -326,11 +326,11 @@ class ScAbstractDialogFactory
 public:
     SC_DLLPUBLIC static ScAbstractDialogFactory*    Create();
 
-    virtual     AbstractScImportAsciiDlg * CreateScImportAsciiDlg( vcl::Window* pParent, const OUString& aDatName,
+    virtual     AbstractScImportAsciiDlg * CreateScImportAsciiDlg( const OUString& aDatName,
                                                                     SvStream* pInStream,
                                                                     ScImportAsciiCall eCall) = 0;
 
-    virtual     AbstractScTextImportOptionsDlg * CreateScTextImportOptionsDlg(vcl::Window* pParent) = 0;
+    virtual     AbstractScTextImportOptionsDlg * CreateScTextImportOptionsDlg() = 0;
 
     virtual     AbstractScAutoFormatDlg * CreateScAutoFormatDlg(vcl::Window* pParent,
                                                                 ScAutoFormat* pAutoFormat,
@@ -360,8 +360,7 @@ public:
     virtual AbstractScDataFormDlg * CreateScDataFormDlg(vcl::Window* pParent,
         ScTabViewShell* pTabViewShell) = 0;
 
-    virtual AbstractScDeleteContentsDlg * CreateScDeleteContentsDlg(vcl::Window* pParent,
-                                                                    InsertDeleteFlags nCheckDefaults = InsertDeleteFlags::NONE) = 0;
+    virtual AbstractScDeleteContentsDlg * CreateScDeleteContentsDlg(vcl::Window* pParent) = 0;
     virtual AbstractScFillSeriesDlg * CreateScFillSeriesDlg( vcl::Window*        pParent,
                                                             ScDocument& rDocument,
                                                             FillDir     eFillDir,
@@ -455,8 +454,7 @@ public:
                                                                 const Color& rDefaultColor, //Currently selected Color
                                                                 const OString& ) = 0;
 
-    virtual AbstractScImportOptionsDlg * CreateScImportOptionsDlg ( vcl::Window*                 pParent,
-                                                                    bool                    bAscii = true,
+    virtual AbstractScImportOptionsDlg * CreateScImportOptionsDlg ( bool                    bAscii = true,
                                                                     const ScImportOptions*  pOptions = nullptr,
                                                                     const OUString*         pStrTitle = nullptr,
                                                                     bool                    bMultiByte = false,

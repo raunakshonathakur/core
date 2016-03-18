@@ -737,13 +737,13 @@ sal_Int32 EditView::StartSearchAndReplace( const SvxSearchItem& rSearchItem )
     return pImpEditView->pEditEngine->pImpEditEngine->StartSearchAndReplace( this, rSearchItem );
 }
 
-bool EditView::IsCursorAtWrongSpelledWord( bool bMarkIfWrong )
+bool EditView::IsCursorAtWrongSpelledWord()
 {
     bool bIsWrong = false;
     if ( !HasSelection() )
     {
         EditPaM aPaM = pImpEditView->GetEditSelection().Max();
-        bIsWrong = pImpEditView->IsWrongSpelledWord( aPaM, bMarkIfWrong );
+        bIsWrong = pImpEditView->IsWrongSpelledWord( aPaM, false/*bMarkIfWrong*/ );
     }
     return bIsWrong;
 }
@@ -929,7 +929,7 @@ void EditView::ExecuteSpellPopup( const Point& rPosPixel, Link<SpellCallbackInfo
         sal_uInt16 nId = aPopupMenu.Execute( pImpEditView->GetWindow(), aTempRect, PopupMenuFlags::NoMouseUpClose );
         if ( nId == MN_IGNORE )
         {
-            OUString aWord = pImpEditView->SpellIgnoreOrAddWord( false );
+            OUString aWord = pImpEditView->SpellIgnoreWord();
             if ( pCallBack )
             {
                 SpellCallbackInfo aInf( SpellCallbackCommand::IGNOREWORD, aWord );

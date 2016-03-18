@@ -2707,7 +2707,7 @@ void CellStyleBuffer::finalizeImport()
     try
     {
         // unfortunately, com.sun.star.style.StyleFamily does not implement XEnumerationAccess...
-        Reference< XIndexAccess > xStyleFamilyIA( getStyleFamily( false ), UNO_QUERY_THROW );
+        Reference< XIndexAccess > xStyleFamilyIA( getCellStyleFamily(), UNO_QUERY_THROW );
         for( sal_Int32 nIndex = 0, nCount = xStyleFamilyIA->getCount(); nIndex < nCount; ++nIndex )
         {
             Reference< XStyle > xStyle( xStyleFamilyIA->getByIndex( nIndex ), UNO_QUERY_THROW );
@@ -2856,9 +2856,8 @@ StylesBuffer::StylesBuffer( const WorkbookHelper& rHelper ) :
 {
 }
 
-FontRef StylesBuffer::createFont( sal_Int32* opnFontId )
+FontRef StylesBuffer::createFont()
 {
-    if( opnFontId ) *opnFontId = static_cast< sal_Int32 >( maFonts.size() );
     FontRef xFont( new Font( *this, false ) );
     maFonts.push_back( xFont );
     return xFont;
@@ -2874,41 +2873,36 @@ sal_Int32 StylesBuffer::nextFreeNumFmtId()
     return maNumFmts.nextFreeId();
 }
 
-BorderRef StylesBuffer::createBorder( sal_Int32* opnBorderId )
+BorderRef StylesBuffer::createBorder()
 {
-    if( opnBorderId ) *opnBorderId = static_cast< sal_Int32 >( maBorders.size() );
     BorderRef xBorder( new Border( *this, false ) );
     maBorders.push_back( xBorder );
     return xBorder;
 }
 
-FillRef StylesBuffer::createFill( sal_Int32* opnFillId )
+FillRef StylesBuffer::createFill()
 {
-    if( opnFillId ) *opnFillId = static_cast< sal_Int32 >( maFills.size() );
     FillRef xFill( new Fill( *this, false ) );
     maFills.push_back( xFill );
     return xFill;
 }
 
-XfRef StylesBuffer::createCellXf( sal_Int32* opnXfId )
+XfRef StylesBuffer::createCellXf()
 {
-    if( opnXfId ) *opnXfId = static_cast< sal_Int32 >( maCellXfs.size() );
     XfRef xXf( new Xf( *this ) );
     maCellXfs.push_back( xXf );
     return xXf;
 }
 
-XfRef StylesBuffer::createStyleXf( sal_Int32* opnXfId )
+XfRef StylesBuffer::createStyleXf()
 {
-    if( opnXfId ) *opnXfId = static_cast< sal_Int32 >( maStyleXfs.size() );
     XfRef xXf( new Xf( *this ) );
     maStyleXfs.push_back( xXf );
     return xXf;
 }
 
-DxfRef StylesBuffer::createDxf( sal_Int32* opnDxfId )
+DxfRef StylesBuffer::createDxf()
 {
-    if( opnDxfId ) *opnDxfId = static_cast< sal_Int32 >( maDxfs.size() );
     DxfRef xDxf( new Dxf( *this ) );
     maDxfs.push_back( xDxf );
     return xDxf;

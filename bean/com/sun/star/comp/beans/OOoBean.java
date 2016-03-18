@@ -520,7 +520,7 @@ public class OOoBean
         @throws java.io.IOException
             if an IO error occurs reading the resource specified by the URL.
 
-        @throws com.sun.star.lang.NoConnectionException
+        @throws com.sun.star.comp.beans.NoConnectionException
             if no connection can be established.
 
         @throws com.sun.star.util.CloseVetoException
@@ -797,7 +797,7 @@ public class OOoBean
         @throws java.io.IOException
             if an IO error occurs reading the resource specified by the URL.
 
-        @throws com.sun.star.lang.NoConnectionException
+        @throws com.sun.star.comp.beans.NoConnectionException
             if no connection is established.
 
         @throws NoDocumentException
@@ -923,12 +923,12 @@ public class OOoBean
 
     // @requirement FUNC.BEAN.PROG/0.5
     // @requirement API.SIM.SEAP/0.2
-    /** returns the <type scope="com::sun::star::frame">Frame</a>
+    /** returns the com::sun::star::frame::Frame
         of the bean.
 
         @return
             a Java class which implements all interfaces which the service
-        <type scope="com::sun::star::frame">Frame</a> implements.
+        com::sun::star::frame::Frame implements.
         Thus, methods can be called directly without queryInterface.
         This feature might be implemented by UNO or explicitly coded.
 
@@ -947,11 +947,11 @@ public class OOoBean
 
        // @requirement FUNC.BEAN.PROG/0.5
        // @requirement API.SIM.SEAP/0.2
-    /** returns the <type scope="com::sun::star::frame::Controller"> of the bean.
+    /** returns the com::sun::star::frame::Controller of the bean.
 
         @return
             a Java class which implements all interfaces which the service
-        <type scope="com::sun::star::frame">Controller</a> implements.
+        com::sun::star::frame::Controller implements.
         Thus, methods can be called directly without queryInterface.
         This feature might be implemented by UNO or explicitly coded.
 
@@ -974,12 +974,12 @@ public class OOoBean
     // @requirement FUNC.BEAN.STOR/0.4
     // @requirement FUNC.BEAN.PRNT/0.4
     // @requirement API.SIM.SEAP/0.2
-       /** returns the <type scope="com::sun::star::document::OfficeDocument">
+       /** returns the com::sun::star::document::OfficeDocument
         of the bean.
 
         @return
             a Java class which implements all interfaces which the service
-        <type scope="com::sun::star::document">OfficeDocument</a>
+        com::sun::star::document::OfficeDocument
         implements.
         Thus, methods can be called directly without queryInterface.
         This feature might be implemented by UNO or explicitly coded.

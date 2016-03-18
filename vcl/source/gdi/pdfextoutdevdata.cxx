@@ -615,14 +615,14 @@ void PDFExtOutDevData::PlayGlobalActions( PDFWriter& rWriter )
    all actions will be played after the last page was recorded
 */
 //--->i56629
-sal_Int32 PDFExtOutDevData::CreateNamedDest(const OUString& sDestName,  const Rectangle& rRect, sal_Int32 nPageNr, PDFWriter::DestAreaType eType )
+sal_Int32 PDFExtOutDevData::CreateNamedDest(const OUString& sDestName,  const Rectangle& rRect, sal_Int32 nPageNr )
 {
     mpGlobalSyncData->mActions.push_back( PDFExtOutDevDataSync::CreateNamedDest );
     mpGlobalSyncData->mParaOUStrings.push_back( sDestName );
     mpGlobalSyncData->mParaRects.push_back( rRect );
     mpGlobalSyncData->mParaMapModes.push_back( mrOutDev.GetMapMode() );
     mpGlobalSyncData->mParaInts.push_back( nPageNr == -1 ? mnPage : nPageNr );
-    mpGlobalSyncData->mParaDestAreaTypes.push_back( eType );
+    mpGlobalSyncData->mParaDestAreaTypes.push_back( PDFWriter::XYZ );
 
     return mpGlobalSyncData->mCurId++;
 }
@@ -692,12 +692,12 @@ void PDFExtOutDevData::CreateNote( const Rectangle& rRect, const PDFNote& rNote,
     mpGlobalSyncData->mParaPDFNotes.push_back( rNote );
     mpGlobalSyncData->mParaInts.push_back( nPageNr == -1 ? mnPage : nPageNr );
 }
-void PDFExtOutDevData::SetPageTransition( PDFWriter::PageTransition eType, sal_uInt32 nMilliSec, sal_Int32 nPageNr )
+void PDFExtOutDevData::SetPageTransition( PDFWriter::PageTransition eType, sal_uInt32 nMilliSec )
 {
     mpGlobalSyncData->mActions.push_back( PDFExtOutDevDataSync::SetPageTransition );
     mpGlobalSyncData->mParaPageTransitions.push_back( eType );
     mpGlobalSyncData->mParauInts.push_back( nMilliSec );
-    mpGlobalSyncData->mParaInts.push_back( nPageNr == -1 ? mnPage : nPageNr );
+    mpGlobalSyncData->mParaInts.push_back( mnPage );
 }
 
 /* local (page), actions have to be played synchronously to the actions of
@@ -764,7 +764,7 @@ void PDFExtOutDevData::SetAlternateText( const OUString& rText )
     mpPageSyncData->mParaOUStrings.push_back( rText );
 }
 
-void PDFExtOutDevData::CreateControl( const PDFWriter::AnyWidget& rControlType, sal_Int32 /*nPageNr*/ )
+void PDFExtOutDevData::CreateControl( const PDFWriter::AnyWidget& rControlType )
 {
     mpPageSyncData->PushAction( mrOutDev, PDFExtOutDevDataSync::CreateControl );
 

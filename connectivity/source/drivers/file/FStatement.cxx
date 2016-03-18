@@ -256,7 +256,7 @@ sal_Bool SAL_CALL OStatement::execute( const OUString& sql ) throw(SQLException,
 
     executeQuery(sql);
 
-    return m_aSQLIterator.getStatementType() == SQL_STATEMENT_SELECT;
+    return m_aSQLIterator.getStatementType() == OSQLStatementType::Select;
 }
 
 
@@ -405,15 +405,15 @@ void OStatement_Base::construct(const OUString& sql)  throw(SQLException, Runtim
             // more than one table -> can't operate on them -> error
             m_pConnection->throwGenericSQLException(STR_QUERY_MORE_TABLES,*this);
 
-        if ( (m_aSQLIterator.getStatementType() == SQL_STATEMENT_SELECT) && m_aSQLIterator.getSelectColumns()->get().empty() )
+        if ( (m_aSQLIterator.getStatementType() == OSQLStatementType::Select) && m_aSQLIterator.getSelectColumns()->get().empty() )
             // SELECT statement without columns -> error
             m_pConnection->throwGenericSQLException(STR_QUERY_NO_COLUMN,*this);
 
         switch(m_aSQLIterator.getStatementType())
         {
-            case SQL_STATEMENT_CREATE_TABLE:
-            case SQL_STATEMENT_ODBC_CALL:
-            case SQL_STATEMENT_UNKNOWN:
+            case OSQLStatementType::CreateTable:
+            case OSQLStatementType::OdbcCall:
+            case OSQLStatementType::Unknown:
                 m_pConnection->throwGenericSQLException(STR_QUERY_TOO_COMPLEX,*this);
                 break;
             default:
@@ -625,7 +625,7 @@ void OStatement_Base::GetAssignValues()
 
             OSQLParseNode * pComp = pAssignment->getChild(1);
             OSL_ENSURE(pComp != nullptr,"OResultSet: pComp == NULL");
-            OSL_ENSURE(pComp->getNodeType() == SQL_NODE_EQUAL,"OResultSet: pComp->getNodeType() != SQL_NODE_COMPARISON");
+            OSL_ENSURE(pComp->getNodeType() == SQLNodeType::Equal,"OResultSet: pComp->getNodeType() != SQLNodeType::Comparison");
             if (pComp->getTokenValue().toChar() != '=')
             {
                 throwFunctionSequenceException(*this);
@@ -647,9 +647,9 @@ void OStatement_Base::ParseAssignValues(const ::std::vector< OUString>& aColumnN
     OSL_ENSURE(aColumnName.getLength() > 0,"OResultSet: Column-Name nicht gefunden");
     OSL_ENSURE(pRow_Value_Constructor_Elem != nullptr,"OResultSet: pRow_Value_Constructor_Elem darf nicht NULL sein!");
 
-    if (pRow_Value_Constructor_Elem->getNodeType() == SQL_NODE_STRING ||
-        pRow_Value_Constructor_Elem->getNodeType() == SQL_NODE_INTNUM ||
-        pRow_Value_Constructor_Elem->getNodeType() == SQL_NODE_APPROXNUM)
+    if (pRow_Value_Constructor_Elem->getNodeType() == SQLNodeType::String ||
+        pRow_Value_Constructor_Elem->getNodeType() == SQLNodeType::IntNum ||
+        pRow_Value_Constructor_Elem->getNodeType() == SQLNodeType::ApproxNum)
     {
         // set value:
         SetAssignValue(aColumnName, pRow_Value_Constructor_Elem->getTokenValue());

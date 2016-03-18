@@ -190,9 +190,40 @@ private:
     VclPtr<ScMenuFloatingWindow> mpParentMenu;
 };
 
+class ScCheckListMenuWindow;
+
+template <class T> struct VclPtr_hash;
+template <> struct VclPtr_hash< VclPtr<vcl::Window> >
+{
+    size_t operator()( const VclPtr<vcl::Window>& r ) const
+    {
+        return reinterpret_cast<size_t>(r.get());
+    }
+};
+
+class ScTabStops
+{
+private:
+    typedef std::unordered_map< VclPtr<vcl::Window>, size_t, VclPtr_hash<VclPtr<vcl::Window>> > ControlToPosMap;
+    VclPtr<ScCheckListMenuWindow> mpMenuWindow;
+    ControlToPosMap maControlToPos;
+    std::vector<VclPtr<vcl::Window>> maControls;
+    size_t mnCurTabStop;
+public:
+    ScTabStops( ScCheckListMenuWindow* mpMenuWin );
+    ~ScTabStops();
+    void AddTabStop( vcl::Window* pWin );
+    void SetTabStop( vcl::Window* pWin );
+    void CycleFocus( bool bReverse = false );
+    vcl::Window* GetCurrentControl();
+    void clear();
+};
+
 class ScCheckListBox : public SvTreeListBox
 {
     SvLBoxButtonData*   mpCheckButton;
+    ScTabStops*         mpTabStops;
+    bool                mbSeenMouseButtonDown;
     void            CountCheckedEntries( SvTreeListEntry* pParent, sal_uLong& nCount ) const;
     void            CheckAllChildren( SvTreeListEntry* pEntry, bool bCheck = true );
 
@@ -210,7 +241,28 @@ class ScCheckListBox : public SvTreeListBox
     sal_uInt16 GetCheckedEntryCount() const;
     void         ExpandChildren( SvTreeListEntry* pParent );
     virtual void KeyInput( const KeyEvent& rKEvt ) override;
+    virtual void MouseButtonDown(const MouseEvent& rMEvt) override;
+    virtual void MouseButtonUp(const MouseEvent& rMEvt) override;
+    void SetTabStopsContainer( ScTabStops* pTabStops ) { mpTabStops = pTabStops; }
 };
+
+class ScSearchEdit : public Edit
+{
+private:
+    ScTabStops*         mpTabStops;
+public:
+    ScSearchEdit(Window* pParent)
+        : Edit(pParent)
+        , mpTabStops(nullptr)
+    {
+    }
+
+    virtual ~ScSearchEdit() {}
+
+    virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
+    void SetTabStopsContainer( ScTabStops* pTabStops )  { mpTabStops = pTabStops; }
+};
+
 /**
  * This class implements a popup window for field button, for quick access
  * of hide-item list, and possibly more stuff related to field options.
@@ -334,7 +386,7 @@ private:
     DECL_LINK_TYPED( EdModifyHdl, Edit&, void );
 
 private:
-    VclPtr<Edit>           maEdSearch;
+    VclPtr<ScSearchEdit>   maEdSearch;
     VclPtr<ScCheckListBox> maChecks;
 
     VclPtr<TriStateBox>     maChkToggleAll;
@@ -343,9 +395,6 @@ private:
 
     VclPtr<OKButton>        maBtnOk;
     VclPtr<CancelButton>    maBtnCancel;
-
-    std::vector<VclPtr<vcl::Window> >          maTabStopCtrls;
-    size_t                          mnCurTabStop;
 
     std::vector<Member>           maMembers;
     std::unique_ptr<ExtendedData> mpExtendedData;
@@ -356,6 +405,7 @@ private:
     Size maWndSize;  /// whole window size.
     Size maMenuSize; /// size of all menu items combined.
     TriState mePrevToggleAllState;
+    ScTabStops maTabStops;
 };
 
 #endif

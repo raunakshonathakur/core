@@ -308,8 +308,7 @@ public:
 
     static void     UpdateInputLine();
 
-    void            InitRefMode( SCCOL nCurX, SCROW nCurY, SCTAB nCurZ, ScRefType eType,
-                                 bool bPaint = true );
+    void            InitRefMode( SCCOL nCurX, SCROW nCurY, SCTAB nCurZ, ScRefType eType );
     void            DoneRefMode( bool bContinue = false );
     void            UpdateRef( SCCOL nCurX, SCROW nCurY, SCTAB nCurZ );
     void            StopRefMode();
@@ -475,6 +474,23 @@ public:
 
     void            MarkColumns();
     void            MarkRows();
+
+    /**
+     * Called to select the specified full column.
+     *
+     * @param nCol: Column number to do operation on
+     * @param nModifier: 0, KEY_SHIFT, KEY_MOD1, KEY_SHIFT | KEY_MOD1
+     */
+
+    void            MarkColumns(SCCOL nCol, sal_Int16 nModifier);
+    /**
+     * Called to select the specified full row.
+     *
+     * @param nRow: Row number to do operation on
+     * @param nModifier: 0, KEY_SHIFT, KEY_MOD1, KEY_SHIFT | KEY_MOD1
+     */
+    void            MarkRows(SCROW nRow, sal_Int16 nModifier);
+
     void            MarkDataArea( bool bIncludeCursor = true );
     void            MarkMatrixFormula();
     void            Unmark();

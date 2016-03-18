@@ -204,12 +204,10 @@ public:
 
     /// Implementations of "Make...Node" are in the given .cxx-files.
     SwTextNode *MakeTextNode( const SwNodeIndex & rWhere,
-                            SwTextFormatColl *pColl,
-                            SwAttrSet* pAutoAttr = nullptr ); ///< in ndtxt.cxx
+                            SwTextFormatColl *pColl ); ///< in ndtxt.cxx
     SwStartNode* MakeTextSection( const SwNodeIndex & rWhere,
                             SwStartNodeType eSttNdTyp,
-                            SwTextFormatColl *pColl,
-                            SwAttrSet* pAutoAttr = nullptr );
+                            SwTextFormatColl *pColl );
 
     static SwGrfNode *MakeGrfNode( const SwNodeIndex & rWhere,
                             const OUString& rGrfName,
@@ -221,13 +219,11 @@ public:
 
     static SwGrfNode *MakeGrfNode( const SwNodeIndex & rWhere,
                             const GraphicObject& rGrfObj,
-                            SwGrfFormatColl *pColl,
-                            SwAttrSet* pAutoAttr = nullptr ); ///< in ndgrf.cxx
+                            SwGrfFormatColl *pColl ); ///< in ndgrf.cxx
 
     SwOLENode *MakeOLENode( const SwNodeIndex & rWhere,
                             const svt::EmbeddedObjectRef&,
-                            SwGrfFormatColl *pColl,
-                            SwAttrSet* pAutoAttr = nullptr ); ///< in ndole.cxx
+                            SwGrfFormatColl *pColl ); ///< in ndole.cxx
     SwOLENode *MakeOLENode( const SwNodeIndex & rWhere,
                             const OUString &rName,
                             sal_Int64 nAspect,

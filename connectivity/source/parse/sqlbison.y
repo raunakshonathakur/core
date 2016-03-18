@@ -71,9 +71,9 @@ inline connectivity::OSQLInternalNode* newNode(const OUString& _NewValue,
 
 // yyi is the internal number of the rule that is currently being reduced
 // This can be mapped to external rule number via the yyrmap.
-#define SQL_NEW_RULE 			newNode("", SQL_NODE_RULE, yyr1[yyn])
-#define SQL_NEW_LISTRULE 		newNode("", SQL_NODE_LISTRULE, yyr1[yyn])
-#define SQL_NEW_COMMALISTRULE   newNode("", SQL_NODE_COMMALISTRULE, yyr1[yyn])
+#define SQL_NEW_RULE 			newNode("", SQLNodeType::Rule, yyr1[yyn])
+#define SQL_NEW_LISTRULE 		newNode("", SQLNodeType::ListRule, yyr1[yyn])
+#define SQL_NEW_COMMALISTRULE   newNode("", SQLNodeType::CommaListRule, yyr1[yyn])
 
 
 extern connectivity::OSQLParser* xxx_pGLOBAL_SQLPARSER;
@@ -298,7 +298,7 @@ op_schema:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	;
@@ -343,9 +343,9 @@ base_table_def:
 		$$->append($1);
 		$$->append($2);
 		$$->append($3);
-		$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+		$$->append(newNode("(", SQLNodeType::Punctuation));
 		$$->append($5);
-		$$->append(newNode(")", SQL_NODE_PUNCTUATION));}
+		$$->append(newNode(")", SQLNodeType::Punctuation));}
 	;
 
 base_table_element_commalist:
@@ -418,9 +418,9 @@ column_def_opt:
 	|       SQL_TOKEN_CHECK '(' search_condition ')'
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));}
+			$$->append(newNode(")", SQLNodeType::Punctuation));}
 	|       SQL_TOKEN_REFERENCES table_node
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
@@ -429,53 +429,53 @@ column_def_opt:
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
 			$$->append($2);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($4);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));}
+			$$->append(newNode(")", SQLNodeType::Punctuation));}
 	;
 
 table_constraint_def:
 		unique_spec '(' column_commalist ')'
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));}
+			$$->append(newNode(")", SQLNodeType::Punctuation));}
 	|       SQL_TOKEN_FOREIGN SQL_TOKEN_KEY '(' column_commalist ')' SQL_TOKEN_REFERENCES table_node
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
 			$$->append($2);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($4);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 			$$->append($6);
 			$$->append($7);}
 	|       SQL_TOKEN_FOREIGN SQL_TOKEN_KEY '(' column_commalist ')' SQL_TOKEN_REFERENCES table_node '(' column_commalist ')'
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
 			$$->append($2);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($4);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 			$$->append($6);
 			$$->append($7);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($9);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));}
+			$$->append(newNode(")", SQLNodeType::Punctuation));}
 	|       SQL_TOKEN_CHECK '(' search_condition ')'
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));}
+			$$->append(newNode(")", SQLNodeType::Punctuation));}
 	;
 op_column_commalist:
 	/* empty */ {$$ = SQL_NEW_RULE;}
 	| '(' column_commalist ')'
 		{$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 column_commalist:
@@ -512,9 +512,9 @@ opt_column_commalist:
 		/* empty */         {$$ = SQL_NEW_RULE;}
 	|       '(' column_commalist ')'
 			{$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));}
+			$$->append(newNode(")", SQLNodeType::Punctuation));}
 	;
 
 privilege_def:
@@ -666,9 +666,9 @@ manipulative_statement:
 	|		'{' odbc_call_spec '}'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("{", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("{", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode("}", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("}", SQLNodeType::Punctuation));
 		}
 	;
 
@@ -733,9 +733,9 @@ values_or_query_spec:
 		SQL_TOKEN_VALUES '(' table_value_const_list ')'
 		{$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 
@@ -762,9 +762,9 @@ row_value_constructor:
 /*	  |		'(' row_value_const_list ')'
 			{
 				$$ = SQL_NEW_RULE;
-				$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+				$$->append(newNode("(", SQLNodeType::Punctuation));
 				$$->append($2);
-				$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+				$$->append(newNode(")", SQLNodeType::Punctuation));
 			}
 			*/
 	;
@@ -888,7 +888,7 @@ selection:
 		'*'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("*", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("*", SQLNodeType::Punctuation));
 		}
 	|	scalar_exp_commalist
 	;
@@ -1030,17 +1030,17 @@ table_ref:
 	|	'{' SQL_TOKEN_OJ joined_table '}'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("{", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("{", SQLNodeType::Punctuation));
 			$$->append($2);
 			$$->append($3);
-			$$->append(newNode("}", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("}", SQLNodeType::Punctuation));
 		}
 	|	'(' joined_table ')'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 where_clause:
@@ -1088,9 +1088,9 @@ boolean_primary:
 	|   '(' search_condition ')'
 		{ // boolean_primary: rule 2
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	row_value_constructor_elem  /*[^')' ',']*/
 		{
@@ -1100,15 +1100,15 @@ boolean_primary:
                         sal_Int16 nErg = 0;
                         if ( SQL_ISTOKEN( $1, NULL))
                         {
-                            OSQLParseNode* pColumnRef = newNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                            pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
-                            OSQLParseNode* pTFN = new OSQLInternalNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::test_for_null));
+                            OSQLParseNode* pColumnRef = newNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::column_ref));
+                            pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQLNodeType::Name));
+                            OSQLParseNode* pTFN = new OSQLInternalNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::test_for_null));
                             pTFN->append(pColumnRef);
 
-                            OSQLParseNode* pNPP2 = new OSQLInternalNode("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::null_predicate_part_2));
-                            pNPP2->append(new OSQLInternalNode("", SQL_NODE_KEYWORD, SQL_TOKEN_IS));
-                            pNPP2->append(new OSQLInternalNode("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::sql_not)));
-                            pNPP2->append(new OSQLInternalNode("", SQL_NODE_KEYWORD, SQL_TOKEN_NULL));
+                            OSQLParseNode* pNPP2 = new OSQLInternalNode("", SQLNodeType::Rule, OSQLParser::RuleID(OSQLParseNode::null_predicate_part_2));
+                            pNPP2->append(new OSQLInternalNode("", SQLNodeType::Keyword, SQL_TOKEN_IS));
+                            pNPP2->append(new OSQLInternalNode("", SQLNodeType::Rule, OSQLParser::RuleID(OSQLParseNode::sql_not)));
+                            pNPP2->append(new OSQLInternalNode("", SQLNodeType::Keyword, SQL_TOKEN_NULL));
                             pTFN->append(pNPP2);
 
                             $$->append(pTFN);
@@ -1142,9 +1142,9 @@ parenthesized_boolean_value_expression:
    '(' search_condition ')'
 	{ // boolean_primary: rule 2
 		$$ = SQL_NEW_RULE;
-		$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+		$$->append(newNode("(", SQLNodeType::Punctuation));
 		$$->append($2);
-		$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+		$$->append(newNode(")", SQLNodeType::Punctuation));
 	}
 	;
 boolean_factor:
@@ -1261,7 +1261,7 @@ between_predicate_part_2:
 					$$ = pTemp->removeAt((sal_uInt32)0);
 					OSQLParseNode* pColumnRef = $$->removeAt((sal_uInt32)0);
 					$$->insert(0,$1);
-					OSQLParseNode* pBetween_predicate = new OSQLInternalNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::between_predicate));
+					OSQLParseNode* pBetween_predicate = new OSQLInternalNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::between_predicate));
 					pBetween_predicate->append(pColumnRef);
 					pBetween_predicate->append($$);
 					$$ = pBetween_predicate;
@@ -1331,8 +1331,8 @@ like_predicate:
 		{
 			if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())  // like_predicate: rule 5
 			{
-				OSQLParseNode* pColumnRef = newNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-				pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+				OSQLParseNode* pColumnRef = newNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::column_ref));
+				pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQLNodeType::Name));
 
 				$$ = SQL_NEW_RULE;
 				$$->append(pColumnRef);
@@ -1353,8 +1353,8 @@ like_predicate:
 		{
 			if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // like_predicate: rule 6
 			{
-				OSQLParseNode* pColumnRef = newNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-				pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+				OSQLParseNode* pColumnRef = newNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::column_ref));
+				pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQLNodeType::Name));
 
 				$$ = SQL_NEW_RULE;
 				$$->append(pColumnRef);
@@ -1382,10 +1382,10 @@ opt_escape:
 	|	'{' SQL_TOKEN_ESCAPE SQL_TOKEN_STRING '}'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("{", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("{", SQLNodeType::Punctuation));
 			$$->append($2);
 			$$->append($3);
-			$$->append(newNode("}", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("}", SQLNodeType::Punctuation));
 		}
 	;
 
@@ -1416,8 +1416,8 @@ test_for_null:
 		{
 			if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())// test_for_null: rule 2
 			{
-				OSQLParseNode* pColumnRef = newNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-				pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+				OSQLParseNode* pColumnRef = newNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::column_ref));
+				pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQLNodeType::Name));
 
 				$$ = SQL_NEW_RULE;
 				$$->append(pColumnRef);
@@ -1434,9 +1434,9 @@ in_predicate_value:
 		}
 	  | '(' value_exp_commalist ')'
 		{$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 in_predicate_part_2:
@@ -1459,8 +1459,8 @@ in_predicate:
 		{
 			if ( xxx_pGLOBAL_SQLPARSER->inPredicateCheck() )// in_predicate: rule 2
 			{
-				OSQLParseNode* pColumnRef = newNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-				pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+				OSQLParseNode* pColumnRef = newNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::column_ref));
+				pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQLNodeType::Name));
 
 				$$ = SQL_NEW_RULE;
 				$$->append(pColumnRef);
@@ -1490,8 +1490,8 @@ all_or_any_predicate:
 		{
 			if(xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
 			{
-				OSQLParseNode* pColumnRef = newNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-				pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+				OSQLParseNode* pColumnRef = newNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::column_ref));
+				pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQLNodeType::Name));
 
 				$$ = SQL_NEW_RULE;
 				$$->append(pColumnRef);
@@ -1523,9 +1523,9 @@ unique_test:
 subquery:
 		'(' query_exp ')'
 			{$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));}
+			$$->append(newNode(")", SQLNodeType::Punctuation));}
 	;
 
 	/* scalar expressions */
@@ -1546,8 +1546,8 @@ select_sublist:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
-			$$->append(newNode("*", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
+			$$->append(newNode("*", SQLNodeType::Punctuation));
 		}
 */
 		derived_column
@@ -1562,24 +1562,24 @@ parameter_ref:
 op_like:
 		'*'
 		{
-			$$ = newNode("*", SQL_NODE_PUNCTUATION);
+			$$ = newNode("*", SQLNodeType::Punctuation);
 		}
 	|	'?'
 		{
-			$$ = newNode("?", SQL_NODE_PUNCTUATION);
+			$$ = newNode("?", SQLNodeType::Punctuation);
 		}
 	|   op_like	'*'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("*", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("*", SQLNodeType::Punctuation));
 			xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_False);
 		}
 	|	op_like '?'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("?", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("?", SQLNodeType::Punctuation));
 			xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_False);
 		}
 	;
@@ -1659,19 +1659,19 @@ position_exp:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
 			$$->append($4);
 			$$->append($5);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	SQL_TOKEN_POSITION '(' value_exp_commalist ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 num_value_fct:
@@ -1684,17 +1684,17 @@ char_length_exp:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	SQL_TOKEN_SQL_TOKEN_INTNUM '(' value_exp ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 
 	;
@@ -1703,9 +1703,9 @@ octet_length_exp:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 bit_length_exp:
@@ -1713,9 +1713,9 @@ bit_length_exp:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 length_exp:
@@ -1769,11 +1769,11 @@ extract_exp:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
 			$$->append($4);
 			$$->append($5);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 unsigned_value_spec:
@@ -1801,63 +1801,63 @@ set_fct_spec:
 	|	'{' odbc_fct_spec '}'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("{", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("{", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode("}", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("}", SQLNodeType::Punctuation));
 		}
 	|	function_name '(' ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	function_name0 '(' ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	function_name1 '(' function_arg ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	function_name2 '(' function_arg_commalist2 ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	function_name3 '(' function_arg_commalist3 ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	string_function_4Argument '(' function_arg_commalist4 ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	function_name '(' function_args_commalist ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	function_name12 '(' function_args_commalist ')'
 		{
@@ -1865,9 +1865,9 @@ set_fct_spec:
 			{
 				$$ = SQL_NEW_RULE;
 				$$->append($1);
-				$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+				$$->append(newNode("(", SQLNodeType::Punctuation));
 				$$->append($3);
-				$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+				$$->append(newNode(")", SQLNodeType::Punctuation));
 			}
 			else
 				YYERROR;
@@ -1878,9 +1878,9 @@ set_fct_spec:
 			{
 				$$ = SQL_NEW_RULE;
 				$$->append($1);
-				$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+				$$->append(newNode("(", SQLNodeType::Punctuation));
 				$$->append($3);
-				$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+				$$->append(newNode(")", SQLNodeType::Punctuation));
 			}
 			else
 				YYERROR;
@@ -2020,15 +2020,15 @@ window_function_type :
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	SQL_TOKEN_ROW_NUMBER '(' ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	| general_set_fct
 	| ntile_function
@@ -2041,9 +2041,9 @@ ntile_function :
 	{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 	}
 	;
 dynamic_parameter_specification:
@@ -2061,15 +2061,15 @@ opt_lead_or_lag_function:
 	| ',' offset
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode(",", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(",", SQLNodeType::Punctuation));
 			$$->append($2);
 		}
 	| ',' offset ',' default_expression
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode(",", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(",", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(",", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(",", SQLNodeType::Punctuation));
 			$$->append($4);
 		}
 	;
@@ -2083,10 +2083,10 @@ lead_or_lag_function:
 	{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
 			$$->append($4);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 			$$->append($6);
 	}
 	;
@@ -2112,9 +2112,9 @@ first_or_last_value_function:
 	{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 			$$->append($5);
 	}
 	;
@@ -2131,11 +2131,11 @@ nth_value_function:
 	{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(",", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(",", SQLNodeType::Punctuation));
 			$$->append($5);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 			$$->append($7);
 			$$->append($8);
 	}
@@ -2204,9 +2204,9 @@ window_specification:
 	'(' window_specification_details ')'
 	{
 		$$ = SQL_NEW_RULE;
-		$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+		$$->append(newNode("(", SQLNodeType::Punctuation));
 		$$->append($2);
-		$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+		$$->append(newNode(")", SQLNodeType::Punctuation));
 	}
 	;
 opt_existing_window_name:
@@ -2366,7 +2366,7 @@ op_parameter:
 	|	'?' SQL_EQUAL
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("?", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("?", SQLNodeType::Punctuation));
 			$$->append($2);
 		}
 	;
@@ -2386,9 +2386,9 @@ op_odbc_call_parameter:
 	|	'(' odbc_parameter_commalist ')'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 
@@ -2434,27 +2434,27 @@ general_set_fct:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
 			$$->append($4);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	SQL_TOKEN_COUNT '(' '*' ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
-			$$->append(newNode("*", SQL_NODE_PUNCTUATION));
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
+			$$->append(newNode("*", SQLNodeType::Punctuation));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	SQL_TOKEN_COUNT '(' opt_all_distinct function_arg ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
 			$$->append($4);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	ordered_set_function
 	|	array_aggregate_function
@@ -2485,20 +2485,20 @@ hypothetical_set_function:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 			$$->append($5);
 		}
 	|	rank_function_type '('	hypothetical_set_function_value_expression_list SQL_TOKEN_BY value_exp_commalist ')'	within_group_specification
 	{
 		$$ = SQL_NEW_RULE;
 		$$->append($1);
-		$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+		$$->append(newNode("(", SQLNodeType::Punctuation));
 		$$->append($3);
 		$$->append($4);
 		$$->append($5);
-		$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+		$$->append(newNode(")", SQLNodeType::Punctuation));
 		$$->append($7);
 	}
 	;
@@ -2512,9 +2512,9 @@ within_group_specification:
 		$$ = SQL_NEW_RULE;
 		$$->append($1);
 		$$->append($2);
-		$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+		$$->append(newNode("(", SQLNodeType::Punctuation));
 		$$->append($4);
-		$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+		$$->append(newNode(")", SQLNodeType::Punctuation));
 	}
 	;
 hypothetical_set_function_value_expression_list:
@@ -2526,9 +2526,9 @@ inverse_distribution_function:
 	{
 		$$ = SQL_NEW_RULE;
 		$$->append($1);
-		$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+		$$->append(newNode("(", SQLNodeType::Punctuation));
 		$$->append($3);
-		$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+		$$->append(newNode(")", SQLNodeType::Punctuation));
 	}
 	;
 inverse_distribution_function_argument:
@@ -2544,10 +2544,10 @@ array_aggregate_function:
 	{
 		$$ = SQL_NEW_RULE;
 		$$->append($1);
-		$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+		$$->append(newNode("(", SQLNodeType::Punctuation));
 		$$->append($3);
 		$$->append($4);
-		$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+		$$->append(newNode(")", SQLNodeType::Punctuation));
 	}
 	;
 
@@ -2642,9 +2642,9 @@ named_columns_join:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 simple_table:
@@ -2657,9 +2657,9 @@ non_join_query_primary:
 	  | '(' non_join_query_exp ')'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	  ;
 non_join_query_term:
@@ -2717,11 +2717,11 @@ cast_spec:
 	  {
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
 			$$->append($4);
 			$$->append($5);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 value_exp_primary:
@@ -2734,9 +2734,9 @@ value_exp_primary:
 	  | '(' value_exp ')'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	  | cast_spec
 	;
@@ -2750,13 +2750,13 @@ factor:
 	|	'-' num_primary  %prec SQL_TOKEN_UMINUS
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("-", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("-", SQLNodeType::Punctuation));
 			$$->append($2);
 		}
 	|	'+' num_primary  %prec SQL_TOKEN_UMINUS
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("+", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("+", SQLNodeType::Punctuation));
 			$$->append($2);
 		}
 	;
@@ -2767,14 +2767,14 @@ term:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("*", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("*", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	  | term '/' factor
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("/", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("/", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	  ;
@@ -2785,14 +2785,14 @@ num_value_exp:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("+", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("+", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	  | num_value_exp '-' term
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("-", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("-", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	  ;
@@ -2874,14 +2874,14 @@ interval_term:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("*", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("*", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	  | interval_term '/' factor
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("/", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("/", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	;
@@ -2896,21 +2896,21 @@ datetime_value_exp:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("+", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("+", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	  | datetime_value_exp '+' interval_term
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("+", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("+", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	  | datetime_value_exp '-' interval_term
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("-", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("-", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 */	;
@@ -2925,24 +2925,24 @@ interval_value_exp:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("+", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("+", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	  | interval_value_exp '-' interval_term
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("-", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("-", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	  | '(' datetime_value_exp '-' datetime_term ')' interval_qualifier
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode("-", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("-", SQLNodeType::Punctuation));
 			$$->append($4);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 			$$->append($6);
 		}
 	;
@@ -3113,7 +3113,7 @@ concatenation:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("+", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("+", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	|	value_exp SQL_CONCAT value_exp
@@ -3162,12 +3162,12 @@ bit_substring_fct:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
 			$$->append($4);
 			$$->append($5);
 			$$->append($6);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 bit_value_exp:
@@ -3189,7 +3189,7 @@ bit_concatenation:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("+", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("+", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	;
@@ -3247,20 +3247,20 @@ char_substring_fct:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
 			$$->append($4);
 			$$->append($5);
 			$$->append($6);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	SQL_TOKEN_SUBSTRING '(' value_exp_commalist ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 upper_lower:
@@ -3272,9 +3272,9 @@ fold:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 form_conversion:
@@ -3282,21 +3282,21 @@ form_conversion:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
 			$$->append($4);
 			$$->append($5);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	SQL_TOKEN_CONVERT '(' cast_operand ',' cast_target ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(",", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(",", SQLNodeType::Punctuation));
 			$$->append($5);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 char_translation:
@@ -3304,11 +3304,11 @@ char_translation:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
 			$$->append($4);
 			$$->append($5);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 trim_fct:
@@ -3316,9 +3316,9 @@ trim_fct:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 trim_operands:
@@ -3378,14 +3378,14 @@ catalog_name:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 	|	SQL_TOKEN_NAME ':' schema_name
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(":", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(":", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 ;
@@ -3394,7 +3394,7 @@ schema_name:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($3);
 		}
 ;
@@ -3412,50 +3412,50 @@ column_ref:
 /*	|       table_node '.' column_val %prec '.'
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($3);}
 */
 	|       SQL_TOKEN_NAME '.' column_val %prec '.'
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($3);
 			}
 	|       SQL_TOKEN_NAME '.' SQL_TOKEN_NAME '.' column_val %prec '.'
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($5);}
 	|       SQL_TOKEN_NAME '.' SQL_TOKEN_NAME '.' SQL_TOKEN_NAME '.' column_val %prec '.'
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($5);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($7);
 			}
 	|       SQL_TOKEN_NAME ':' SQL_TOKEN_NAME '.' SQL_TOKEN_NAME '.' column_val %prec '.'
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(":", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(":", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($5);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($7);
 			}
 /*	|       SQL_TOKEN_NAME ';' SQL_TOKEN_NAME '.' SQL_TOKEN_NAME '.' column_val
 			{$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode(";", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(";", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($5);
-			$$->append(newNode(".", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(".", SQLNodeType::Punctuation));
 			$$->append($7);
 			}
 */	;
@@ -3468,7 +3468,7 @@ column_val:
 	|	'*'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("*", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("*", SQLNodeType::Punctuation));
 		}
 	;
 data_type:
@@ -3551,9 +3551,9 @@ paren_char_length:
 	'(' SQL_TOKEN_INTNUM ')'
 	{
 		$$ = SQL_NEW_RULE;
-		$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+		$$->append(newNode("(", SQLNodeType::Punctuation));
 		$$->append($2);
-		$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+		$$->append(newNode(")", SQLNodeType::Punctuation));
 	}
 	;
 opt_paren_char_large_length:
@@ -3564,9 +3564,9 @@ paren_character_large_object_length:
 	'(' large_object_length ')'
 	{
 		$$ = SQL_NEW_RULE;
-		$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+		$$->append(newNode("(", SQLNodeType::Punctuation));
 		$$->append($2);
-		$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+		$$->append(newNode(")", SQLNodeType::Punctuation));
 	}
 	;
 
@@ -3583,27 +3583,27 @@ opt_multiplier:
 	|	'K'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("K", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("K", SQLNodeType::Punctuation));
 		}
 	|	'M'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("M", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("M", SQLNodeType::Punctuation));
 		}
 	|	'G'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("G", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("G", SQLNodeType::Punctuation));
 		}
 	|	'T'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("T", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("T", SQLNodeType::Punctuation));
 		}
 	|	'P'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("P", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("P", SQLNodeType::Punctuation));
 		}
 	;
 character_large_object_type:
@@ -3748,18 +3748,18 @@ opt_paren_precision_scale:
 	|	'(' SQL_TOKEN_INTNUM ')'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	'(' SQL_TOKEN_INTNUM ',' SQL_TOKEN_INTNUM ')'
 		{
 			$$ = SQL_NEW_RULE;
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode(",", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(",", SQLNodeType::Punctuation));
 			$$->append($4);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 exact_numeric_type:
@@ -3791,9 +3791,9 @@ approximate_numeric_type:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	SQL_TOKEN_FLOAT
 	|	SQL_TOKEN_REAL
@@ -3858,19 +3858,19 @@ column:
 		{
 			sal_uInt32 nNod = $$->getRuleID();
 			delete $$;
-			$$ = newNode(xxx_pGLOBAL_SQLPARSER->TokenIDToStr(nNod), SQL_NODE_NAME);
+			$$ = newNode(xxx_pGLOBAL_SQLPARSER->TokenIDToStr(nNod), SQLNodeType::Name);
 		}
 	|	SQL_TOKEN_CHAR_LENGTH
 		{
 			sal_uInt32 nNod = $$->getRuleID();
 			delete $$;
-			$$ = newNode(xxx_pGLOBAL_SQLPARSER->TokenIDToStr(nNod), SQL_NODE_NAME);
+			$$ = newNode(xxx_pGLOBAL_SQLPARSER->TokenIDToStr(nNod), SQLNodeType::Name);
 		}
 	|	SQL_TOKEN_EXTRACT
 		{
 			sal_uInt32 nNod = $$->getRuleID();
 			delete $$;
-			$$ = newNode(xxx_pGLOBAL_SQLPARSER->TokenIDToStr(nNod), SQL_NODE_NAME);
+			$$ = newNode(xxx_pGLOBAL_SQLPARSER->TokenIDToStr(nNod), SQLNodeType::Name);
 		}
 	;
 case_expression:
@@ -3882,25 +3882,25 @@ case_abbreviation:
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	SQL_TOKEN_COALESCE '(' value_exp ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	|	SQL_TOKEN_COALESCE '(' value_exp_commalist ')'
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
-			$$->append(newNode("(", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("(", SQLNodeType::Punctuation));
 			$$->append($3);
-			$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(")", SQLNodeType::Punctuation));
 		}
 	;
 case_specification:
@@ -4022,16 +4022,16 @@ module:	SQL_TOKEN_NAME
 parameter:
 		':' SQL_TOKEN_NAME
 			{$$ = SQL_NEW_RULE;
-			$$->append(newNode(":", SQL_NODE_PUNCTUATION));
+			$$->append(newNode(":", SQLNodeType::Punctuation));
 			$$->append($2);}
 	|	'?'
 			{$$ = SQL_NEW_RULE; // test
-			$$->append(newNode("?", SQL_NODE_PUNCTUATION));}
+			$$->append(newNode("?", SQLNodeType::Punctuation));}
 	|	'['	SQL_TOKEN_NAME ']'
 			{$$ = SQL_NEW_RULE;
-			$$->append(newNode("[", SQL_NODE_PUNCTUATION));
+			$$->append(newNode("[", SQLNodeType::Punctuation));
 			$$->append($2);
-			$$->append(newNode("]", SQL_NODE_PUNCTUATION));}
+			$$->append(newNode("]", SQLNodeType::Punctuation));}
 	;
 
 /***
@@ -4062,8 +4062,8 @@ sql:
 				$$ = $1;
 				if ( SQL_ISRULE($$,search_condition) )
 				{
-					$$->insert(0,newNode("(", SQL_NODE_PUNCTUATION));
-					$$->append(newNode(")", SQL_NODE_PUNCTUATION));
+					$$->insert(0,newNode("(", SQLNodeType::Punctuation));
+					$$->append(newNode(")", SQLNodeType::Punctuation));
 				}
 			}
 			else
@@ -4175,7 +4175,7 @@ triggered_SQL_statement:
         $$->append($1);
         $$->append($2);
         $$->append($3);
-        $$->append(newNode(";", SQL_NODE_PUNCTUATION));
+        $$->append(newNode(";", SQLNodeType::Punctuation));
         $$->append($5);
     }
 	;
@@ -4305,26 +4305,26 @@ OParseContext::~OParseContext()
 
 OUString OParseContext::getErrorMessage(ErrorCode _eCode) const
 {
-	OUString aMsg;
-	switch (_eCode)
-	{
-		case ERROR_GENERAL:					aMsg = "Syntax error in SQL expression"; break;
-		case ERROR_VALUE_NO_LIKE:			aMsg = "The value #1 can not be used with LIKE."; break;
-		case ERROR_FIELD_NO_LIKE:			aMsg = "LIKE can not be used with this field."; break;
-		case ERROR_INVALID_COMPARE:			aMsg = "The entered criterion can not be compared with this field."; break;
-		case ERROR_INVALID_INT_COMPARE:		aMsg = "The field can not be compared with a number."; break;
-		case ERROR_INVALID_DATE_COMPARE:	aMsg = "The field can not be compared with a date."; break;
-		case ERROR_INVALID_REAL_COMPARE:	aMsg = "The field can not be compared with a floating point number."; break;
-		case ERROR_INVALID_TABLE_NOSUCH:			aMsg = "The database does not contain a table named \"#\"."; break;
-		case ERROR_INVALID_TABLE_OR_QUERY:  aMsg = "The database does contain neither a table nor a query named \"#\"."; break;
-		case ERROR_INVALID_COLUMN:			aMsg = "The column \"#1\" is unknown in the table \"#2\"."; break;
-		case ERROR_INVALID_TABLE_EXIST:		aMsg = "The database already contains a table or view with name \"#\"."; break;
-		case ERROR_INVALID_QUERY_EXIST:		aMsg = "The database already contains a query with name \"#\"."; break;
+    OUString aMsg;
+    switch (_eCode)
+    {
+        case ErrorCode::General:              aMsg = "Syntax error in SQL expression"; break;
+        case ErrorCode::ValueNoLike:          aMsg = "The value #1 can not be used with LIKE."; break;
+        case ErrorCode::FieldNoLike:          aMsg = "LIKE can not be used with this field."; break;
+        case ErrorCode::InvalidCompare:       aMsg = "The entered criterion can not be compared with this field."; break;
+        case ErrorCode::InvalidIntCompare:    aMsg = "The field can not be compared with a number."; break;
+        case ErrorCode::InvalidDateCompare:   aMsg = "The field can not be compared with a date."; break;
+        case ErrorCode::InvalidRealCompare:   aMsg = "The field can not be compared with a floating point number."; break;
+        case ErrorCode::InvalidTableNosuch:   aMsg = "The database does not contain a table named \"#\"."; break;
+        case ErrorCode::InvalidTableOrQuery:  aMsg = "The database does contain neither a table nor a query named \"#\"."; break;
+        case ErrorCode::InvalidColumn:        aMsg = "The column \"#1\" is unknown in the table \"#2\"."; break;
+        case ErrorCode::InvalidTableExist:    aMsg = "The database already contains a table or view with name \"#\"."; break;
+        case ErrorCode::InvalidQueryExist:    aMsg = "The database already contains a query with name \"#\"."; break;
         default:
             OSL_FAIL( "OParseContext::getErrorMessage: unknown error code!" );
             break;
-	}
-	return aMsg;
+    }
+    return aMsg;
 }
 
 
@@ -4333,31 +4333,31 @@ OString OParseContext::getIntlKeywordAscii(InternationalKeyCode _eKey) const
 	OString aKeyword;
 	switch (_eKey)
 	{
-		case KEY_LIKE:		aKeyword = "LIKE"; break;
-		case KEY_NOT:		aKeyword = "NOT"; break;
-		case KEY_NULL:		aKeyword = "NULL"; break;
-		case KEY_TRUE:		aKeyword = "True"; break;
-		case KEY_FALSE:		aKeyword = "False"; break;
-		case KEY_IS:		aKeyword = "IS"; break;
-		case KEY_BETWEEN:	aKeyword = "BETWEEN"; break;
-		case KEY_OR:		aKeyword = "OR"; break;
-		case KEY_AND:		aKeyword = "AND"; break;
-		case KEY_AVG:		aKeyword = "AVG"; break;
-		case KEY_COUNT:		aKeyword = "COUNT"; break;
-		case KEY_MAX:		aKeyword = "MAX"; break;
-		case KEY_MIN:		aKeyword = "MIN"; break;
-		case KEY_SUM:		aKeyword = "SUM"; break;
-        case KEY_EVERY:     aKeyword = "EVERY"; break;
-        case KEY_ANY:       aKeyword = "ANY"; break;
-        case KEY_SOME:      aKeyword = "SOME"; break;
-        case KEY_STDDEV_POP: aKeyword = "STDDEV_POP"; break;
-        case KEY_STDDEV_SAMP: aKeyword = "STDDEV_SAMP"; break;
-        case KEY_VAR_SAMP:  aKeyword = "VAR_SAMP"; break;
-        case KEY_VAR_POP:   aKeyword = "VAR_POP"; break;
-        case KEY_COLLECT:   aKeyword = "COLLECT"; break;
-        case KEY_FUSION:    aKeyword = "FUSION"; break;
-        case KEY_INTERSECTION:aKeyword = "INTERSECTION"; break;
-        case KEY_NONE:      break;
+		case InternationalKeyCode::Like:		aKeyword = "LIKE"; break;
+		case InternationalKeyCode::Not:		aKeyword = "NOT"; break;
+		case InternationalKeyCode::Null:		aKeyword = "NULL"; break;
+		case InternationalKeyCode::True:		aKeyword = "True"; break;
+		case InternationalKeyCode::False:		aKeyword = "False"; break;
+		case InternationalKeyCode::Is:		aKeyword = "IS"; break;
+		case InternationalKeyCode::Between:	aKeyword = "BETWEEN"; break;
+		case InternationalKeyCode::Or:		aKeyword = "OR"; break;
+		case InternationalKeyCode::And:		aKeyword = "AND"; break;
+		case InternationalKeyCode::Avg:		aKeyword = "AVG"; break;
+		case InternationalKeyCode::Count:		aKeyword = "COUNT"; break;
+		case InternationalKeyCode::Max:		aKeyword = "MAX"; break;
+		case InternationalKeyCode::Min:		aKeyword = "MIN"; break;
+		case InternationalKeyCode::Sum:		aKeyword = "SUM"; break;
+        case InternationalKeyCode::Every:     aKeyword = "EVERY"; break;
+        case InternationalKeyCode::Any:       aKeyword = "ANY"; break;
+        case InternationalKeyCode::Some:      aKeyword = "SOME"; break;
+        case InternationalKeyCode::StdDevPop: aKeyword = "STDDEV_POP"; break;
+        case InternationalKeyCode::StdDevSamp: aKeyword = "STDDEV_SAMP"; break;
+        case InternationalKeyCode::VarSamp:  aKeyword = "VAR_SAMP"; break;
+        case InternationalKeyCode::VarPop:   aKeyword = "VAR_POP"; break;
+        case InternationalKeyCode::Collect:   aKeyword = "COLLECT"; break;
+        case InternationalKeyCode::Fusion:    aKeyword = "FUSION"; break;
+        case InternationalKeyCode::Intersection:aKeyword = "INTERSECTION"; break;
+        case InternationalKeyCode::None:      break;
         default:
             OSL_FAIL( "OParseContext::getIntlKeywordAscii: unknown key!" );
             break;
@@ -4370,12 +4370,12 @@ IParseContext::InternationalKeyCode OParseContext::getIntlKeyCode(const OString&
 {
 	static IParseContext::InternationalKeyCode Intl_TokenID[] =
 	{
-		KEY_LIKE, KEY_NOT, KEY_NULL, KEY_TRUE,
-		KEY_FALSE, KEY_IS, KEY_BETWEEN, KEY_OR,
-		KEY_AND, KEY_AVG, KEY_COUNT, KEY_MAX,
-		KEY_MIN, KEY_SUM, KEY_EVERY,KEY_ANY,KEY_SOME,
-        KEY_STDDEV_POP,KEY_STDDEV_SAMP,KEY_VAR_SAMP,
-        KEY_VAR_POP,KEY_COLLECT,KEY_FUSION,KEY_INTERSECTION
+		InternationalKeyCode::Like, InternationalKeyCode::Not, InternationalKeyCode::Null, InternationalKeyCode::True,
+		InternationalKeyCode::False, InternationalKeyCode::Is, InternationalKeyCode::Between, InternationalKeyCode::Or,
+		InternationalKeyCode::And, InternationalKeyCode::Avg, InternationalKeyCode::Count, InternationalKeyCode::Max,
+		InternationalKeyCode::Min, InternationalKeyCode::Sum, InternationalKeyCode::Every,InternationalKeyCode::Any,InternationalKeyCode::Some,
+        InternationalKeyCode::StdDevPop,InternationalKeyCode::StdDevSamp,InternationalKeyCode::VarSamp,
+        InternationalKeyCode::VarPop,InternationalKeyCode::Collect,InternationalKeyCode::Fusion,InternationalKeyCode::Intersection
 	};
 
 	sal_uInt32 nCount = SAL_N_ELEMENTS( Intl_TokenID );
@@ -4386,7 +4386,7 @@ IParseContext::InternationalKeyCode OParseContext::getIntlKeyCode(const OString&
 			return Intl_TokenID[i];
 	}
 
-	return KEY_NONE;
+	return InternationalKeyCode::None;
 }
 
 
@@ -4585,7 +4585,7 @@ OSQLParseNode* OSQLParser::parseTree(OUString& rErrorMessage,
 		if (m_sErrorMessage.isEmpty())
 			m_sErrorMessage = s_pScanner->getErrorMessage();
 		if (m_sErrorMessage.isEmpty())
-			m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_GENERAL);
+			m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ErrorCode::General);
 
 		rErrorMessage = m_sErrorMessage;
 
@@ -4612,25 +4612,25 @@ OString OSQLParser::TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pCont
 	OString aStr;
 	if (pContext)
 	{
-		IParseContext::InternationalKeyCode eKeyCode = IParseContext::KEY_NONE;
+		IParseContext::InternationalKeyCode eKeyCode = IParseContext::InternationalKeyCode::None;
 		switch( nTokenID )
 		{
-			case SQL_TOKEN_LIKE: eKeyCode = IParseContext::KEY_LIKE; break;
-			case SQL_TOKEN_NOT: eKeyCode = IParseContext::KEY_NOT; break;
-			case SQL_TOKEN_NULL: eKeyCode = IParseContext::KEY_NULL; break;
-			case SQL_TOKEN_TRUE: eKeyCode = IParseContext::KEY_TRUE; break;
-			case SQL_TOKEN_FALSE: eKeyCode = IParseContext::KEY_FALSE; break;
-			case SQL_TOKEN_IS: eKeyCode = IParseContext::KEY_IS; break;
-			case SQL_TOKEN_BETWEEN: eKeyCode = IParseContext::KEY_BETWEEN; break;
-			case SQL_TOKEN_OR: eKeyCode = IParseContext::KEY_OR; break;
-			case SQL_TOKEN_AND: eKeyCode = IParseContext::KEY_AND; break;
-			case SQL_TOKEN_AVG: eKeyCode = IParseContext::KEY_AVG; break;
-			case SQL_TOKEN_COUNT: eKeyCode = IParseContext::KEY_COUNT; break;
-			case SQL_TOKEN_MAX: eKeyCode = IParseContext::KEY_MAX; break;
-			case SQL_TOKEN_MIN: eKeyCode = IParseContext::KEY_MIN; break;
-			case SQL_TOKEN_SUM: eKeyCode = IParseContext::KEY_SUM; break;
+			case SQL_TOKEN_LIKE: eKeyCode = IParseContext::InternationalKeyCode::Like; break;
+			case SQL_TOKEN_NOT: eKeyCode = IParseContext::InternationalKeyCode::Not; break;
+			case SQL_TOKEN_NULL: eKeyCode = IParseContext::InternationalKeyCode::Null; break;
+			case SQL_TOKEN_TRUE: eKeyCode = IParseContext::InternationalKeyCode::True; break;
+			case SQL_TOKEN_FALSE: eKeyCode = IParseContext::InternationalKeyCode::False; break;
+			case SQL_TOKEN_IS: eKeyCode = IParseContext::InternationalKeyCode::Is; break;
+			case SQL_TOKEN_BETWEEN: eKeyCode = IParseContext::InternationalKeyCode::Between; break;
+			case SQL_TOKEN_OR: eKeyCode = IParseContext::InternationalKeyCode::Or; break;
+			case SQL_TOKEN_AND: eKeyCode = IParseContext::InternationalKeyCode::And; break;
+			case SQL_TOKEN_AVG: eKeyCode = IParseContext::InternationalKeyCode::Avg; break;
+			case SQL_TOKEN_COUNT: eKeyCode = IParseContext::InternationalKeyCode::Count; break;
+			case SQL_TOKEN_MAX: eKeyCode = IParseContext::InternationalKeyCode::Max; break;
+			case SQL_TOKEN_MIN: eKeyCode = IParseContext::InternationalKeyCode::Min; break;
+			case SQL_TOKEN_SUM: eKeyCode = IParseContext::InternationalKeyCode::Sum; break;
 		}
-		if ( eKeyCode != IParseContext::KEY_NONE )
+		if ( eKeyCode != IParseContext::InternationalKeyCode::None )
 		    aStr = pContext->getIntlKeywordAscii(eKeyCode);
 	}
 
@@ -4651,7 +4651,7 @@ OString OSQLParser::TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pCont
 	return aStr;
 }
 
-#if OSL_DEBUG_LEVEL > 1
+#if OSL_DEBUG_LEVEL > 0
 OUString OSQLParser::RuleIDToStr(sal_uInt32 nRuleID)
 {
 	OSL_ENSURE(nRuleID < SAL_N_ELEMENTS(yytname), "OSQLParser::RuleIDToStr: Invalid nRuleId!");
@@ -4700,20 +4700,20 @@ sal_uInt32 OSQLParser::RuleID(OSQLParseNode::Rule eRule)
 
 sal_Int16 OSQLParser::buildNode(OSQLParseNode*& pAppend,OSQLParseNode* pCompare,OSQLParseNode* pLiteral,OSQLParseNode* pLiteral2)
 {
-	OSQLParseNode* pColumnRef = new OSQLInternalNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-	pColumnRef->append(new OSQLInternalNode(m_sFieldName,SQL_NODE_NAME));
+	OSQLParseNode* pColumnRef = new OSQLInternalNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::column_ref));
+	pColumnRef->append(new OSQLInternalNode(m_sFieldName,SQLNodeType::Name));
 	OSQLParseNode* pComp = NULL;
 	if ( SQL_ISTOKEN( pCompare, BETWEEN) && pLiteral2 )
-		pComp = new OSQLInternalNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::between_predicate_part_2));
+		pComp = new OSQLInternalNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::between_predicate_part_2));
 	else
-		pComp = new OSQLInternalNode("", SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::comparison_predicate));
+		pComp = new OSQLInternalNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::comparison_predicate));
 
 	pComp->append(pColumnRef);
 	pComp->append(pCompare);
 	pComp->append(pLiteral);
 	if ( pLiteral2 )
 	{
-		pComp->append(new OSQLInternalNode("", SQL_NODE_KEYWORD,SQL_TOKEN_AND));
+		pComp->append(new OSQLInternalNode("", SQLNodeType::Keyword,SQL_TOKEN_AND));
 		pComp->append(pLiteral2);
 	}
 	pAppend->append(pComp);
@@ -4729,11 +4729,11 @@ sal_Int16 OSQLParser::buildStringNodes(OSQLParseNode*& pLiteral)
 		|| SQL_ISRULE(pLiteral,subquery))
 		return 1; // here I have a function that I can't transform into a string
 
-	if(pLiteral->getNodeType() == SQL_NODE_INTNUM || pLiteral->getNodeType() == SQL_NODE_APPROXNUM || pLiteral->getNodeType() == SQL_NODE_ACCESS_DATE)
+	if(pLiteral->getNodeType() == SQLNodeType::IntNum || pLiteral->getNodeType() == SQLNodeType::ApproxNum || pLiteral->getNodeType() == SQLNodeType::AccessDate)
 	{
 		OSQLParseNode* pParent = pLiteral->getParent();
 
-		OSQLParseNode* pNewNode = new OSQLInternalNode(pLiteral->getTokenValue(), SQL_NODE_STRING);
+		OSQLParseNode* pNewNode = new OSQLInternalNode(pLiteral->getTokenValue(), SQLNodeType::String);
 		pParent->replace(pLiteral, pNewNode);
 		delete pLiteral;
 		pLiteral = NULL;
@@ -4747,7 +4747,7 @@ sal_Int16 OSQLParser::buildStringNodes(OSQLParseNode*& pLiteral)
 	}
 	if(SQL_ISRULE(pLiteral,term) || SQL_ISRULE(pLiteral,value_exp_primary))
 	{
-		m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_INVALID_COMPARE);
+		m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ErrorCode::InvalidCompare);
 		return 0;
 	}
 	return 1;
@@ -4755,7 +4755,7 @@ sal_Int16 OSQLParser::buildStringNodes(OSQLParseNode*& pLiteral)
 
 sal_Int16 OSQLParser::buildComparsionRule(OSQLParseNode*& pAppend,OSQLParseNode* pLiteral)
 {
-    OSQLParseNode* pComp = new OSQLInternalNode("=", SQL_NODE_EQUAL);
+    OSQLParseNode* pComp = new OSQLInternalNode("=", SQLNodeType::Equal);
     return buildPredicateRule(pAppend,pLiteral,pComp);
 }
 
@@ -4774,7 +4774,7 @@ void OSQLParser::reduceLiteral(OSQLParseNode*& pLiteral, bool bAppendBlank)
 
 	aValue.append(pLiteral->getChild(1)->getTokenValue());
 
-	pLiteral = new OSQLInternalNode(aValue.makeStringAndClear(),SQL_NODE_STRING);
+	pLiteral = new OSQLInternalNode(aValue.makeStringAndClear(),SQLNodeType::String);
 	delete pTemp;
 }
 

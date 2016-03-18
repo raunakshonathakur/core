@@ -159,10 +159,10 @@ ScImportExport::ScImportExport( ScDocument* p, const OUString& rPos )
     }
     formula::FormulaGrammar::AddressConvention eConv = pDoc->GetAddressConvention();
     // Range?
-    if (aRange.Parse(aPos, pDoc, eConv) & SCA_VALID)
+    if (aRange.Parse(aPos, pDoc, eConv) & ScRefFlags::VALID)
         bSingle = false;
     // Cell?
-    else if (aRange.aStart.Parse(aPos, pDoc, eConv) & SCA_VALID)
+    else if (aRange.aStart.Parse(aPos, pDoc, eConv) & ScRefFlags::VALID)
         aRange.aEnd = aRange.aStart;
     else
         bAll = true;
@@ -433,13 +433,13 @@ bool ScImportExport::ExportStream( SvStream& rStrm, const OUString& rBaseURL, So
         {
             // Always use Calc A1 syntax for paste link.
             OUString aRefName;
-            sal_uInt16 nFlags = SCA_VALID | SCA_TAB_3D;
+            ScRefFlags nFlags = ScRefFlags::VALID | ScRefFlags::TAB_3D;
             if( bSingle )
                 aRefName = aRange.aStart.Format(nFlags, pDoc, formula::FormulaGrammar::CONV_OOO);
             else
             {
                 if( aRange.aStart.Tab() != aRange.aEnd.Tab() )
-                    nFlags |= SCA_TAB2_3D;
+                    nFlags |= ScRefFlags::TAB2_3D;
                 aRefName = aRange.Format(nFlags, pDoc, formula::FormulaGrammar::CONV_OOO);
             }
             OUString aAppName = Application::GetAppName();
@@ -2057,7 +2057,7 @@ bool ScImportExport::Doc2Sylk( SvStream& rStrm )
                             case MM_REFERENCE :
                             {   // diff expression with 'I' M$-extension
                                 ScAddress aPos;
-                                pFCell->GetMatrixOrigin( aPos );
+                                (void)pFCell->GetMatrixOrigin( aPos );
                                 aPrefix = ";I;R";
                                 aPrefix += OUString::number( aPos.Row() - nStartRow + 1 );
                                 aPrefix += ";C";
@@ -2222,8 +2222,8 @@ class ScFormatFilterMissing : public ScFormatFilterPlugin {
     virtual OUString       GetHTMLRangeNameList( ScDocument*, const OUString& ) override { return OUString(); }
 
     virtual FltError ScExportExcel5( SfxMedium&, ScDocument*, ExportFormatExcel, rtl_TextEncoding ) override { return eERR_INTERN; }
-    virtual void ScExportDif( SvStream&, ScDocument*, const ScAddress&, const rtl_TextEncoding, sal_uInt32 ) override {}
-    virtual FltError ScExportDif( SvStream&, ScDocument*, const ScRange&, const rtl_TextEncoding, sal_uInt32 ) override { return eERR_INTERN; }
+    virtual void ScExportDif( SvStream&, ScDocument*, const ScAddress&, const rtl_TextEncoding ) override {}
+    virtual FltError ScExportDif( SvStream&, ScDocument*, const ScRange&, const rtl_TextEncoding ) override { return eERR_INTERN; }
     virtual void ScExportHTML( SvStream&, const OUString&, ScDocument*, const ScRange&, const rtl_TextEncoding, bool,
                   const OUString&, OUString&, const OUString& ) override {}
     virtual void ScExportRTF( SvStream&, ScDocument*, const ScRange&, const rtl_TextEncoding ) override {}

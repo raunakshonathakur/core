@@ -129,11 +129,15 @@ ScHFEditPage::ScHFEditPage( vcl::Window*             pParent,
     m_pWndCenter->SetFont( aPatAttr );
     m_pWndRight->SetFont( aPatAttr );
 
-    // Set size request of 1 widget, the other two will follow as they are
-    // in the same grid
+    // Set size request for all 3 widgets
     Size aSize = LogicToPixel(Size(80, 120), MAP_APPFONT);
-    m_pWndLeft->set_width_request(aSize.Width());
-    m_pWndLeft->set_height_request(aSize.Height());
+    VclPtr<ScEditWindow> aEditWindows[] = {m_pWndLeft, m_pWndCenter, m_pWndRight};
+
+    for (auto &pEditWindow : aEditWindows)
+    {
+        pEditWindow->set_width_request(aSize.Width());
+        pEditWindow->set_height_request(aSize.Height());
+    }
 
     m_pWndLeft->SetObjectSelectHdl( LINK(this,ScHFEditPage,ObjectSelectHdl) );
     m_pWndCenter->SetObjectSelectHdl( LINK(this,ScHFEditPage,ObjectSelectHdl) );
@@ -142,7 +146,6 @@ ScHFEditPage::ScHFEditPage( vcl::Window*             pParent,
     m_pWndLeft->SetGetFocusHdl(setEditFocus);
     m_pWndCenter->SetGetFocusHdl(setEditFocus);
     m_pWndRight->SetGetFocusHdl(setEditFocus);
-    FillCmdArr();
 
     m_pWndLeft->GrabFocus();
     m_pEditFocus = m_pWndLeft; // there's no event from GrabFocus()
@@ -229,27 +232,6 @@ bool ScHFEditPage::FillItemSet( SfxItemSet* rCoreSet )
 
     return true;
 }
-
-#define SET_CMD(i,id) \
-    aCmd  = aDel;                           \
-    aCmd += ScGlobal::GetRscString( id );   \
-    aCmd += aDel;                           \
-    aCmdArr[i] = aCmd;
-
-void ScHFEditPage::FillCmdArr()
-{
-    OUString aDel( ScGlobal::GetRscString( STR_HFCMD_DELIMITER ) );
-    OUString aCmd;
-
-    SET_CMD( 0, STR_HFCMD_PAGE )
-    SET_CMD( 1, STR_HFCMD_PAGES )
-    SET_CMD( 2, STR_HFCMD_DATE )
-    SET_CMD( 3, STR_HFCMD_TIME )
-    SET_CMD( 4, STR_HFCMD_FILE )
-    SET_CMD( 5, STR_HFCMD_TABLE )
-}
-
-#undef SET_CMD
 
 void ScHFEditPage::InitPreDefinedList()
 {

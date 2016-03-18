@@ -11,6 +11,9 @@
 #define INCLUDED_SFX2_CLASSIFICATIONHELPER_HXX
 
 #include <memory>
+#include <vector>
+
+#include <com/sun/star/document/XDocumentProperties.hpp>
 
 #include <rtl/ustring.hxx>
 #include <sfx2/dllapi.h>
@@ -22,6 +25,14 @@ namespace basegfx
 class BColor;
 }
 
+/// Return code of SfxClassificationHelper::CheckPaste().
+enum class SfxClassificationCheckPasteResult
+{
+    None = 1,
+    TargetDocNotClassified = 2,
+    DocClassificationTooLow = 3
+};
+
 /// Shared code to handle Business Authorization Identification and Labeling Scheme (BAILS) properties.
 class SFX2_DLLPUBLIC SfxClassificationHelper
 {
@@ -30,23 +41,40 @@ class SFX2_DLLPUBLIC SfxClassificationHelper
 
 public:
     /// Does the document have any BAILS properties?
-    static bool IsClassified(SfxObjectShell& rObjectShell);
+    static bool IsClassified(const css::uno::Reference<css::document::XDocumentProperties>& xDocumentProperties);
+    /// Checks if pasting from xSource to xDestination would leak information.
+    static SfxClassificationCheckPasteResult CheckPaste(const css::uno::Reference<css::document::XDocumentProperties>& xSource,
+            const css::uno::Reference<css::document::XDocumentProperties>& xDestination);
+    /// Wrapper around CheckPaste(): informs the user if necessary and finds out if the paste can be continued or not.
+    static bool ShowPasteInfo(SfxClassificationCheckPasteResult eResult);
 
-    SfxClassificationHelper(SfxObjectShell& rObjectShell);
+    SfxClassificationHelper(const css::uno::Reference<css::document::XDocumentProperties>& xDocumentProperties);
     ~SfxClassificationHelper();
-    OUString GetBACName();
+    const OUString& GetBACName();
+    /// Return all possible valid category names, based on the policy.
+    std::vector<OUString> GetBACNames();
     /// Setting this sets all the other properties, based on the policy.
     void SetBACName(const OUString& rName);
-    /// If GetImpactLevelColor() will return something meaningful.
+    /// If GetImpactScale() and GetImpactLevel*() will return something meaningful.
     bool HasImpactLevel();
     basegfx::BColor GetImpactLevelColor();
+    /// Larger value means more confidential.
+    sal_Int32 GetImpactLevel();
+    /// Comparing the GetImpactLevel() result is only meaningful when the impact scale is the same.
+    OUString GetImpactScale();
     OUString GetDocumentWatermark();
     /// The selected category has some content for the document header.
     bool HasDocumentHeader();
+    /// The selected category has some content for the document footer.
+    bool HasDocumentFooter();
     void UpdateInfobar(SfxViewFrame& rViewFrame);
 
     /// Brief text located at the top of each document's pages.
     static const OUString& PROP_DOCHEADER();
+    /// Brief text located at the bottom of each document's pages.
+    static const OUString& PROP_DOCFOOTER();
+    /// Brief text formatted as a watermark on each document's page.
+    static const OUString& PROP_DOCWATERMARK();
 };
 
 #endif

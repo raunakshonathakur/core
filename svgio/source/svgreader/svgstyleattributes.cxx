@@ -263,9 +263,6 @@ namespace svgio
                 // dismantle to geometry and add needed primitives
                 const basegfx::BColor* pFill = getFill();
                 const SvgGradientNode* pFillGradient = getSvgGradientNodeFill();
-                const SvgStyleAttributes* pSvgStyleAttributes = getParentStyle();
-                const SvgGradientNode* pParentFillGradient =
-                    pSvgStyleAttributes ? pSvgStyleAttributes->getSvgGradientNodeFill() : nullptr;
                 const SvgPatternNode* pFillPattern = getSvgPatternNodeFill();
                 const basegfx::BColor* pStroke = getStroke();
                 const SvgGradientNode* pStrokeGradient = getSvgGradientNodeStroke();
@@ -306,19 +303,19 @@ namespace svgio
 
                 const bool bStrokeUsed(pStroke || pStrokeGradient || pStrokePattern);
 
-                if(pFill && (!pFillGradient || pParentFillGradient))
-                {
-                    // add the already prepared primitives for single color fill
-                    rTarget.append(rSource);
-                }
                 // add fill. Use geometry even for simple color fill when stroke
                 // is used, else text rendering and the geometry-based stroke will
                 // normally not really match optically due to diverse system text
                 // renderers
-                else if(aMergedArea.count() && (pFillGradient || pFillPattern || bStrokeUsed))
+                if(aMergedArea.count() && (pFillGradient || pFillPattern || bStrokeUsed))
                 {
                     // create text fill content based on geometry
                     add_fill(aMergedArea, rTarget, aMergedArea.getB2DRange());
+                }
+                else if(pFill)
+                {
+                    // add the already prepared primitives for single color fill
+                    rTarget.append(rSource);
                 }
 
                 // add stroke
@@ -1148,30 +1145,21 @@ namespace svgio
                     aSource = drawinglayer::primitive2d::Primitive2DContainer { xRef };
                 }
 
-                if(!getClipPathXLink().isEmpty())
+                const SvgClipPathNode* mpClip = accessClipPathXLink();
+                while(mpClip)
                 {
-                    // try to access linked ClipPath
-                    const SvgClipPathNode* mpClip = dynamic_cast< const SvgClipPathNode* >(mrOwner.getDocument().findSvgNodeById(getClipPathXLink()));
-
-                    if(mpClip)
-                    {
-                        // #i124852# transform may be needed when userSpaceOnUse
-                        mpClip->apply(aSource, pTransform);
-                    }
+                    // #i124852# transform may be needed when userSpaceOnUse
+                    mpClip->apply(aSource, pTransform);
+                    mpClip = mpClip->getSvgStyleAttributes()->accessClipPathXLink();
                 }
 
                 if(!aSource.empty()) // test again, applied clipPath may have lead to empty geometry
                 {
-                    if(!getMaskXLink().isEmpty())
+                    const SvgMaskNode* mpMask = accessMaskXLink();
+                    if(mpMask)
                     {
-                        // try to access linked Mask
-                        const SvgMaskNode* mpMask = dynamic_cast< const SvgMaskNode* >(mrOwner.getDocument().findSvgNodeById(getMaskXLink()));
-
-                        if(mpMask)
-                        {
-                            // #i124852# transform may be needed when userSpaceOnUse
-                            mpMask->apply(aSource, pTransform);
-                        }
+                        // #i124852# transform may be needed when userSpaceOnUse
+                        mpMask->apply(aSource, pTransform);
                     }
 
                     if(!aSource.empty()) // test again, applied mask may have lead to empty geometry
@@ -1218,7 +1206,9 @@ namespace svgio
             maTitle(),
             maDesc(),
             maClipPathXLink(),
+            mpClipPathXLink(nullptr),
             maMaskXLink(),
+            mpMaskXLink(nullptr),
             maMarkerStartXLink(),
             mpMarkerStartXLink(nullptr),
             maMarkerMidXLink(),
@@ -1969,6 +1959,18 @@ namespace svgio
                 static basegfx::BColor aBlack(0.0, 0.0, 0.0);
                 return &aBlack;
             }
+            else if((SVGTokenMarker == mrOwner.getType()) && !maFill.isSet())
+            {
+                const SvgStyleAttributes* pSvgStyleAttributes = getParentStyle();
+
+                if(pSvgStyleAttributes)
+                {
+                    return pSvgStyleAttributes->getFill();
+                }
+
+                static basegfx::BColor aBlack(0.0, 0.0, 0.0);
+                return &aBlack;
+            }
             else if(maFill.isSet())
             {
                 if(maFill.isCurrent())
@@ -2671,12 +2673,59 @@ namespace svgio
 
             const SvgStyleAttributes* pSvgStyleAttributes = getParentStyle();
 
-            if(pSvgStyleAttributes)
+            if(pSvgStyleAttributes && !pSvgStyleAttributes->maClipPathXLink.isEmpty())
             {
                 return pSvgStyleAttributes->getClipPathXLink();
             }
 
             return OUString();
+        }
+
+        const SvgClipPathNode* SvgStyleAttributes::accessClipPathXLink() const
+        {
+            if(!mpClipPathXLink)
+            {
+                const OUString aClipPath(getClipPathXLink());
+
+                if(!aClipPath.isEmpty())
+                {
+                    const_cast< SvgStyleAttributes* >(this)->mpClipPathXLink = dynamic_cast< const SvgClipPathNode* >(mrOwner.getDocument().findSvgNodeById(getClipPathXLink()));
+                }
+            }
+
+            return mpClipPathXLink;
+        }
+
+        OUString SvgStyleAttributes::getMaskXLink() const
+        {
+            if(!maMaskXLink.isEmpty())
+            {
+                return maMaskXLink;
+            }
+
+            const SvgStyleAttributes* pSvgStyleAttributes = getParentStyle();
+
+            if(pSvgStyleAttributes && !pSvgStyleAttributes->maMaskXLink.isEmpty())
+            {
+                return pSvgStyleAttributes->getMaskXLink();
+            }
+
+            return OUString();
+        }
+
+        const SvgMaskNode* SvgStyleAttributes::accessMaskXLink() const
+        {
+            if(!mpMaskXLink)
+            {
+                const OUString aMask(getMaskXLink());
+
+                if(!aMask.isEmpty())
+                {
+                    const_cast< SvgStyleAttributes* >(this)->mpMaskXLink = dynamic_cast< const SvgMaskNode* >(mrOwner.getDocument().findSvgNodeById(getMaskXLink()));
+                }
+            }
+
+            return mpMaskXLink;
         }
 
         OUString SvgStyleAttributes::getMarkerStartXLink() const

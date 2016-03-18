@@ -94,7 +94,7 @@ struct BinAddress
     inline explicit     BinAddress( const ScAddress& rAddr ) : mnCol( rAddr.Col() ), mnRow( rAddr.Row() ) {}
 
     void                read( SequenceInputStream& rStrm );
-    void                read( BiffInputStream& rStrm, bool bCol16Bit = true, bool bRow32Bit = false );
+    void                read( BiffInputStream& rStrm );
 };
 
 inline bool operator<( const BinAddress& rL, const BinAddress& rR )
@@ -130,7 +130,7 @@ struct BinRange
     inline explicit     BinRange( const css::table::CellRangeAddress& rRange ) : maFirst( rRange.StartColumn, rRange.StartRow ), maLast( rRange.EndColumn, rRange.EndRow ) {}
 
     void                read( SequenceInputStream& rStrm );
-    void                read( BiffInputStream& rStrm, bool bCol16Bit = true, bool bRow32Bit = false );
+    void                read( BiffInputStream& rStrm );
 };
 
 inline SequenceInputStream& operator>>( SequenceInputStream& rStrm, BinRange& orRange )
@@ -225,7 +225,6 @@ public:
         @param ornEndRow  (out-parameter) returns the converted end row index.
         @param rString  The string containing the cell address.
         @param nStart  Start index of string part in rString to be parsed.
-        @param nLength  Length of string part in rString to be parsed.
 
         @return  true = Parsed string was valid, returned values can be used.
      */
@@ -233,21 +232,20 @@ public:
                             sal_Int32& ornStartColumn, sal_Int32& ornStartRow,
                             sal_Int32& ornEndColumn, sal_Int32& ornEndRow,
                             const OUString& rString,
-                            sal_Int32 nStart = 0,
-                            sal_Int32 nLength = SAL_MAX_INT32 );
+                            sal_Int32 nStart = 0 );
 
     /** Returns the biggest valid cell address in the own Calc document. */
-    inline const css::table::CellAddress&
+    inline const ScAddress&
                         getMaxApiAddress() const { return maMaxApiPos; }
 
     /** Returns the biggest valid cell address in the imported/exported
         Excel document. */
-    inline const css::table::CellAddress&
+    inline const ScAddress&
                         getMaxXlsAddress() const { return maMaxXlsPos; }
 
     /** Returns the biggest valid cell address in both Calc and the
         imported/exported Excel document. */
-    inline const css::table::CellAddress&
+    inline const ScAddress&
                         getMaxAddress() const { return maMaxPos; }
 
     /** Checks if the passed column index is valid.
@@ -376,8 +374,7 @@ public:
         @param bTrackOverflow  true = Update the internal overflow flags, if
             the address is outside of the supported sheet limits.
         @return  A valid API cell address struct. */
-    css::table::CellAddress
-                        createValidCellAddress(
+    ScAddress           createValidCellAddress(
                             const OUString& rString,
                             sal_Int16 nSheet,
                             bool bTrackOverflow );
@@ -443,8 +440,7 @@ public:
         @param bTrackOverflow  true = Update the internal overflow flags, if
             the address is outside of the supported sheet limits.
         @return  A valid API cell address struct. */
-    css::table::CellAddress
-                        createValidCellAddress(
+    ScAddress           createValidCellAddress(
                             const BinAddress& rBinAddress,
                             sal_Int16 nSheet,
                             bool bTrackOverflow );
@@ -653,9 +649,9 @@ private:
                                 sal_Unicode cSameSheet );
     };
 
-    css::table::CellAddress maMaxApiPos;     /// Maximum valid cell address in Calc.
-    css::table::CellAddress maMaxXlsPos;     /// Maximum valid cell address in Excel.
-    css::table::CellAddress maMaxPos;        /// Maximum valid cell address in Calc/Excel.
+    ScAddress maMaxApiPos;     /// Maximum valid cell address in Calc.
+    ScAddress maMaxXlsPos;     /// Maximum valid cell address in Excel.
+    ScAddress maMaxPos;        /// Maximum valid cell address in Calc/Excel.
     ControlCharacters       maLinkChars;     /// Control characters for external link import (BIFF).
     ControlCharacters       maDConChars;     /// Control characters for DCON* record import (BIFF).
     bool                    mbColOverflow;   /// Flag for "columns overflow".

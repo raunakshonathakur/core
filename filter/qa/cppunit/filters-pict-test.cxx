@@ -46,7 +46,7 @@ public:
 
     OUString pictURL()
     {
-        return getURLFromSrc("/filter/qa/cppunit/data/pict/");
+        return m_directories.getURLFromSrc("/filter/qa/cppunit/data/pict/");
     }
 
     /**
@@ -74,8 +74,7 @@ bool PictFilterTest::load(const OUString &,
 void PictFilterTest::testCVEs()
 {
     testDir(OUString(),
-        pictURL(),
-        OUString());
+        pictURL());
 }
 
 void PictFilterTest::testDontClipTooMuch()

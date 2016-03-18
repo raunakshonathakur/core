@@ -224,12 +224,12 @@ void ScStyleSheetPool::CreateStandardStyles()
     SfxItemSet*     pSet            = nullptr;
     SfxItemSet*     pHFSet          = nullptr;
     SvxSetItem*     pHFSetItem      = nullptr;
-    ScEditEngineDefaulter*  pEdEngine   = new ScEditEngineDefaulter( EditEngine::CreatePool(), true );
+    std::unique_ptr<ScEditEngineDefaulter> pEdEngine(new ScEditEngineDefaulter( EditEngine::CreatePool(), true ));
     pEdEngine->SetUpdateMode( false );
     EditTextObject* pEmptyTxtObj    = pEdEngine->CreateTextObject();
     EditTextObject* pTxtObj         = nullptr;
-    ScPageHFItem*   pHeaderItem     = new ScPageHFItem( ATTR_PAGE_HEADERRIGHT );
-    ScPageHFItem*   pFooterItem     = new ScPageHFItem( ATTR_PAGE_FOOTERRIGHT );
+    std::unique_ptr<ScPageHFItem> pHeaderItem(new ScPageHFItem( ATTR_PAGE_HEADERRIGHT ));
+    std::unique_ptr<ScPageHFItem> pFooterItem(new ScPageHFItem( ATTR_PAGE_FOOTERRIGHT ));
     ScStyleSheet*   pSheet          = nullptr;
     ::editeng::SvxBorderLine    aBorderLine     ( &aColBlack, DEF_LINE_WIDTH_2 );
     SvxBoxItem      aBoxItem        ( ATTR_BORDER );
@@ -331,7 +331,7 @@ void ScStyleSheetPool::CreateStandardStyles()
     pHFSetItem = new SvxSetItem( static_cast<const SvxSetItem&>(pSet->Get( ATTR_PAGE_HEADERSET ) ) );
     pSet->Put( *pHFSetItem, ATTR_PAGE_HEADERSET );
     pSet->Put( *pHFSetItem, ATTR_PAGE_FOOTERSET );
-    DELETEZ( pHFSetItem );
+    delete pHFSetItem;
 
     // Header:
     // [empty][\sheet\][empty]
@@ -343,7 +343,7 @@ void ScStyleSheetPool::CreateStandardStyles()
     pHeaderItem->SetCenterArea( *pTxtObj );
     pHeaderItem->SetRightArea ( *pEmptyTxtObj );
     pSet->Put( *pHeaderItem );
-    DELETEZ( pTxtObj );
+    delete pTxtObj;
 
     // Footer:
     // [empty][Page \STR_PAGE\][empty]
@@ -357,7 +357,7 @@ void ScStyleSheetPool::CreateStandardStyles()
     pFooterItem->SetCenterArea( *pTxtObj );
     pFooterItem->SetRightArea ( *pEmptyTxtObj );
     pSet->Put( *pFooterItem );
-    DELETEZ( pTxtObj );
+    delete pTxtObj;
 
     // 2. Report
 
@@ -389,7 +389,7 @@ void ScStyleSheetPool::CreateStandardStyles()
     pHFSet->Put( aBoxInfoItem );
     pSet->Put( *pHFSetItem, ATTR_PAGE_HEADERSET );
     pSet->Put( *pHFSetItem, ATTR_PAGE_FOOTERSET );
-    DELETEZ( pHFSetItem );
+    delete pHFSetItem;
 
     // Footer:
     // [\TABLE\ (\DATA\)][empty][\DATE\, \TIME\]
@@ -401,7 +401,7 @@ void ScStyleSheetPool::CreateStandardStyles()
     pTxtObj = pEdEngine->CreateTextObject();
     pHeaderItem->SetLeftArea( *pTxtObj );
     pHeaderItem->SetCenterArea( *pEmptyTxtObj );
-    DELETEZ( pTxtObj );
+    delete pTxtObj;
     aStr = ", ";
     pEdEngine->SetText( aStr );
     pEdEngine->QuickInsertField( SvxFieldItem(SvxTimeField(), EE_FEATURE_FIELD), ESelection(0,2,0,2) );
@@ -409,7 +409,7 @@ void ScStyleSheetPool::CreateStandardStyles()
                                     ESelection() );
     pTxtObj = pEdEngine->CreateTextObject();
     pHeaderItem->SetRightArea( *pTxtObj );
-    DELETEZ( pTxtObj );
+    delete pTxtObj;
     pSet->Put( *pHeaderItem );
 
     // Footer:
@@ -427,12 +427,9 @@ void ScStyleSheetPool::CreateStandardStyles()
     pFooterItem->SetCenterArea( *pTxtObj );
     pFooterItem->SetRightArea ( *pEmptyTxtObj );
     pSet->Put( *pFooterItem );
-    DELETEZ( pTxtObj );
+    delete pTxtObj;
 
-    DELETEZ( pEmptyTxtObj );
-    DELETEZ( pHeaderItem );
-    DELETEZ( pFooterItem );
-    DELETEZ( pEdEngine );
+    delete pEmptyTxtObj;
 }
 
 namespace {

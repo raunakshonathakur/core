@@ -73,11 +73,11 @@ public:
     BinaryOutputStream&   WriteUInt32(sal_uInt32 x) { writeValue(x); return *this; }
     BinaryOutputStream&   WriteInt64(sal_Int64 x)   { writeValue(x); return *this; }
 
-    void writeCompressedUnicodeArray( const OUString& rString, bool bCompressed, bool bAllowNulChars = false );
+    void writeCompressedUnicodeArray( const OUString& rString, bool bCompressed );
 
-    void writeCharArrayUC( const OUString& rString, rtl_TextEncoding eTextEnc, bool bAllowNulChars = false );
+    void writeCharArrayUC( const OUString& rString, rtl_TextEncoding eTextEnc );
 
-    void writeUnicodeArray( const OUString& rString, bool bAllowNulChars = false );
+    void writeUnicodeArray( const OUString& rString );
 
 protected:
     /** This dummy default c'tor will never call the c'tor of the virtual base

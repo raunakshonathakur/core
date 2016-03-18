@@ -236,22 +236,22 @@ SdrModel::SdrModel():
     maMaPag(),
     maPages()
 {
-    ImpCtor(nullptr, nullptr, false, LOADREFCOUNTS);
+    ImpCtor(nullptr, nullptr, false, false);
 }
 
-SdrModel::SdrModel(SfxItemPool* pPool, ::comphelper::IEmbeddedHelper* pPers, bool bUseExtColorTable, bool bLoadRefCounts):
+SdrModel::SdrModel(SfxItemPool* pPool, ::comphelper::IEmbeddedHelper* pPers, bool bUseExtColorTable):
     maMaPag(),
     maPages()
 {
-    ImpCtor(pPool,pPers,bUseExtColorTable, bLoadRefCounts);
+    ImpCtor(pPool,pPers,bUseExtColorTable, false/*bLoadRefCounts*/);
 }
 
-SdrModel::SdrModel(const OUString& rPath, SfxItemPool* pPool, ::comphelper::IEmbeddedHelper* pPers, bool bUseExtColorTable, bool bLoadRefCounts):
+SdrModel::SdrModel(const OUString& rPath, SfxItemPool* pPool, ::comphelper::IEmbeddedHelper* pPers, bool bUseExtColorTable):
     maMaPag(),
     maPages(),
     aTablePath(rPath)
 {
-    ImpCtor(pPool,pPers,bUseExtColorTable, bLoadRefCounts);
+    ImpCtor(pPool,pPers,bUseExtColorTable, false/*bLoadRefCounts*/);
 }
 
 SdrModel::~SdrModel()
@@ -320,9 +320,9 @@ SdrModel::~SdrModel()
     delete mpImpl;
 }
 
-void SdrModel::SetSwapGraphics( bool bSwap )
+void SdrModel::SetSwapGraphics()
 {
-    bSwapGraphics = bSwap;
+    bSwapGraphics = true;
 }
 
 bool SdrModel::IsReadOnly() const
@@ -840,11 +840,6 @@ void SdrModel::setTiledSearching(bool bTiledSearching)
 bool SdrModel::isTiledSearching() const
 {
     return mbTiledSearching;
-}
-
-LibreOfficeKitCallback SdrModel::getLibreOfficeKitCallback() const
-{
-    return mpLibreOfficeKitCallback;
 }
 
 void* SdrModel::getLibreOfficeKitData() const
@@ -1377,7 +1372,7 @@ void SdrModel::TakeAngleStr(long nAngle, OUString& rStr, bool bNoDegChar)
     rStr = aBuf.makeStringAndClear();
 }
 
-void SdrModel::TakePercentStr(const Fraction& rVal, OUString& rStr, bool bNoPercentChar)
+void SdrModel::TakePercentStr(const Fraction& rVal, OUString& rStr)
 {
     sal_Int32 nMul(rVal.GetNumerator());
     sal_Int32 nDiv(rVal.GetDenominator());
@@ -1401,8 +1396,7 @@ void SdrModel::TakePercentStr(const Fraction& rVal, OUString& rStr, bool bNoPerc
     if(bNeg)
         rStr = "-" + rStr;
 
-    if(!bNoPercentChar)
-        rStr += "%";
+    rStr += "%";
 }
 
 void SdrModel::SetChanged(bool bFlg)

@@ -272,8 +272,7 @@ public:
     bool IsMarkedHit(const Point& rPnt, short nTol=-2) const { return IsMarkedObjHit(rPnt,nTol); }
     bool IsMarkedObjHit(const Point& rPnt, short nTol=-2) const;
 
-    // Pick: Supported options for nOptions are SEARCH_NEXT, SEARCH_BACKWARD (ni)
-    SdrHdl* PickHandle(const Point& rPnt, SdrSearchOptions nOptions=SdrSearchOptions::NONE, SdrHdl* pHdl0=nullptr) const;
+    SdrHdl* PickHandle(const Point& rPnt) const;
 
     // Pick: Supported options for nOptions are:
     // SdrSearchOptions::DEEP SdrSearchOptions::ALSOONMASTER SdrSearchOptions::TESTMARKABLE SdrSearchOptions::TESTTEXTEDIT
@@ -380,8 +379,7 @@ public:
     // (Handlers are just situated at marked gluepoints )
     // Attention: With each change of the glue point status the handle list is re-calculated.
     // All previously saved SdrHdl* became invalid by this, the same with the point IDs!
-    // Pick: Supported options for nOptions are SEARCH_NEXT, SEARCH_BACKWARD
-    bool PickGluePoint(const Point& rPnt, SdrObject*& rpObj, sal_uInt16& rnId, SdrPageView*& rpPV, SdrSearchOptions nOptions=SdrSearchOptions::NONE) const;
+    bool PickGluePoint(const Point& rPnt, SdrObject*& rpObj, sal_uInt16& rnId, SdrPageView*& rpPV) const;
     bool MarkGluePoint(const SdrObject* pObj, sal_uInt16 nId, const SdrPageView* pPV, bool bUnmark=false);
     void UnmarkGluePoint(const SdrObject* pObj, sal_uInt16 nId, const SdrPageView* pPV) { MarkGluePoint(pObj,nId,pPV,true); }
     bool IsGluePointMarked(const SdrObject* pObj, sal_uInt16 nId) const;

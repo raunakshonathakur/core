@@ -175,8 +175,7 @@ private:
         css::uno::Reference<css::datatransfer::XTransferable >& rxDataObj,
         const OUString& rBaseURL, const EditPaM& rPaM, bool bUseSpecial);
 
-    EDITENG_DLLPRIVATE EditPaM EndOfWord(
-        const EditPaM& rPaM, sal_Int16 nWordType = css::i18n::WordType::ANYWORD_IGNOREWHITESPACES);
+    EDITENG_DLLPRIVATE EditPaM EndOfWord(const EditPaM& rPaM);
 
     EDITENG_DLLPRIVATE EditPaM GetPaM(const Point& aDocPos, bool bSmart = true);
 
@@ -271,7 +270,7 @@ public:
     void            SetMaxAutoPaperSize( const Size& rSz );
 
     OUString        GetText( LineEnd eEnd = LINEEND_LF ) const;
-    OUString        GetText( const ESelection& rSelection, const LineEnd eEnd = LINEEND_LF ) const;
+    OUString        GetText( const ESelection& rSelection ) const;
     sal_uInt32      GetTextLen() const;
     sal_uInt32      GetTextHeight() const;
     sal_uInt32      GetTextHeightNTP() const;
@@ -287,7 +286,7 @@ public:
     sal_Int32       GetLineLen( sal_Int32 nParagraph, sal_Int32 nLine ) const;
     void            GetLineBoundaries( /*out*/sal_Int32& rStart, /*out*/sal_Int32& rEnd, sal_Int32 nParagraph, sal_Int32 nLine ) const;
     sal_Int32       GetLineNumberAtIndex( sal_Int32 nPara, sal_Int32 nIndex ) const;
-    sal_uInt32      GetLineHeight( sal_Int32 nParagraph, sal_Int32 nLine = 0 );
+    sal_uInt32      GetLineHeight( sal_Int32 nParagraph );
     ParagraphInfos  GetParagraphInfos( sal_Int32 nPara );
     sal_Int32       FindParagraph( long nDocPosY );
     EPosition       FindDocPosition( const Point& rDocPos ) const;
@@ -453,9 +452,9 @@ public:
     bool            HasConvertibleTextPortion( LanguageType nLang );
     virtual bool    ConvertNextDocument();
 
-    bool UpdateFields();
-    bool UpdateFieldsOnly();
-    void            RemoveFields( bool bKeepFieldText, std::function<bool ( const SvxFieldData* )> isFieldData = [] (const SvxFieldData* ){return true;} );
+    bool            UpdateFields();
+    bool            UpdateFieldsOnly();
+    void            RemoveFields( std::function<bool ( const SvxFieldData* )> isFieldData = [] (const SvxFieldData* ){return true;} );
 
     sal_uInt16      GetFieldCount( sal_Int32 nPara ) const;
     EFieldInfo      GetFieldInfo( sal_Int32 nPara, sal_uInt16 nField ) const;
@@ -482,7 +481,7 @@ public:
     virtual void DrawingText( const Point& rStartPos, const OUString& rText,
                               sal_Int32 nTextStart, sal_Int32 nTextLen,
                               const long* pDXArray, const SvxFont& rFont,
-                              sal_Int32 nPara, sal_Int32 nIndex, sal_uInt8 nRightToLeft,
+                              sal_Int32 nPara, sal_uInt8 nRightToLeft,
                               const EEngineData::WrongSpellVector* pWrongSpellVector,
                               const SvxFieldData* pFieldData,
                               bool bEndOfLine,
@@ -493,7 +492,7 @@ public:
                               const Color& rTextLineColor);
 
     virtual void DrawingTab( const Point& rStartPos, long nWidth, const OUString& rChar,
-                             const SvxFont& rFont, sal_Int32 nPara, sal_Int32 nIndex, sal_uInt8 nRightToLeft,
+                             const SvxFont& rFont, sal_Int32 nPara, sal_uInt8 nRightToLeft,
                              bool bEndOfLine,
                              bool bEndOfParagraph,
                              const Color& rOverlineColor,
@@ -551,8 +550,7 @@ public:
     EditPaM InsertField(const EditSelection& rEditSelection, const SvxFieldItem& rFld);
     EditPaM InsertText(const EditSelection& aCurEditSelection, const OUString& rStr);
     EditSelection InsertText(const EditTextObject& rTextObject, const EditSelection& rSel);
-    EditPaM InsertParaBreak(
-        const EditSelection& rEditSelection, bool bKeepEndingAttribs = true);
+    EditPaM InsertParaBreak(const EditSelection& rEditSelection);
     EditPaM InsertLineBreak(const EditSelection& rEditSelection);
 
     EditPaM CursorLeft(
@@ -560,8 +558,7 @@ public:
     EditPaM CursorRight(
         const EditPaM& rPaM, sal_uInt16 nCharacterIteratorMode = css::i18n::CharacterIteratorMode::SKIPCELL);
 
-    void SeekCursor(
-        ContentNode* pNode, sal_Int32 nPos, SvxFont& rFont, OutputDevice* pOut = nullptr, sal_uInt16 nIgnoreWhich = 0);
+    void SeekCursor(ContentNode* pNode, sal_Int32 nPos, SvxFont& rFont);
 
     EditPaM DeleteSelection(const EditSelection& rSel);
 
@@ -572,7 +569,7 @@ public:
     void SetParaAttribsOnly(sal_Int32 nPara, const SfxItemSet& rSet);
     void SetAttribs(const EditSelection& rSel, const SfxItemSet& rSet, sal_uInt8 nSpecial = 0);
 
-    OUString GetSelected(const EditSelection& rSel, const LineEnd eParaSep = LINEEND_LF) const;
+    OUString GetSelected(const EditSelection& rSel) const;
     EditPaM DeleteSelected(const EditSelection& rSel);
 
     SvtScriptType GetScriptType(const EditSelection& rSel) const;

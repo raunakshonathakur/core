@@ -720,7 +720,7 @@ void ScCellShell::ExecuteEdit( SfxRequest& rReq )
 
                     if ( nStartCol != nEndCol && nStartRow != nEndRow )
                     {
-                        pDlg->SetEdStartValEnabled();
+                        pDlg->SetEdStartValEnabled(false);
                     }
 
                     if ( pDlg->Execute() == RET_OK )
@@ -823,7 +823,7 @@ void ScCellShell::ExecuteEdit( SfxRequest& rReq )
                         ScAddress aScAddress;
                         OUString aArg = static_cast<const SfxStringItem*>(pItem)->GetValue();
 
-                        if( aScAddress.Parse( aArg, pDoc, pDoc->GetAddressConvention() ) & SCA_VALID )
+                        if( aScAddress.Parse( aArg, pDoc, pDoc->GetAddressConvention() ) & ScRefFlags::VALID )
                         {
                             nFillRow = aScAddress.Row();
                             nFillCol = aScAddress.Col();
@@ -894,7 +894,7 @@ void ScCellShell::ExecuteEdit( SfxRequest& rReq )
                             if( ! rReq.IsAPI() )
                             {
                                 ScAddress aAdr( nFillCol, nFillRow, 0 );
-                                OUString  aAdrStr(aAdr.Format(SCR_ABS, pDoc, pDoc->GetAddressConvention()));
+                                OUString  aAdrStr(aAdr.Format(ScRefFlags::RANGE_ABS, pDoc, pDoc->GetAddressConvention()));
 
                                 rReq.AppendItem( SfxStringItem( FID_FILL_AUTO, aAdrStr ) );
                                 rReq.Done();
@@ -1272,7 +1272,7 @@ void ScCellShell::ExecuteEdit( SfxRequest& rReq )
         case SID_CUT:               // for graphs in DrawShell
             {
                 WaitObject aWait( GetViewData()->GetDialogParent() );
-                pTabViewShell->CutToClip( nullptr, true );
+                pTabViewShell->CutToClip();
                 rReq.Done();
                 GetViewData()->SetPasteMode( (ScPasteFlags)(SC_PASTE_MODE | SC_PASTE_BORDER));
                 pTabViewShell->ShowCursor();

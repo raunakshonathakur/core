@@ -74,7 +74,6 @@ class SfxModule;
 class SfxModule;
 namespace vcl { class Window; }
 struct SfxChildWinFactory;
-struct SfxMenuCtrlFactory;
 struct SfxStbCtrlFactory;
 struct SfxTbxCtrlFactory;
 class SimpleResMgr;
@@ -148,7 +147,7 @@ public:
     /**
     * @param pArgs Takes ownership
     */
-    sal_uIntPtr                       LoadTemplate( SfxObjectShellLock& xDoc, const OUString& rFileName, bool bCopy=true, SfxItemSet* pArgs = nullptr );
+    sal_uIntPtr                       LoadTemplate( SfxObjectShellLock& xDoc, const OUString& rFileName, SfxItemSet* pArgs = nullptr );
     vcl::Window*                     GetTopWindow() const;
 
     // members
@@ -163,8 +162,8 @@ public:
     static OUString             ChooseScript();
     static void                 MacroOrganizer( sal_Int16 nTabId );
     static ErrCode              CallBasic( const OUString&, BasicManager*, SbxArray *pArgs, SbxValue *pRet );
-    static ErrCode              CallAppBasic( const OUString& i_macroName, SbxArray* i_args = nullptr, SbxValue* i_ret = nullptr )
-                                { return CallBasic( i_macroName, SfxApplication::GetBasicManager(), i_args, i_ret ); }
+    static ErrCode              CallAppBasic( const OUString& i_macroName, SbxArray* i_args = nullptr )
+                                { return CallBasic( i_macroName, SfxApplication::GetBasicManager(), i_args, nullptr ); }
     static BasicManager*        GetBasicManager();
     css::script::XLibraryContainer * GetDialogContainer();
     css::script::XLibraryContainer * GetBasicContainer();
@@ -191,7 +190,6 @@ public:
     SAL_DLLPRIVATE void         RegisterChildWindow_Impl(SfxModule*, SfxChildWinFactory*);
     SAL_DLLPRIVATE void         RegisterChildWindowContext_Impl(SfxModule*, sal_uInt16, SfxChildWinContextFactory*);
     SAL_DLLPRIVATE void         RegisterStatusBarControl_Impl(SfxModule*, const SfxStbCtrlFactory&);
-    SAL_DLLPRIVATE void         RegisterMenuControl_Impl(SfxModule*, const SfxMenuCtrlFactory&);
     SAL_DLLPRIVATE void         RegisterToolBoxControl_Impl( SfxModule*, const SfxTbxCtrlFactory&);
     SAL_DLLPRIVATE SfxTbxCtrlFactArr_Impl& GetTbxCtrlFactories_Impl() const;
     SAL_DLLPRIVATE SfxStbCtrlFactArr_Impl& GetStbCtrlFactories_Impl() const;

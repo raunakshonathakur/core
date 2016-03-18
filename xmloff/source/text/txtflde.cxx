@@ -1280,7 +1280,7 @@ void XMLTextFieldExport::ExportFieldHelper(
             // adjust value given as integer in minutes
             ProcessDateTime(XML_TIME_ADJUST,
                             GetIntProperty(sPropertyAdjust, rPropSet),
-                            false, true, true);
+                            false, true);
         }
         ExportElement(XML_TIME, sPresentation);
         break;
@@ -1325,7 +1325,7 @@ void XMLTextFieldExport::ExportFieldHelper(
             // adjust value given as number of days
             ProcessDateTime(XML_DATE_ADJUST,
                             GetIntProperty(sPropertyAdjust, rPropSet),
-                            true, true, true);
+                            true, true);
         }
         ExportElement(XML_DATE, sPresentation);
         break;
@@ -2128,7 +2128,7 @@ void XMLTextFieldExport::ExportFieldDeclarations(
             else
             {
                 // string: write regardless of default
-                ProcessString(XML_VALUE_TYPE, XML_STRING, false,
+                ProcessString(XML_VALUE_TYPE, XML_STRING,
                               XML_NAMESPACE_OFFICE);
                 ProcessString(XML_STRING_VALUE,
                               GetStringProperty(sPropertyContent, xPropSet),
@@ -2227,8 +2227,7 @@ void XMLTextFieldExport::ExportElement(enum XMLTokenEnum eElementName,
 }
 
 void XMLTextFieldExport::ExportElement(enum XMLTokenEnum eElementName,
-                                       const OUString& sContent,
-                                       bool bAddSpace)
+                                       const OUString& sContent)
 {
     DBG_ASSERT(eElementName != XML_TOKEN_INVALID, "invalid element name!");
     if (eElementName != XML_TOKEN_INVALID)
@@ -2239,7 +2238,7 @@ void XMLTextFieldExport::ExportElement(enum XMLTokenEnum eElementName,
             if (SvtSaveOptions().GetODFDefaultVersion() > SvtSaveOptions::ODFVER_012)
             {
                 SvXMLElementExport aElem( GetExport(), XML_NAMESPACE_LO_EXT,
-                        eElementName, bAddSpace, bAddSpace );
+                        eElementName, false, false );
                 // export content
                 GetExport().Characters(sContent);
             }
@@ -2247,7 +2246,7 @@ void XMLTextFieldExport::ExportElement(enum XMLTokenEnum eElementName,
         else
         {
             SvXMLElementExport aElem( GetExport(), XML_NAMESPACE_TEXT,
-                                      eElementName, bAddSpace, bAddSpace );
+                                      eElementName, false, false );
             // export content
             GetExport().Characters(sContent);
         }
@@ -2426,8 +2425,7 @@ void XMLTextFieldExport::ProcessValueAndType(
 
 /// process display related properties
 void XMLTextFieldExport::ProcessDisplay(bool bIsVisible,
-                                        bool bIsCommand,
-                                        bool bValueDefault)
+                                        bool bIsCommand)
 {
     enum XMLTokenEnum eValue;
 
@@ -2441,7 +2439,7 @@ void XMLTextFieldExport::ProcessDisplay(bool bIsVisible,
     }
 
     // omit attribute if default
-    if (!bValueDefault || (eValue != XML_VALUE))
+    if (eValue != XML_VALUE)
     {
         GetExport().AddAttribute(XML_NAMESPACE_TEXT, XML_DISPLAY, eValue);
     }
@@ -2485,24 +2483,21 @@ void XMLTextFieldExport::ProcessString(enum XMLTokenEnum eName,
 
 void XMLTextFieldExport::ProcessString(enum XMLTokenEnum eName,
                                        sal_uInt16 nValuePrefix,
-                                       const OUString& sValue,
-                                       bool bOmitEmpty,
-                                       sal_uInt16 nPrefix)
+                                       const OUString& sValue)
 {
     OUString sQValue =
         GetExport().GetNamespaceMap().GetQNameByKey( nValuePrefix, sValue, false );
-    ProcessString( eName, sQValue, bOmitEmpty, nPrefix );
+    ProcessString( eName, sQValue );
 }
 
 /// export a string attribute
 void XMLTextFieldExport::ProcessString(enum XMLTokenEnum eName,
                                        const OUString& sValue,
-                                       const OUString& sDefault,
-                                       sal_uInt16 nPrefix)
+                                       const OUString& sDefault)
 {
     if (sValue != sDefault)
     {
-        ProcessString(eName, sValue, false, nPrefix);
+        ProcessString(eName, sValue);
     }
 }
 
@@ -2510,12 +2505,11 @@ void XMLTextFieldExport::ProcessString(enum XMLTokenEnum eName,
 void XMLTextFieldExport::ProcessString(enum XMLTokenEnum eName,
                                        sal_uInt16 nValuePrefix,
                                        const OUString& sValue,
-                                       const OUString& sDefault,
-                                       sal_uInt16 nPrefix)
+                                       const OUString& sDefault)
 {
     if (sValue != sDefault)
     {
-        ProcessString(eName, nValuePrefix, sValue, false, nPrefix);
+        ProcessString(eName, nValuePrefix, sValue);
     }
 }
 
@@ -2524,17 +2518,11 @@ void XMLTextFieldExport::ProcessString(enum XMLTokenEnum eName,
 void XMLTextFieldExport::ProcessString(
     enum XMLTokenEnum eName,
     enum XMLTokenEnum eValue,
-    bool bOmitEmpty,
     sal_uInt16 nPrefix)
 {
     DBG_ASSERT( eName != XML_TOKEN_INVALID, "invalid element token" );
-    DBG_ASSERT( bOmitEmpty || (eValue != XML_TOKEN_INVALID),
-                "invalid value token" );
+    DBG_ASSERT( eValue != XML_TOKEN_INVALID, "invalid value token" );
     if ( XML_TOKEN_INVALID == eName )
-        return;
-
-    // check for empty string, if applicable
-    if (bOmitEmpty && (eValue == XML_TOKEN_INVALID))
         return;
 
     GetExport().AddAttribute(nPrefix, eName, eValue);
@@ -2544,11 +2532,10 @@ void XMLTextFieldExport::ProcessString(
 void XMLTextFieldExport::ProcessString(
     enum XMLTokenEnum eName,
     enum XMLTokenEnum eValue,
-    enum XMLTokenEnum eDefault,
-    sal_uInt16 nPrefix)
+    enum XMLTokenEnum eDefault)
 {
     if ( eValue != eDefault )
-        ProcessString( eName, eValue, false, nPrefix);
+        ProcessString( eName, eValue);
 }
 
 
@@ -2650,8 +2637,7 @@ void XMLTextFieldExport::ProcessDateTime(enum XMLTokenEnum eName,
 /// export a date or time
 void XMLTextFieldExport::ProcessDateTime(enum XMLTokenEnum eName,
                                          const util::DateTime& rTime,
-                                         bool bIsDate,
-                                         sal_uInt16 nPrefix)
+                                         bool bIsDate)
 {
     OUStringBuffer aBuffer;
 
@@ -2670,29 +2656,26 @@ void XMLTextFieldExport::ProcessDateTime(enum XMLTokenEnum eName,
     ::sax::Converter::convertDateTime(aBuffer, aDateTime, nullptr);
 
     // output attribute
-    ProcessString(eName, aBuffer.makeStringAndClear(), true, nPrefix);
+    ProcessString(eName, aBuffer.makeStringAndClear(), true);
 }
 
 /// export a date, time, or duration
 void XMLTextFieldExport::ProcessDateTime(enum XMLTokenEnum eName,
                                          sal_Int32 nMinutes,
                                          bool bIsDate,
-                                         bool bIsDuration,
-                                         bool bOmitDurationIfZero,
-                                         sal_uInt16 nPrefix)
+                                         bool bIsDuration)
 {
     // handle bOmitDurationIfZero here, because we can precisely compare ints
-    if (!(bIsDuration && bOmitDurationIfZero && (nMinutes==0)))
+    if (!(bIsDuration && (nMinutes==0)))
     {
         ProcessDateTime(eName, (double)nMinutes / (double)(24*60),
-                        bIsDate, bIsDuration, bOmitDurationIfZero, nPrefix);
+                        bIsDate, bIsDuration);
     }
 }
 
 /// export a time or dateTime
 void XMLTextFieldExport::ProcessTimeOrDateTime(enum XMLTokenEnum eName,
-                                         const util::DateTime& rTime,
-                                         sal_uInt16 nPrefix)
+                                         const util::DateTime& rTime)
 {
     OUStringBuffer aBuffer;
 
@@ -2700,7 +2683,7 @@ void XMLTextFieldExport::ProcessTimeOrDateTime(enum XMLTokenEnum eName,
     ::sax::Converter::convertTimeOrDateTime(aBuffer, rTime, nullptr);
 
     // output attribute
-    ProcessString(eName, aBuffer.makeStringAndClear(), true, nPrefix);
+    ProcessString(eName, aBuffer.makeStringAndClear(), true);
 }
 
 

@@ -80,8 +80,7 @@ void RtfTest::test()
 {
 #ifndef DISABLE_CVE_TESTS
     testDir(OUString(),
-            getURLFromSrc("/writerfilter/qa/cppunittests/rtftok/data/"),
-            OUString());
+            m_directories.getURLFromSrc("/writerfilter/qa/cppunittests/rtftok/data/"));
 #endif
 }
 

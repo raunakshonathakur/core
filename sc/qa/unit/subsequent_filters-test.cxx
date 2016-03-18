@@ -1517,17 +1517,17 @@ void ScFiltersTest::testPassword_Impl(const OUString& aFileNameBase)
     OUString aFilterType(getFileFormats()[0].pTypeName, strlen(getFileFormats()[0].pTypeName), RTL_TEXTENCODING_UTF8);
 
     SotClipboardFormatId nFormat = SotClipboardFormatId::STARCALC_8;
-    SfxFilter* aFilter = new SfxFilter(
+    std::shared_ptr<const SfxFilter> pFilter(new SfxFilter(
         aFilterName,
         OUString(), getFileFormats()[0].nFormatType, nFormat, aFilterType, 0, OUString(),
-        OUString(), OUString("private:factory/scalc*") );
-    aFilter->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
+        OUString(), OUString("private:factory/scalc*") ));
+    const_cast<SfxFilter*>(pFilter.get())->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
 
     ScDocShellRef xDocSh = new ScDocShell;
     SfxMedium* pMedium = new SfxMedium(aFileName, STREAM_STD_READWRITE);
     SfxItemSet* pSet = pMedium->GetItemSet();
     pSet->Put(SfxStringItem(SID_PASSWORD, OUString("test")));
-    pMedium->SetFilter(aFilter);
+    pMedium->SetFilter(pFilter);
     if (!xDocSh->DoLoad(pMedium))
     {
         xDocSh->DoClose();
@@ -1731,6 +1731,8 @@ void ScFiltersTest::testCellAnchoredHiddenShapesXLSX()
     SdrObject* pObj = pPage->GetObj(1);
     CPPUNIT_ASSERT_MESSAGE("Failed to get drawing object.", pObj);
     CPPUNIT_ASSERT_MESSAGE("The shape having same twocellanchor from and to attribute values, is visible.", !pObj->IsVisible());
+
+    xDocSh->DoClose();
 }
 
 namespace {
@@ -1825,7 +1827,7 @@ void ScFiltersTest::testPivotTableNamedRangeSourceODS()
     ScDocument& rDoc = xDocSh->GetDocument();
 
     ScDPCollection* pDPs = rDoc.GetDPCollection();
-    CPPUNIT_ASSERT(pDPs->GetCount() == 1);
+    CPPUNIT_ASSERT_EQUAL(size_t(1), pDPs->GetCount());
 
     ScDPObject* pDP = &(*pDPs)[0];
     CPPUNIT_ASSERT(pDP);
@@ -1837,7 +1839,7 @@ void ScFiltersTest::testPivotTableNamedRangeSourceODS()
 
     sal_uInt16 nOrient;
     long nDim = pDP->GetHeaderDim(ScAddress(0,1,1), nOrient);
-    CPPUNIT_ASSERT_MESSAGE("Failed to detect header dimension.", nDim == 0);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed to detect header dimension.", long(0), nDim);
     CPPUNIT_ASSERT_MESSAGE("This dimension should be a page dimension.",
                            nOrient == sheet::DataPilotFieldOrientation_PAGE);
 
@@ -2439,6 +2441,8 @@ void ScFiltersTest::testCondFormatThemeColorXLSX()
     pColorScaleEntry = pColorScale->GetEntry(1);
     CPPUNIT_ASSERT(pColorScaleEntry);
     CPPUNIT_ASSERT_EQUAL(Color(157, 195, 230), pColorScaleEntry->GetColor());
+
+    xDocSh->DoClose();
 }
 
 void ScFiltersTest::testCondFormatThemeColor2XLSX()
@@ -2460,6 +2464,8 @@ void ScFiltersTest::testCondFormatThemeColor2XLSX()
     CPPUNIT_ASSERT(pDataBarFormatData->mpNegativeColor.get());
     CPPUNIT_ASSERT_EQUAL(Color(217, 217, 217), *pDataBarFormatData->mpNegativeColor.get());
     CPPUNIT_ASSERT_EQUAL(Color(197, 90, 17), pDataBarFormatData->maAxisColor);
+
+    xDocSh->DoClose();
 }
 
 namespace {
@@ -2520,6 +2526,8 @@ void ScFiltersTest::testComplexIconSetsXLSX()
     testCustomIconSetsXLSX_Impl(rDoc, 3, 1, IconSet_4RedToBlack, 3);
     testCustomIconSetsXLSX_Impl(rDoc, 3, 2, IconSet_3TrafficLights1, 1);
     testCustomIconSetsXLSX_Impl(rDoc, 3, 3, IconSet_3Arrows, 2);
+
+    xDocSh->DoClose();
 }
 
 void ScFiltersTest::testCondFormatParentXLSX()
@@ -2534,6 +2542,8 @@ void ScFiltersTest::testCondFormatParentXLSX()
     const SfxPoolItem& rPoolItem = pPattern->GetItem(ATTR_VER_JUSTIFY, pCondSet);
     const SvxVerJustifyItem& rVerJustify = static_cast<const SvxVerJustifyItem&>(rPoolItem);
     CPPUNIT_ASSERT_EQUAL(SVX_VER_JUSTIFY_TOP, static_cast<SvxCellVerJustify>(rVerJustify.GetValue()));
+
+    xDocSh->DoClose();
 }
 
 void ScFiltersTest::testColorScaleNumWithRefXLSX()
@@ -2563,6 +2573,8 @@ void ScFiltersTest::testColorScaleNumWithRefXLSX()
     const ScColorScaleEntry* pColorScaleEntry = pColorScale->GetEntry(1);
     CPPUNIT_ASSERT_EQUAL(OUString("=$A$1"),
             pColorScaleEntry->GetFormula(formula::FormulaGrammar::GRAM_NATIVE));
+
+    xDocSh->DoClose();
 }
 
 void ScFiltersTest::testLiteralInFormulaXLS()
@@ -3143,6 +3155,7 @@ void ScFiltersTest::testRefStringXLSX()
     const ScCalcConfig& rCalcConfig = rDoc.GetCalcConfig();
     CPPUNIT_ASSERT_EQUAL(formula::FormulaGrammar::CONV_XL_A1, rCalcConfig.meStringRefAddressSyntax);
 
+    xDocSh->DoClose();
 }
 
 void ScFiltersTest::testBnc762542()
@@ -3180,6 +3193,8 @@ void ScFiltersTest::testHiddenSheetsXLSX()
     CPPUNIT_ASSERT_EQUAL_MESSAGE("1st sheet should be hidden", false, rDoc.IsVisible(0));
     CPPUNIT_ASSERT_EQUAL_MESSAGE("2nd sheet should be visible", true, rDoc.IsVisible(1));
     CPPUNIT_ASSERT_EQUAL_MESSAGE("3rd sheet should be hidden", false, rDoc.IsVisible(2));
+
+    xDocSh->DoClose();
 }
 
 ScFiltersTest::ScFiltersTest()

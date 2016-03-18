@@ -248,15 +248,12 @@ public:
                     MenuItemBits nItemBits = MenuItemBits::NONE,
                     const OString &rIdent = OString(),
                     sal_uInt16 nPos = MENU_APPEND);
-    void InsertItem(const ResId& rResId, sal_uInt16 nPos = MENU_APPEND );
+    void InsertItem(const ResId& rResId);
     void InsertItem(const OUString& rCommand,
-                    const css::uno::Reference<css::frame::XFrame>& rFrame,
-                    MenuItemBits nBits = MenuItemBits::NONE,
-                    const OString &rIdent = OString(),
-                    sal_uInt16 nPos = MENU_APPEND);
+                    const css::uno::Reference<css::frame::XFrame>& rFrame);
     void InsertSeparator(const OString &rIdent = OString(), sal_uInt16 nPos = MENU_APPEND);
     void RemoveItem( sal_uInt16 nPos );
-    void CopyItem(const Menu& rMenu, sal_uInt16 nPos, sal_uInt16 nNewPos = MENU_APPEND );
+    void CopyItem(const Menu& rMenu, sal_uInt16 nPos );
     void Clear();
 
     void CreateAutoMnemonics();
@@ -308,7 +305,7 @@ public:
     virtual bool IsMenuBar() const = 0;
 
     void RemoveDisabledEntries( bool bCheckPopups = true, bool bRemoveEmptyPopups = false );
-    bool HasValidEntries( bool bCheckPopups = true );
+    bool HasValidEntries();
 
     void UpdateNativeMenu();
 
@@ -416,6 +413,7 @@ class VCL_DLLPUBLIC MenuBar : public Menu
     bool mbFloatBtnVisible : 1;
     bool mbHideBtnVisible : 1;
     bool mbDisplayable : 1;
+    VclPtr<SystemWindow> mxAssociatedSystemWindow;
 
     friend class Application;
     friend class Menu;
@@ -425,7 +423,7 @@ class VCL_DLLPUBLIC MenuBar : public Menu
 
     SAL_DLLPRIVATE static vcl::Window* ImplCreate(vcl::Window* pParent, vcl::Window* pWindow, MenuBar* pMenu);
     SAL_DLLPRIVATE static void ImplDestroy(MenuBar* pMenu, bool bDelete);
-    SAL_DLLPRIVATE bool ImplHandleKeyEvent(const KeyEvent& rKEvent, bool bFromMenu = true);
+    SAL_DLLPRIVATE bool ImplHandleKeyEvent(const KeyEvent& rKEvent);
     SAL_DLLPRIVATE bool ImplHandleCmdEvent(const CommandEvent& rCEvent);
 
 protected:
@@ -434,7 +432,7 @@ protected:
     MenuBarWindow* getMenuBarWindow();
 
 public:
-    MenuBar();
+    MenuBar( SystemWindow* pAssociatedSystemWindow = nullptr );
     MenuBar( const MenuBar& rMenu );
     virtual ~MenuBar();
 
@@ -533,7 +531,7 @@ public:
     sal_uInt16 Execute( vcl::Window* pWindow, const Rectangle& rRect, PopupMenuFlags nFlags = PopupMenuFlags::NONE );
 
     // Fuer das TestTool
-    void EndExecute( sal_uInt16 nSelect = 0 );
+    void EndExecute();
     virtual void SelectItem(sal_uInt16 nId) override;
     void SetSelectedEntry( sal_uInt16 nId ); // for use by native submenu only
 

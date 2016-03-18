@@ -48,7 +48,6 @@ void TextCharacterProperties::assignUsed( const TextCharacterProperties& rSource
     maComplexFont.assignIfUsed( rSourceProps.maComplexFont );
     maComplexThemeFont.assignIfUsed( rSourceProps.maComplexThemeFont );
     maSymbolFont.assignIfUsed( rSourceProps.maSymbolFont );
-    maCharColor.assignIfUsed( rSourceProps.maCharColor );
     maHighlightColor.assignIfUsed( rSourceProps.maHighlightColor );
     maUnderlineColor.assignIfUsed( rSourceProps.maUnderlineColor );
     moHeight.assignIfUsed( rSourceProps.moHeight );
@@ -63,10 +62,10 @@ void TextCharacterProperties::assignUsed( const TextCharacterProperties& rSource
     moUnderlineFillFollowText.assignIfUsed( rSourceProps.moUnderlineFillFollowText );
 
     maTextEffectsProperties = rSourceProps.maTextEffectsProperties;
-    maGradientProps.assignUsed( rSourceProps.maGradientProps );
+    maFillProperties.assignUsed( rSourceProps.maFillProperties );
 }
 
-void TextCharacterProperties::pushToPropMap( PropertyMap& rPropMap, const XmlFilterBase& rFilter, bool bUseOptional ) const
+void TextCharacterProperties::pushToPropMap( PropertyMap& rPropMap, const XmlFilterBase& rFilter ) const
 {
     OUString aFontName;
     sal_Int16 nFontPitch = 0;
@@ -103,12 +102,8 @@ void TextCharacterProperties::pushToPropMap( PropertyMap& rPropMap, const XmlFil
         rPropMap.setProperty( PROP_CharFontFamilyComplex, nFontFamily);
     }
 
-    // symbolfont, will now be ... textrun.cxx ... ausgewertet !!!i#113673
-
-    if( maCharColor.isUsed() )
-        rPropMap.setProperty( PROP_CharColor, maCharColor.getColor( rFilter.getGraphicHelper() ));
-    if( maGradientProps.maGradientStops.size() > 0 )
-        rPropMap.setProperty( PROP_CharColor, maGradientProps.maGradientStops.begin()->second.getColor( rFilter.getGraphicHelper() ));
+    if ( maFillProperties.moFillType.has() )
+        rPropMap.setProperty( PROP_CharColor, maFillProperties.getBestSolidColor().getColor( rFilter.getGraphicHelper() ));
 
     if( moLang.has() && !moLang.get().isEmpty() )
     {
@@ -140,19 +135,15 @@ void TextCharacterProperties::pushToPropMap( PropertyMap& rPropMap, const XmlFil
         rPropMap.setProperty( PROP_CharEscapementHeight, sal_Int8(100)); // 100%
     }
 
-    if( !bUseOptional || moBold.has() ) {
-        float fWeight = moBold.get( false ) ? awt::FontWeight::BOLD : awt::FontWeight::NORMAL;
-        rPropMap.setProperty( PROP_CharWeight, fWeight);
-        rPropMap.setProperty( PROP_CharWeightAsian, fWeight);
-        rPropMap.setProperty( PROP_CharWeightComplex, fWeight);
-    }
+    float fWeight = moBold.get( false ) ? awt::FontWeight::BOLD : awt::FontWeight::NORMAL;
+    rPropMap.setProperty( PROP_CharWeight, fWeight);
+    rPropMap.setProperty( PROP_CharWeightAsian, fWeight);
+    rPropMap.setProperty( PROP_CharWeightComplex, fWeight);
 
-    if( !bUseOptional || moItalic.has() ) {
-        awt::FontSlant eSlant = moItalic.get( false ) ? awt::FontSlant_ITALIC : awt::FontSlant_NONE;
-        rPropMap.setProperty( PROP_CharPosture, eSlant);
-        rPropMap.setProperty( PROP_CharPostureAsian, eSlant);
-        rPropMap.setProperty( PROP_CharPostureComplex, eSlant);
-    }
+    awt::FontSlant eSlant = moItalic.get( false ) ? awt::FontSlant_ITALIC : awt::FontSlant_NONE;
+    rPropMap.setProperty( PROP_CharPosture, eSlant);
+    rPropMap.setProperty( PROP_CharPostureAsian, eSlant);
+    rPropMap.setProperty( PROP_CharPostureComplex, eSlant);
 
     bool bUnderlineFillFollowText = moUnderlineFillFollowText.get( false );
     if( moUnderline.has() && maUnderlineColor.isUsed() && !bUnderlineFillFollowText )
@@ -182,10 +173,10 @@ void pushToGrabBag( PropertySet& rPropSet, const std::vector<PropertyValue>& aVe
     rPropSet.setAnyProperty(PROP_CharInteropGrabBag, makeAny(aGrabBag));
 }
 
-void TextCharacterProperties::pushToPropSet( PropertySet& rPropSet, const XmlFilterBase& rFilter, bool bUseOptional ) const
+void TextCharacterProperties::pushToPropSet( PropertySet& rPropSet, const XmlFilterBase& rFilter ) const
 {
     PropertyMap aPropMap;
-    pushToPropMap( aPropMap, rFilter, bUseOptional );
+    pushToPropMap( aPropMap, rFilter );
     rPropSet.setProperties( aPropMap );
     pushToGrabBag(rPropSet, maTextEffectsProperties);
 }

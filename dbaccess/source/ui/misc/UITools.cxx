@@ -696,7 +696,7 @@ OUString createDefaultName(const Reference< XDatabaseMetaData>& _xMetaData,const
         {
             sSchema = _xMetaData->getUserName();
         }
-        sCompsedName = ::dbtools::composeTableName( _xMetaData, sCatalog, sSchema, _sName, false, ::dbtools::eInDataManipulation );
+        sCompsedName = ::dbtools::composeTableName( _xMetaData, sCatalog, sSchema, _sName, false, ::dbtools::EComposeRule::InDataManipulation );
         sDefaultName = ::dbtools::createUniqueName(_xTables,sCompsedName);
     }
     catch(const SQLException&)
@@ -799,11 +799,11 @@ bool callColumnFormatDialog(vcl::Window* _pParent,
     // UNO->ItemSet
     static SfxItemInfo aItemInfos[] =
     {
-        { 0, SfxItemPoolFlags::NONE },
-        { SID_ATTR_NUMBERFORMAT_VALUE,      SfxItemPoolFlags::POOLABLE },
-        { SID_ATTR_ALIGN_HOR_JUSTIFY,       SfxItemPoolFlags::POOLABLE },
-        { SID_ATTR_NUMBERFORMAT_ONE_AREA,   SfxItemPoolFlags::POOLABLE },
-        { SID_ATTR_NUMBERFORMAT_INFO,       SfxItemPoolFlags::POOLABLE }
+        { 0, false },
+        { SID_ATTR_NUMBERFORMAT_VALUE,      true },
+        { SID_ATTR_ALIGN_HOR_JUSTIFY,       true },
+        { SID_ATTR_NUMBERFORMAT_ONE_AREA,   true },
+        { SID_ATTR_NUMBERFORMAT_INFO,       true }
     };
     static const sal_uInt16 aAttrMap[] =
     {
@@ -899,9 +899,9 @@ bool callColumnFormatDialog(vcl::Window* _pParent,
     return bRet;
 }
 
-const SfxFilter* getStandardDatabaseFilter()
+std::shared_ptr<const SfxFilter> getStandardDatabaseFilter()
 {
-    const SfxFilter* pFilter = SfxFilter::GetFilterByName("StarOffice XML (Base)");
+    std::shared_ptr<const SfxFilter> pFilter = SfxFilter::GetFilterByName("StarOffice XML (Base)");
     OSL_ENSURE(pFilter,"Filter: StarOffice XML (Base) could not be found!");
     return pFilter;
 }
@@ -1338,7 +1338,7 @@ Reference< XPropertySet > createView( const OUString& _rName, const Reference< X
                                         sCatalog,
                                         sSchema,
                                         sTable,
-                                        ::dbtools::eInDataManipulation);
+                                        ::dbtools::EComposeRule::InDataManipulation);
 
     xView->setPropertyValue(PROPERTY_CATALOGNAME,makeAny(sCatalog));
     xView->setPropertyValue(PROPERTY_SCHEMANAME,makeAny(sSchema));

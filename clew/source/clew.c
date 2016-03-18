@@ -14,7 +14,6 @@
 #ifndef CLCC_GENERATE_DOCUMENTATION
     #ifdef _WIN32
         #define WIN32_LEAN_AND_MEAN
-        #define VC_EXTRALEAN
         #include <windows.h>
 
         typedef HMODULE             CLCC_DYNLIB_HANDLE;
@@ -24,7 +23,7 @@
         #define CLCC_DYNLIB_IMPORT  GetProcAddress
     #else
         #include <dlfcn.h>
-        
+
         typedef void*                   CLCC_DYNLIB_HANDLE;
 
         #define CLCC_DYNLIB_OPEN(path)  dlopen(path, RTLD_NOW | RTLD_GLOBAL)
@@ -315,7 +314,7 @@ const char* clewErrorString(cl_int error)
         , "CL_INVALID_GLOBAL_WORK_SIZE"                 //  -63
     };
 
-    if  (   (error > 0) 
+    if  (   (error > 0)
         ||  (error < -63)
         )
     {

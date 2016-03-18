@@ -301,11 +301,6 @@ static OUString transliterate_titlecase_Impl(
             pOffset[i] = nIdx;
         }
     }
-#if OSL_DEBUG_LEVEL > 1
-    const sal_Int32 *pCOffset = offset.getConstArray();
-    (void) pCOffset;
-#endif
-
     return aRes;
 }
 

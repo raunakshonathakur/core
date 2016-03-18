@@ -11,7 +11,11 @@
 
 #include "gridwin.hxx"
 #include <svx/svdpage.hxx>
-
+#include <libxml/xmlwriter.h>
+#include <viewdata.hxx>
+#include "document.hxx"
+#include "patattr.hxx"
+#include <svl/poolitem.hxx>
 #include "userdat.hxx"
 
 namespace {
@@ -57,6 +61,26 @@ void ScGridWindow::dumpColumnInformationHmm()
         long nPixel = LogicToLogic(Point(nWidth, 0), MAP_TWIP, MAP_100TH_MM).getX();
         std::cout << "Column: " << nCol << ", Width: " << nPixel << "hmm" << std::endl;
     }
+}
+
+void ScGridWindow::dumpCellProperties()
+{
+    ScDocument* pDoc = pViewData->GetDocument();
+
+    SCTAB nTab = pViewData->GetTabNo();
+    SCCOL nCol = pViewData->GetCurX();
+    SCROW nRow = pViewData->GetCurY();
+    const ScPatternAttr* pPatternAttr = pDoc->GetPattern(nCol,nRow,nTab);
+
+    OString aOutputFile("dump.xml");
+    xmlTextWriterPtr writer = xmlNewTextWriterFilename( aOutputFile.getStr(), 0 );
+
+    xmlTextWriterStartDocument( writer, nullptr, nullptr, nullptr );
+
+    pPatternAttr->GetItemSet().dumpAsXml(writer);
+
+    xmlTextWriterEndDocument( writer );
+    xmlFreeTextWriter (writer);
 }
 
 void ScGridWindow::dumpGraphicInformation()

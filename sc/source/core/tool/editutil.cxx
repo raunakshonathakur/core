@@ -507,12 +507,12 @@ void ScEditEngineDefaulter::SetDefaults( const SfxItemSet& rSet, bool bRememberC
         EnableUndo( true );
 }
 
-void ScEditEngineDefaulter::SetDefaults( SfxItemSet* pSet, bool bTakeOwnership )
+void ScEditEngineDefaulter::SetDefaults( SfxItemSet* pSet )
 {
     if ( bDeleteDefaults )
         delete pDefaults;
     pDefaults = pSet;
-    bDeleteDefaults = bTakeOwnership;
+    bDeleteDefaults = true;
     if ( pDefaults )
         SetDefaults( *pDefaults, false );
 }
@@ -563,13 +563,13 @@ void ScEditEngineDefaulter::SetTextNewDefaults( const EditTextObject& rTextObjec
 }
 
 void ScEditEngineDefaulter::SetTextNewDefaults( const EditTextObject& rTextObject,
-            SfxItemSet* pSet, bool bTakeOwnership )
+            SfxItemSet* pSet )
 {
     bool bUpdateMode = GetUpdateMode();
     if ( bUpdateMode )
         SetUpdateMode( false );
     EditEngine::SetText( rTextObject );
-    SetDefaults( pSet, bTakeOwnership );
+    SetDefaults( pSet );
     if ( bUpdateMode )
         SetUpdateMode( true );
 }
@@ -587,25 +587,25 @@ void ScEditEngineDefaulter::SetText( const OUString& rText )
 }
 
 void ScEditEngineDefaulter::SetTextNewDefaults( const OUString& rText,
-            const SfxItemSet& rSet, bool bRememberCopy )
+            const SfxItemSet& rSet )
 {
     bool bUpdateMode = GetUpdateMode();
     if ( bUpdateMode )
         SetUpdateMode( false );
     EditEngine::SetText( rText );
-    SetDefaults( rSet, bRememberCopy );
+    SetDefaults( rSet );
     if ( bUpdateMode )
         SetUpdateMode( true );
 }
 
 void ScEditEngineDefaulter::SetTextNewDefaults( const OUString& rText,
-            SfxItemSet* pSet, bool bTakeOwnership )
+            SfxItemSet* pSet )
 {
     bool bUpdateMode = GetUpdateMode();
     if ( bUpdateMode )
         SetUpdateMode( false );
     EditEngine::SetText( rText );
-    SetDefaults( pSet, bTakeOwnership );
+    SetDefaults( pSet );
     if ( bUpdateMode )
         SetUpdateMode( true );
 }

@@ -28,7 +28,8 @@
 #include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/script/XDefaultMethod.hpp>
 #include <com/sun/star/uno/Any.hxx>
-#include <com/sun/star/util/SearchOptions.hpp>
+#include <com/sun/star/util/SearchOptions2.hpp>
+#include <com/sun/star/util/SearchAlgorithms2.hpp>
 
 #include <comphelper/processfactory.hxx>
 #include <comphelper/string.hxx>
@@ -251,7 +252,7 @@ SbiRuntime::pStep2 SbiRuntime::aStep2[] = {// all opcodes with two operands
 SbiRTLData::SbiRTLData()
 {
     pDir        = nullptr;
-    nDirFlags   = 0;
+    nDirFlags   = SbAttributes::NONE;
     nCurDirPos  = 0;
     pWildCard   = nullptr;
 }
@@ -1013,9 +1014,9 @@ void SbiRuntime::ClearExprStack()
 // Take variable from the expression-stack without removing it
 // n counts from 0
 
-SbxVariable* SbiRuntime::GetTOS( short n )
+SbxVariable* SbiRuntime::GetTOS()
 {
-    n = nExprLvl - n - 1;
+    short n = nExprLvl - 1;
 #ifdef DBG_UTIL
     if( n < 0 )
     {
@@ -1138,7 +1139,7 @@ void SbiRuntime::ClearArgvStack()
 void SbiRuntime::PushFor()
 {
     SbiForStack* p = new SbiForStack;
-    p->eForType = FOR_TO;
+    p->eForType = ForType::To;
     p->pNext = pForStk;
     pForStk = p;
 
@@ -1167,7 +1168,7 @@ void SbiRuntime::PushForEach()
     bool bError_ = false;
     if (SbxDimArray* pArray = dynamic_cast<SbxDimArray*>(pObj))
     {
-        p->eForType = FOR_EACH_ARRAY;
+        p->eForType = ForType::EachArray;
         p->refEnd = reinterpret_cast<SbxVariable*>(pArray);
 
         short nDims = pArray->GetDims();
@@ -1184,7 +1185,7 @@ void SbiRuntime::PushForEach()
     }
     else if (BasicCollection* pCollection = dynamic_cast<BasicCollection*>(pObj))
     {
-        p->eForType = FOR_EACH_COLLECTION;
+        p->eForType = ForType::EachCollection;
         p->refEnd = pCollection;
         p->nCurCollectionIndex = 0;
     }
@@ -1196,7 +1197,7 @@ void SbiRuntime::PushForEach()
         if( (aAny >>= xEnumerationAccess) )
         {
             p->xEnumeration = xEnumerationAccess->createEnumeration();
-            p->eForType = FOR_EACH_XENUMERATION;
+            p->eForType = ForType::EachXEnumeration;
         }
         else if ( isVBAEnabled() && pUnoObj->isNativeCOMObject() )
         {
@@ -1206,7 +1207,7 @@ void SbiRuntime::PushForEach()
                 try
                 {
                     p->xEnumeration = new ComEnumerationWrapper( xInvocation );
-                    p->eForType = FOR_EACH_XENUMERATION;
+                    p->eForType = ForType::EachXEnumeration;
                 }
                 catch(const uno::Exception& )
                 {}
@@ -1263,8 +1264,9 @@ SbiForStack* SbiRuntime::FindForStackItemForCollection( class BasicCollection* p
     for (SbiForStack *p = pForStk; p; p = p->pNext)
     {
         SbxVariable* pVar = p->refEnd.Is() ? p->refEnd.get() : nullptr;
-        if( p->eForType == FOR_EACH_COLLECTION && pVar != nullptr &&
-            dynamic_cast<BasicCollection*>( pVar) == pCollection  )
+        if( p->eForType == ForType::EachCollection
+         && pVar != nullptr
+         && dynamic_cast<BasicCollection*>( pVar) == pCollection  )
         {
             return p;
         }
@@ -1283,13 +1285,6 @@ void SbiRuntime::DllCall
       SbxDataType eResType,     // return value
       bool bCDecl )         // true: according to C-conventions
 {
-    // No DllCall for "virtual" portal users
-    if( needSecurityRestrictions() )
-    {
-        StarBASIC::Error(ERRCODE_BASIC_NOT_IMPLEMENTED);
-        return;
-    }
-
     // NOT YET IMPLEMENTED
 
     SbxVariable* pRes = new SbxVariable( eResType );
@@ -1550,9 +1545,9 @@ void SbiRuntime::StepLIKE()
     OUString pattern = VBALikeToRegexp(refVar1->GetOUString());
     OUString value = refVar2->GetOUString();
 
-    css::util::SearchOptions aSearchOpt;
+    css::util::SearchOptions2 aSearchOpt;
 
-    aSearchOpt.algorithmType = css::util::SearchAlgorithms_REGEXP;
+    aSearchOpt.AlgorithmType2 = css::util::SearchAlgorithms2::REGEXP;
 
     aSearchOpt.Locale = Application::GetSettings().GetLanguageTag().getLocale();
     aSearchOpt.searchString = pattern;
@@ -1568,7 +1563,7 @@ void SbiRuntime::StepLIKE()
         aSearchOpt.transliterateFlags |= css::i18n::TransliterationModules_IGNORE_CASE;
     }
     SbxVariable* pRes = new SbxVariable;
-    utl::TextSearch aSearch( utl::TextSearch::UpgradeToSearchOptions2( aSearchOpt));
+    utl::TextSearch aSearch( aSearchOpt);
     sal_Int32 nStart=0, nEnd=value.getLength();
     bool bRes = aSearch.SearchForward(value, &nStart, &nEnd);
     pRes->PutBool( bRes );
@@ -2603,7 +2598,7 @@ void SbiRuntime::StepNEXT()
         StarBASIC::FatalError( ERRCODE_BASIC_INTERNAL_ERROR );
         return;
     }
-    if( pForStk->eForType == FOR_TO )
+    if( pForStk->eForType == ForType::To )
     {
         pForStk->refVar->Compute( SbxPLUS, *pForStk->refInc );
     }
@@ -3017,14 +3012,14 @@ void SbiRuntime::StepTESTFOR( sal_uInt32 nOp1 )
     bool bEndLoop = false;
     switch( pForStk->eForType )
     {
-        case FOR_TO:
+        case ForType::To:
         {
             SbxOperator eOp = ( pForStk->refInc->GetDouble() < 0 ) ? SbxLT : SbxGT;
             if( pForStk->refVar->Compare( eOp, *pForStk->refEnd ) )
                 bEndLoop = true;
             break;
         }
-        case FOR_EACH_ARRAY:
+        case ForType::EachArray:
         {
             SbiForStack* p = pForStk;
             if( p->pArrayCurIndices == nullptr )
@@ -3065,7 +3060,7 @@ void SbiRuntime::StepTESTFOR( sal_uInt32 nOp1 )
             }
             break;
         }
-        case FOR_EACH_COLLECTION:
+        case ForType::EachCollection:
         {
             BasicCollection* pCollection = static_cast<BasicCollection*>(static_cast<SbxVariable*>(pForStk->refEnd));
             SbxArrayRef xItemArray = pCollection->xItemArray;
@@ -3082,7 +3077,7 @@ void SbiRuntime::StepTESTFOR( sal_uInt32 nOp1 )
             }
             break;
         }
-        case FOR_EACH_XENUMERATION:
+        case ForType::EachXEnumeration:
         {
             SbiForStack* p = pForStk;
             if( p->xEnumeration->hasMoreElements() )

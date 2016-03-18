@@ -202,15 +202,13 @@ class SW_DLLPUBLIC SwFrame: public SwClient, public SfxBroadcaster
         'All footnotes' is no longer treated. Instead each footnote is treated
         as an own environment.
 
-        @param _bInSameFootnote
-        input parameter - boolean indicating, that the found previous content
-        frame has to be in the same footnote frame. This parameter is only
+        The found previous content frame has to be in the same footnote frame. This is only
         relevant for flow frames in footnotes.
 
         @return SwContentFrame*
         pointer to the found previous content frame. It's NULL, if none exists.
     */
-    SwContentFrame* _FindPrevCnt( const bool _bInSameFootnote = false );
+    SwContentFrame* _FindPrevCnt();
 
     void _UpdateAttrFrame( const SfxPoolItem*, const SfxPoolItem*, sal_uInt8 & );
     SwFrame* _GetIndNext();
@@ -376,8 +374,7 @@ public:
     const SwSortedObjs *GetDrawObjs() const { return mpDrawObjs; }
           SwSortedObjs *GetDrawObjs()         { return mpDrawObjs; }
     // #i28701# - change purpose of method and adjust its name
-    void InvalidateObjs( const bool _bInvaPosOnly,
-                         const bool _bNoInvaOfAsCharAnchoredObjs = true );
+    void InvalidateObjs( const bool _bNoInvaOfAsCharAnchoredObjs = true );
 
     virtual void PaintBorder( const SwRect&, const SwPageFrame *pPage,
                               const SwBorderAttrs & ) const;
@@ -395,9 +392,8 @@ public:
     drawinglayer::processor2d::BaseProcessor2D * CreateProcessor2D( ) const;
     void ProcessPrimitives( const drawinglayer::primitive2d::Primitive2DContainer& rSequence ) const;
 
-    // FIXME: EasyHack (refactoring): rename method name in all files
     // retouch, not in the area of the given Rect!
-    void Retouche( const SwPageFrame *pPage, const SwRect &rRect ) const;
+    void Retouch( const SwPageFrame *pPage, const SwRect &rRect ) const;
 
     bool GetBackgroundBrush(
         drawinglayer::attribute::SdrAllFillAttributesHelperPtr& rFillAttributes,
@@ -523,9 +519,9 @@ public:
     inline const SwFrame     *FindPrev() const;
            const SwFrame     *GetLower()  const;
 
-    SwContentFrame* FindPrevCnt( const bool _bInSameFootnote = false );
+    SwContentFrame* FindPrevCnt();
 
-    const SwContentFrame* FindPrevCnt( const bool _bInSameFootnote = false ) const;
+    const SwContentFrame* FindPrevCnt() const;
 
     // #i79774#
     SwFrame* _GetIndPrev() const;
@@ -1162,11 +1158,6 @@ extern SwRectFn fnRectHori, fnRectVert, fnRectB2T, fnRectVL2R, fnRectVertL2R;
                                 fnRect = bVert ? \
                                     ( bRev ? fnRectVL2R : ( bVertL2R ? fnRectVertL2R : fnRectVert ) ): \
                                     ( bRev ? fnRectB2T : fnRectHori ); }
-#define SWRECTFN2( pFrame )   bool bVert = pFrame->IsVertical(); \
-                bool bVertL2R = pFrame->IsVertLR(); \
-                            bool bNeighb = pFrame->IsNeighbourFrame(); \
-                            SwRectFn fnRect = bVert == bNeighb ? \
-                                fnRectHori : ( bVertL2R ? fnRectVertL2R : fnRectVert );
 
 #define POS_DIFF( aFrame1, aFrame2 ) \
             ( (aFrame1.*fnRect->fnGetTop)() != (aFrame2.*fnRect->fnGetTop)() || \

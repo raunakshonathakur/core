@@ -17,11 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 #include "dbu_app.hrc"
-#include <svx/globlmn.hrc>
 #include <sfx2/cntids.hrc>
 #include "browserids.hxx"
 #include "dbaccess_helpid.hrc"
-#include "toolbox.hrc"
 
 #define MN_PROPS    25
 
@@ -101,17 +99,23 @@ Menu RID_MENU_APP_NEW
         };
         MenuItem
         {
-            MID_DOCUMENT_CREATE_REPWIZ
+            Identifier = ID_DOCUMENT_CREATE_REPWIZ ;
+            HelpID = HID_DOCUMENT_CREATE_REPWIZ ;
+            Text [ en-US ] = "Report Wizard...";
             Command = ".uno:DBNewReportAutoPilot";
         };
         MenuItem
         {
-            MID_QUERY_NEW_DESIGN
+            Identifier = ID_NEW_QUERY_DESIGN;
+            HelpId = HID_BROWSER_QUERY_CREATE_DESIGN ;
+            Text [ en-US ] = "New ~Query (Design View)" ;
             Command = ".uno:DBNewQuery";
         };
         MenuItem
         {
-            MID_QUERY_NEW_SQL
+            Identifier = ID_NEW_QUERY_SQL;
+            HelpId = HID_BROWSER_QUERY_CREATE_TEXT ;
+            Text [ en-US ] = "New Query (~SQL View)" ;
             Command = ".uno:DBNewQuerySql";
         };
         MenuItem
@@ -120,12 +124,16 @@ Menu RID_MENU_APP_NEW
         };
         MenuItem
         {
-            MID_NEW_TABLE_DESIGN
+            Identifier = ID_NEW_TABLE_DESIGN;
+            HelpId = HID_BROWSER_TABLE_CREATE_DESIGN ;
+            Text [ en-US ] = "New ~Table Design" ;
             Command = ".uno:DBNewTable";
         };
         MenuItem
         {
-            MID_NEW_VIEW_DESIGN
+            Identifier = ID_NEW_VIEW_DESIGN;
+            HelpId = HID_BROWSER_VIEW_CREATE_DESIGN ;
+            Text [ en-US ] = "New ~View Design" ;
             Command = ".uno:DBNewView";
         };
         MenuItem
@@ -144,11 +152,15 @@ Menu RID_MENU_APP_EDIT
     {
         MenuItem
         {
-            ITEM_EDIT_COPY
+            Identifier = SID_COPY ;
+            Command = ".uno:Copy" ;
+            Text [ en-US ] = "~Copy" ;
         };
         MenuItem
         {
-            ITEM_EDIT_PASTE
+            Identifier = SID_PASTE ;
+            Command = ".uno:Paste" ;
+            Text [ en-US ] = "~Paste" ;
         };
         MenuItem
         {

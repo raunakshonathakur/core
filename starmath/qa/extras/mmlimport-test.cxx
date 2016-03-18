@@ -44,7 +44,7 @@ private:
     {
         // Cf.
         // filter/source/config/fragments/filters/MathML_XML__Math_.xcu
-        SfxFilter* pFilter = new SfxFilter(MATHML_XML,
+        std::shared_ptr<SfxFilter> pFilter(new SfxFilter(MATHML_XML,
                                            OUString(),
                                            SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::TEMPLATE,
                                            SotClipboardFormatId::STARCALC_8,
@@ -52,8 +52,8 @@ private:
                                            0,
                                            OUString(),
                                            OUString(),
-                                           "private:factory/smath*");
-        pFilter->SetVersion(SOFFICE_FILEFORMAT_60);
+                                           "private:factory/smath*"));
+        pFilter.get()->SetVersion(SOFFICE_FILEFORMAT_60);
 
         mxDocShell = new SmDocShell(SfxModelFlags::EMBEDDED_OBJECT |
                                     SfxModelFlags::DISABLE_EMBEDDED_SCRIPTS |
@@ -84,21 +84,21 @@ void Test::tearDown()
 
 void Test::testSimple()
 {
-    loadURL(getURLFromSrc("starmath/qa/extras/data/simple.mml"));
+    loadURL(m_directories.getURLFromSrc("starmath/qa/extras/data/simple.mml"));
     OUString sExpected("left ( {a + b} right )^2");
     CPPUNIT_ASSERT_EQUAL_MESSAGE("loaded text", sExpected, mxDocShell->GetText());
 }
 
 void Test::testNsPrefixMath()
 {
-    loadURL(getURLFromSrc("starmath/qa/extras/data/ns-prefix-math.mml"));
+    loadURL(m_directories.getURLFromSrc("starmath/qa/extras/data/ns-prefix-math.mml"));
     OUString sExpected("left ( {a + b} right )^2");
     CPPUNIT_ASSERT_EQUAL_MESSAGE("loaded text", sExpected, mxDocShell->GetText());
 }
 
 void Test::testMaction()
 {
-    loadURL(getURLFromSrc("starmath/qa/extras/data/maction.mml"));
+    loadURL(m_directories.getURLFromSrc("starmath/qa/extras/data/maction.mml"));
     OUString sExpected("matrix {1 ## 2 ## 3}");
     CPPUNIT_ASSERT_EQUAL_MESSAGE("loaded text", sExpected, mxDocShell->GetText());
 }

@@ -632,8 +632,8 @@ IMPL_LINK_TYPED( LibPage, ButtonHdl, Button *, pButton, void )
         SfxStringItem aLibNameItem( SID_BASICIDE_ARG_LIBNAME, aLibName );
         if (SfxDispatcher* pDispatcher = GetDispatcher())
             pDispatcher->Execute( SID_BASICIDE_LIBSELECTED,
-                                    SfxCallMode::ASYNCHRON, &aDocItem, &aLibNameItem, 0L );
-        EndTabDialog( 1 );
+                                    SfxCallMode::ASYNCHRON, &aDocItem, &aLibNameItem, 0 );
+        EndTabDialog();
         return;
     }
     else if (pButton == m_pNewLibButton)
@@ -1229,7 +1229,7 @@ void LibPage::ExportAsPackage( const OUString& aLibName )
 
         OUString aTmpPath = SvtPathOptions().GetTempPath();
         INetURLObject aInetObj( aTmpPath );
-        aInetObj.insertName( aLibName, true, INetURLObject::LAST_SEGMENT, true, INetURLObject::ENCODE_ALL );
+        aInetObj.insertName( aLibName, true, INetURLObject::LAST_SEGMENT, INetURLObject::ENCODE_ALL );
         OUString aSourcePath = aInetObj.GetMainURL( INetURLObject::NO_DECODE );
         if( xSFA->exists( aSourcePath ) )
             xSFA->kill( aSourcePath );
@@ -1261,7 +1261,7 @@ void LibPage::ExportAsPackage( const OUString& aLibName )
 
         INetURLObject aMetaInfInetObj( aTmpPath );
         aMetaInfInetObj.insertName( "META-INF",
-            true, INetURLObject::LAST_SEGMENT, true, INetURLObject::ENCODE_ALL );
+            true, INetURLObject::LAST_SEGMENT, INetURLObject::ENCODE_ALL );
         OUString aMetaInfFolder = aMetaInfInetObj.GetMainURL( INetURLObject::NO_DECODE );
         if( xSFA->exists( aMetaInfFolder ) )
             xSFA->kill( aMetaInfFolder );
@@ -1288,7 +1288,7 @@ void LibPage::ExportAsPackage( const OUString& aLibName )
                 &manifest[ 0 ], manifest.size() ) );
 
         aMetaInfInetObj.insertName( "manifest.xml",
-            true, INetURLObject::LAST_SEGMENT, true, INetURLObject::ENCODE_ALL );
+            true, INetURLObject::LAST_SEGMENT, INetURLObject::ENCODE_ALL );
 
         // write buffered pipe data to content:
         ::ucbhelper::Content manifestContent( aMetaInfInetObj.GetMainURL( INetURLObject::NO_DECODE ), xCmdEnv, comphelper::getProcessComponentContext() );
@@ -1356,7 +1356,7 @@ void LibPage::DeleteCurrent()
         SfxStringItem aLibNameItem( SID_BASICIDE_ARG_LIBNAME, aLibName );
         if (SfxDispatcher* pDispatcher = GetDispatcher())
             pDispatcher->Execute( SID_BASICIDE_LIBREMOVED,
-                                  SfxCallMode::SYNCHRON, &aDocItem, &aLibNameItem, 0L );
+                                  SfxCallMode::SYNCHRON, &aDocItem, &aLibNameItem, 0 );
 
         // remove library from module and dialog library containers
         if ( xModLibContainer.is() && xModLibContainer->hasByName( aOULibName ) )
@@ -1369,11 +1369,11 @@ void LibPage::DeleteCurrent()
     }
 }
 
-void LibPage::EndTabDialog( sal_uInt16 nRet )
+void LibPage::EndTabDialog()
 {
     DBG_ASSERT( pTabDlg, "TabDlg nicht gesetzt!" );
     if ( pTabDlg )
-        pTabDlg->EndDialog( nRet );
+        pTabDlg->EndDialog( 1 );
 }
 
 void LibPage::FillListBox()
@@ -1535,7 +1535,7 @@ void createLibImpl( vcl::Window* pWin, const ScriptDocument& rDocument,
                 SbxItem aSbxItem( SID_BASICIDE_ARG_SBX, rDocument, aLibName, aModName, TYPE_MODULE );
                 if (SfxDispatcher* pDispatcher = GetDispatcher())
                     pDispatcher->Execute( SID_BASICIDE_SBXINSERTED,
-                                          SfxCallMode::SYNCHRON, &aSbxItem, 0L );
+                                          SfxCallMode::SYNCHRON, &aSbxItem, 0 );
 
                 if( pBasicBox )
                 {

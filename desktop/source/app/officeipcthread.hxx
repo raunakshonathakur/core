@@ -72,11 +72,12 @@ class OfficeIPCThread : public salhelper::Thread
   private:
     static rtl::Reference< OfficeIPCThread > pGlobalOfficeIPCThread;
 
+    enum class State { Starting, RequestsEnabled, Downing };
+
     osl::Pipe                   maPipe;
-    bool                        mbDowning;
-    bool                        mbRequestsEnabled;
+    State                       mState;
     int                         mnPendingRequests;
-    DispatchWatcher*            mpDispatchWatcher;
+    rtl::Reference<DispatchWatcher> mpDispatchWatcher;
 
     /* condition to be set when the request has been processed */
     ::osl::Condition cProcessed;
@@ -106,24 +107,21 @@ class OfficeIPCThread : public salhelper::Thread
 
     // controlling pipe communication during shutdown
     static void                 SetDowning();
-    static void                 EnableRequests( bool i_bEnable = true );
+    static void                 EnableRequests();
     static bool                 AreRequestsPending();
-    static void                 RequestsCompleted( int n = 1 );
-    static bool                 ExecuteCmdLineRequests( ProcessDocumentsRequest& );
+    static void                 RequestsCompleted();
+    static bool                 ExecuteCmdLineRequests(
+        ProcessDocumentsRequest&, bool noTerminate);
 
     // return sal_False if second office
     static Status               EnableOfficeIPCThread();
     static void                 DisableOfficeIPCThread(bool join = true);
     // start dispatching events...
-    static void                 SetReady(
-        rtl::Reference< OfficeIPCThread > const & pThread =
-            rtl::Reference< OfficeIPCThread >());
-    static void                 WaitForReady(
-        rtl::Reference< OfficeIPCThread > const & pThread =
-            rtl::Reference< OfficeIPCThread >());
+    static void                 SetReady();
+    static void                 WaitForReady();
     static bool                 IsEnabled();
 
-    bool                        AreRequestsEnabled() const { return mbRequestsEnabled && ! mbDowning; }
+    bool                        AreRequestsEnabled() const { return mState == State::RequestsEnabled; }
 };
 
 

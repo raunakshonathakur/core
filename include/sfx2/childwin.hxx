@@ -76,11 +76,7 @@ struct SAL_DLLPUBLIC_RTTI SfxChildWinInfo
                             bVisible = false;
                             nFlags = SfxChildWindowFlags::NONE;
                         }
-    bool                GetExtraData_Impl( SfxChildAlignment    *pAlign,
-                                           SfxChildAlignment    *pLastAlign = nullptr,
-                                           Size                 *pSize = nullptr,
-                                           sal_uInt16               *pLine = nullptr,
-                                           sal_uInt16               *pPos = nullptr ) const;
+    bool                GetExtraData_Impl( SfxChildAlignment    *pAlign ) const;
 };
 
 // ChildWindow factory methods
@@ -219,35 +215,11 @@ public:
 };
 
 
-//! soon obsolete !
-#define SFX_DECL_CHILDWINDOW_CONTEXT(Class) \
-        static  SfxChildWindowContext* CreateImpl(vcl::Window *pParent, \
-                    SfxBindings *pBindings, SfxChildWinInfo* pInfo ); \
-        static  void RegisterChildWindowContext(SfxModule *pMod=nullptr); \
-
 //! The Macro of the future ...
 #define SFX_DECL_CHILDWINDOWCONTEXT(Class) \
         static  SfxChildWindowContext* CreateImpl(vcl::Window *pParent, \
                     SfxBindings *pBindings, SfxChildWinInfo* pInfo ); \
         static  void RegisterChildWindowContext(sal_uInt16, SfxModule *pMod=nullptr); \
-
-//! soon obsolete !
-#define SFX_IMPL_CHILDWINDOW_CONTEXT(Class, MyID, ShellClass) \
-        SfxChildWindowContext* Class::CreateImpl( vcl::Window *pParent, \
-                SfxBindings *pBindings, SfxChildWinInfo* pInfo ) \
-        {   \
-            SfxChildWindowContext *pContext = new Class(pParent, \
-                    /* cast is safe here! */static_cast< sal_uInt16 >(ShellClass::GetInterfaceId()), \
-                    pBindings,pInfo); \
-            return pContext; \
-        } \
-        void    Class::RegisterChildWindowContext(SfxModule* pMod)   \
-        {   \
-            SfxChildWinContextFactory *pFact = new SfxChildWinContextFactory( \
-                Class::CreateImpl, \
-                /* cast is safe here! */static_cast< sal_uInt16 >(ShellClass::GetInterfaceId()) );   \
-            SfxChildWindowContext::RegisterChildWindowContext(pMod, MyID, pFact); \
-        }
 
 //! The Macro of the future ...
 // As a parameter and because of ContextId, CreateImpl must be handed the

@@ -68,13 +68,13 @@ namespace connectivity
         std::shared_ptr< OSQLTables >   m_pSubTables;   // all tables from sub queries not the tables from the select tables
         std::shared_ptr< QueryNameSet > m_pForbiddenQueryNames;
 
-        sal_uInt32                      m_nIncludeMask;
+        TraversalParts                  m_nIncludeMask;
 
         bool                            m_bIsCaseSensitive;
 
         OSQLParseTreeIteratorImpl( const Reference< XConnection >& _rxConnection, const Reference< XNameAccess >& _rxTables )
             :m_xConnection( _rxConnection )
-            ,m_nIncludeMask( OSQLParseTreeIterator::All )
+            ,m_nIncludeMask( TraversalParts::All )
             ,m_bIsCaseSensitive( true )
         {
             OSL_PRECOND( m_xConnection.is(), "OSQLParseTreeIteratorImpl::OSQLParseTreeIteratorImpl: invalid connection!" );
@@ -198,7 +198,7 @@ void OSQLParseTreeIterator::setParseTree(const OSQLParseNode * pNewParseTree)
     m_pParseTree = pNewParseTree;
     if (!m_pParseTree)
     {
-        m_eStatementType = SQL_STATEMENT_UNKNOWN;
+        m_eStatementType = OSQLStatementType::Unknown;
         return;
     }
 
@@ -212,32 +212,32 @@ void OSQLParseTreeIterator::setParseTree(const OSQLParseNode * pNewParseTree)
     // Determine statement type ...
     if (SQL_ISRULE(m_pParseTree,select_statement) || SQL_ISRULE(m_pParseTree,union_statement) )
     {
-        m_eStatementType = SQL_STATEMENT_SELECT;
+        m_eStatementType = OSQLStatementType::Select;
     }
     else if (SQL_ISRULE(m_pParseTree,insert_statement))
     {
-        m_eStatementType = SQL_STATEMENT_INSERT;
+        m_eStatementType = OSQLStatementType::Insert;
     }
     else if (SQL_ISRULE(m_pParseTree,update_statement_searched))
     {
-        m_eStatementType = SQL_STATEMENT_UPDATE;
+        m_eStatementType = OSQLStatementType::Update;
     }
     else if (SQL_ISRULE(m_pParseTree,delete_statement_searched))
     {
-        m_eStatementType = SQL_STATEMENT_DELETE;
+        m_eStatementType = OSQLStatementType::Delete;
     }
     else if (m_pParseTree->count() == 3 && SQL_ISRULE(m_pParseTree->getChild(1),odbc_call_spec))
     {
-        m_eStatementType = SQL_STATEMENT_ODBC_CALL;
+        m_eStatementType = OSQLStatementType::OdbcCall;
     }
     else if (SQL_ISRULE(m_pParseTree->getChild(0),base_table_def))
     {
-        m_eStatementType = SQL_STATEMENT_CREATE_TABLE;
+        m_eStatementType = OSQLStatementType::CreateTable;
         m_pParseTree = m_pParseTree->getChild(0);
     }
     else
     {
-        m_eStatementType = SQL_STATEMENT_UNKNOWN;
+        m_eStatementType = OSQLStatementType::Unknown;
         //aIteratorStatus.setInvalidStatement();
         return;
     }
@@ -293,7 +293,7 @@ namespace
                     sSchema,
                     sName,
                     false,
-                    ::dbtools::eInDataManipulation
+                    ::dbtools::EComposeRule::InDataManipulation
                 );
             }
         }
@@ -304,7 +304,7 @@ namespace
 
 void OSQLParseTreeIterator::impl_getQueryParameterColumns( const OSQLTable& _rQuery  )
 {
-    if ( ( m_pImpl->m_nIncludeMask & Parameters ) != Parameters )
+    if ( !( m_pImpl->m_nIncludeMask & TraversalParts::Parameters ) )
         // parameters not to be included in the traversal
         return;
 
@@ -336,7 +336,7 @@ void OSQLParseTreeIterator::impl_getQueryParameterColumns( const OSQLTable& _rQu
         break;
 
     OSQLParseTreeIterator aSubQueryIterator( *this, m_rParser, pSubQueryNode.get() );
-    aSubQueryIterator.traverseSome( Parameters | SelectColumns );
+    aSubQueryIterator.traverseSome( TraversalParts::Parameters | TraversalParts::SelectColumns );
         // SelectColumns might also contain parameters
         // #i77635# - 2007-07-23 / frank.schoenheit@sun.com
     pSubQueryParameterColumns = aSubQueryIterator.getParameters();
@@ -364,7 +364,7 @@ OSQLTable OSQLParseTreeIterator::impl_locateRecordSource( const OUString& _rComp
     try
     {
         OUString sCatalog, sSchema, sName;
-        qualifiedNameComponents( m_pImpl->m_xDatabaseMetaData, sComposedName, sCatalog, sSchema, sName, ::dbtools::eInDataManipulation );
+        qualifiedNameComponents( m_pImpl->m_xDatabaseMetaData, sComposedName, sCatalog, sSchema, sName, ::dbtools::EComposeRule::InDataManipulation );
 
         // check whether there is a query with the given name
         bool bQueryDoesExist = m_pImpl->m_xQueryContainer.is() && m_pImpl->m_xQueryContainer->hasByName( sComposedName );
@@ -378,12 +378,12 @@ OSQLTable OSQLParseTreeIterator::impl_locateRecordSource( const OUString& _rComp
 
         // if we're creating a table, and there already is a table or query with the same name,
         // this is worth an error
-        if ( SQL_STATEMENT_CREATE_TABLE == m_eStatementType )
+        if ( OSQLStatementType::CreateTable == m_eStatementType )
         {
             if ( bQueryDoesExist )
-                impl_appendError( IParseContext::ERROR_INVALID_QUERY_EXIST, &sName );
+                impl_appendError( IParseContext::ErrorCode::InvalidQueryExist, &sName );
             else if ( bTableDoesExist )
-                impl_appendError( IParseContext::ERROR_INVALID_TABLE_EXIST, &sName );
+                impl_appendError( IParseContext::ErrorCode::InvalidTableExist, &sName );
             else
                 aReturn = impl_createTableObject( sName, sCatalog, sSchema );
         }
@@ -412,15 +412,15 @@ OSQLTable OSQLParseTreeIterator::impl_locateRecordSource( const OUString& _rComp
                 if ( m_pImpl->m_xQueryContainer.is() )
                     // the connection on which we're working supports sub queries in from (else
                     // m_xQueryContainer would not have been set), so emit a better error message
-                    impl_appendError( IParseContext::ERROR_INVALID_TABLE_OR_QUERY, &sName );
+                    impl_appendError( IParseContext::ErrorCode::InvalidTableOrQuery, &sName );
                 else
-                    impl_appendError( IParseContext::ERROR_INVALID_TABLE_NOSUCH, &sName );
+                    impl_appendError( IParseContext::ErrorCode::InvalidTableNosuch, &sName );
             }
         }
     }
     catch(Exception&)
     {
-        impl_appendError( IParseContext::ERROR_INVALID_TABLE_NOSUCH, &sComposedName );
+        impl_appendError( IParseContext::ErrorCode::InvalidTableNosuch, &sComposedName );
     }
 
     return aReturn;
@@ -429,7 +429,7 @@ OSQLTable OSQLParseTreeIterator::impl_locateRecordSource( const OUString& _rComp
 
 void OSQLParseTreeIterator::traverseOneTableName( OSQLTables& _rTables,const OSQLParseNode * pTableName, const OUString & rTableRange )
 {
-    if ( ( m_pImpl->m_nIncludeMask & TableNames ) != TableNames )
+    if ( !( m_pImpl->m_nIncludeMask & TraversalParts::TableNames ) )
         // tables should not be included in the traversal
         return;
 
@@ -448,7 +448,7 @@ void OSQLParseTreeIterator::traverseOneTableName( OSQLTables& _rTables,const OSQ
                                 aSchema,
                                 aTableName,
                                 false,
-                                ::dbtools::eInDataManipulation);
+                                ::dbtools::EComposeRule::InDataManipulation);
 
     // if there is no alias for the table name assign the orignal name to it
     if ( aTableRange.isEmpty() )
@@ -484,7 +484,7 @@ void OSQLParseTreeIterator::impl_fillJoinConditions(const OSQLParseNode* i_pJoin
         OSL_ENSURE(i_pJoinCondition->count() == 3,"OQueryDesignView::InsertJoinConnection: error in the parse tree");
         if (SQL_ISRULE(i_pJoinCondition->getChild(0),column_ref) &&
               SQL_ISRULE(i_pJoinCondition->getChild(2),column_ref) &&
-               i_pJoinCondition->getChild(1)->getNodeType() == SQL_NODE_EQUAL)
+               i_pJoinCondition->getChild(1)->getNodeType() == SQLNodeType::Equal)
         {
             m_pImpl->m_aJoinConditions.push_back( TNodePair(i_pJoinCondition->getChild(0),i_pJoinCondition->getChild(2)) );
         }
@@ -666,17 +666,17 @@ bool OSQLParseTreeIterator::traverseTableNames(OSQLTables& _rTables)
 
     switch ( m_eStatementType )
     {
-        case SQL_STATEMENT_SELECT:
+        case OSQLStatementType::Select:
             getSelect_statement( _rTables, m_pParseTree );
             break;
 
-        case SQL_STATEMENT_CREATE_TABLE:
-        case SQL_STATEMENT_INSERT:
-        case SQL_STATEMENT_DELETE:
+        case OSQLStatementType::CreateTable:
+        case OSQLStatementType::Insert:
+        case OSQLStatementType::Delete:
             pTableName = m_pParseTree->getChild(2);
             break;
 
-        case SQL_STATEMENT_UPDATE:
+        case OSQLStatementType::Update:
             pTableName = m_pParseTree->getChild(1);
             break;
         default:
@@ -755,7 +755,7 @@ namespace
         { // Function
             _pColumnRef->parseNodeToStr( _out_rColumnName, _rxConnection );
         }
-        else  if(_pColumnRef->getNodeType() == SQL_NODE_NAME)
+        else  if(_pColumnRef->getNodeType() == SQLNodeType::Name)
             _out_rColumnName = _pColumnRef->getTokenValue();
     }
 }
@@ -858,9 +858,9 @@ void OSQLParseTreeIterator::traverseCreateColumns(const OSQLParseNode* pSelectNo
 {
     //  aIteratorStatus.Clear();
 
-    if (!pSelectNode || m_eStatementType != SQL_STATEMENT_CREATE_TABLE || m_pImpl->m_pTables->empty())
+    if (!pSelectNode || m_eStatementType != OSQLStatementType::CreateTable || m_pImpl->m_pTables->empty())
     {
-        impl_appendError( IParseContext::ERROR_GENERAL );
+        impl_appendError( IParseContext::ErrorCode::General );
         return;
     }
     if (!SQL_ISRULE(pSelectNode,base_table_element_commalist))
@@ -892,7 +892,7 @@ void OSQLParseTreeIterator::traverseCreateColumns(const OSQLParseNode* pSelectNo
                     (void)nLen;
                 }
             }
-            else if(pDatatype && pDatatype->getNodeType() == SQL_NODE_KEYWORD)
+            else if(pDatatype && pDatatype->getNodeType() == SQLNodeType::Keyword)
             {
                 aTypeName = "VARCHAR";
             }
@@ -916,12 +916,12 @@ void OSQLParseTreeIterator::traverseCreateColumns(const OSQLParseNode* pSelectNo
 
 bool OSQLParseTreeIterator::traverseSelectColumnNames(const OSQLParseNode* pSelectNode)
 {
-    if ( ( m_pImpl->m_nIncludeMask & SelectColumns ) != SelectColumns )
+    if ( !( m_pImpl->m_nIncludeMask & TraversalParts::SelectColumns ) )
         return true;
 
-    if (!pSelectNode || m_eStatementType != SQL_STATEMENT_SELECT || m_pImpl->m_pTables->empty())
+    if (!pSelectNode || m_eStatementType != OSQLStatementType::Select || m_pImpl->m_pTables->empty())
     {
-        impl_appendError( IParseContext::ERROR_GENERAL );
+        impl_appendError( IParseContext::ErrorCode::General );
         return false;
     }
 
@@ -1033,7 +1033,7 @@ void OSQLParseTreeIterator::traverseByColumnNames(const OSQLParseNode* pSelectNo
         return;
     }
 
-    if (m_eStatementType != SQL_STATEMENT_SELECT)
+    if (m_eStatementType != OSQLStatementType::Select)
     {
         //aIteratorStatus.setInvalidStatement();
         return;
@@ -1172,7 +1172,7 @@ void OSQLParseTreeIterator::traverseParameters(const OSQLParseNode* _pNode)
                 lcl_generateParameterName( *pParent, *_pNode );
             }
         }
-        else if ( pParent->getNodeType() == SQL_NODE_COMMALISTRULE )
+        else if ( pParent->getNodeType() == SQLNodeType::CommaListRule )
         {
             lcl_generateParameterName( *pParent, *_pNode );
         }
@@ -1196,7 +1196,7 @@ bool OSQLParseTreeIterator::traverseSelectionCriteria(const OSQLParseNode* pSele
     // and set pointer to WHERE clause:
     OSQLParseNode * pWhereClause = nullptr;
 
-    if (m_eStatementType == SQL_STATEMENT_SELECT)
+    if (m_eStatementType == OSQLStatementType::Select)
     {
         if(SQL_ISRULE(pSelectNode,union_statement))
         {
@@ -1383,7 +1383,7 @@ void OSQLParseTreeIterator::traverseParameter(const OSQLParseNode* _pParseNode
     if ( !SQL_ISRULE( _pParseNode, parameter ) )
         return;
 
-    if ( ( m_pImpl->m_nIncludeMask & Parameters ) != Parameters )
+    if ( !( m_pImpl->m_nIncludeMask & TraversalParts::Parameters ) )
         // parameters not to be included in the traversal
         return;
 
@@ -1540,7 +1540,7 @@ void OSQLParseTreeIterator::traverseOnePredicate(
 }
 
 
-void OSQLParseTreeIterator::traverseSome( sal_uInt32 _nIncludeMask )
+void OSQLParseTreeIterator::traverseSome( TraversalParts _nIncludeMask )
 {
     impl_traverse( _nIncludeMask );
 }
@@ -1548,11 +1548,11 @@ void OSQLParseTreeIterator::traverseSome( sal_uInt32 _nIncludeMask )
 
 void OSQLParseTreeIterator::traverseAll()
 {
-    impl_traverse( All );
+    impl_traverse( TraversalParts::All );
 }
 
 
-void OSQLParseTreeIterator::impl_traverse( sal_uInt32 _nIncludeMask )
+void OSQLParseTreeIterator::impl_traverse( TraversalParts _nIncludeMask )
 {
     impl_resetErrors();
     m_pImpl->m_nIncludeMask = _nIncludeMask;
@@ -1562,7 +1562,7 @@ void OSQLParseTreeIterator::impl_traverse( sal_uInt32 _nIncludeMask )
 
     switch ( m_eStatementType )
     {
-    case SQL_STATEMENT_SELECT:
+    case OSQLStatementType::Select:
     {
         const OSQLParseNode* pSelectNode = m_pParseTree;
         traverseParameters( pSelectNode );
@@ -1574,7 +1574,7 @@ void OSQLParseTreeIterator::impl_traverse( sal_uInt32 _nIncludeMask )
             return;
     }
     break;
-    case SQL_STATEMENT_CREATE_TABLE:
+    case OSQLStatementType::CreateTable:
     {
         //0     |  1  |  2   |3|        4         |5
         //create table sc.foo ( a char(20), b char )
@@ -1582,7 +1582,7 @@ void OSQLParseTreeIterator::impl_traverse( sal_uInt32 _nIncludeMask )
         traverseCreateColumns(pCreateNode);
     }
     break;
-    case SQL_STATEMENT_INSERT:
+    case OSQLStatementType::Insert:
         break;
     default:
         break;
@@ -1595,7 +1595,7 @@ void OSQLParseTreeIterator::impl_traverse( sal_uInt32 _nIncludeMask )
 OSQLTable OSQLParseTreeIterator::impl_createTableObject( const OUString& rTableName,
     const OUString& rCatalogName, const OUString& rSchemaName )
 {
-    OSL_PRECOND( m_eStatementType == SQL_STATEMENT_CREATE_TABLE,
+    OSL_PRECOND( m_eStatementType == OSQLStatementType::CreateTable,
         "OSQLParseTreeIterator::impl_createTableObject: only to be called for CREATE TABLE statements!" );
         // (in all other cases, m_pTables is to contain the table objects as obtained from the tables
         // container of the connection (m_xTablesContainer)
@@ -1653,7 +1653,7 @@ void OSQLParseTreeIterator::appendColumns(::rtl::Reference<OSQLColumns>& _rColum
             _rColumns->get().push_back(xCol);
         }
         else
-            impl_appendError( IParseContext::ERROR_INVALID_COLUMN, pBegin, &_rTableAlias );
+            impl_appendError( IParseContext::ErrorCode::InvalidColumn, pBegin, &_rTableAlias );
     }
 }
 
@@ -1889,7 +1889,7 @@ const OSQLParseNode* OSQLParseTreeIterator::getWhereTree() const
     // Analyse parse tree (depending on statement type)
     // and set pointer to WHERE clause:
     OSQLParseNode * pWhereClause = nullptr;
-    if(getStatementType() == SQL_STATEMENT_SELECT)
+    if(getStatementType() == OSQLStatementType::Select)
     {
         OSL_ENSURE(m_pParseTree->count() >= 4,"ParseTreeIterator: error in parse tree!");
         OSQLParseNode * pTableExp = m_pParseTree->getChild(3);
@@ -1912,7 +1912,7 @@ const OSQLParseNode* OSQLParseTreeIterator::getWhereTree() const
 
 const OSQLParseNode* OSQLParseTreeIterator::getOrderTree() const
 {
-    if (!m_pParseTree || getStatementType() != SQL_STATEMENT_SELECT)
+    if (!m_pParseTree || getStatementType() != OSQLStatementType::Select)
         return nullptr;
 
     // Analyse parse tree (depending on statement type)
@@ -1933,7 +1933,7 @@ const OSQLParseNode* OSQLParseTreeIterator::getOrderTree() const
 
 const OSQLParseNode* OSQLParseTreeIterator::getGroupByTree() const
 {
-    if (!m_pParseTree || getStatementType() != SQL_STATEMENT_SELECT)
+    if (!m_pParseTree || getStatementType() != OSQLStatementType::Select)
         return nullptr;
 
     // Analyse parse tree (depending on statement type)
@@ -1954,7 +1954,7 @@ const OSQLParseNode* OSQLParseTreeIterator::getGroupByTree() const
 
 const OSQLParseNode* OSQLParseTreeIterator::getHavingTree() const
 {
-    if (!m_pParseTree || getStatementType() != SQL_STATEMENT_SELECT)
+    if (!m_pParseTree || getStatementType() != OSQLStatementType::Select)
         return nullptr;
 
     // Analyse parse tree (depending on statement type)
@@ -2088,7 +2088,7 @@ void OSQLParseTreeIterator::impl_appendError( IParseContext::ErrorCode _eError, 
     }
 
     impl_appendError( SQLException(
-        sErrorMessage, nullptr, getStandardSQLState( SQL_GENERAL_ERROR ), 1000, Any() ) );
+        sErrorMessage, nullptr, getStandardSQLState( StandardSQLState::GENERAL_ERROR ), 1000, Any() ) );
 }
 
 

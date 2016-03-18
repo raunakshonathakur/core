@@ -21,19 +21,30 @@ package com.sun.star.script.framework.container;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ScriptEntry implements Cloneable {
+public class ScriptEntry {
 
-    private String language;
-    private String languagename;
-    private String location;
-    private String logicalname = "";
-    private String description = "";
+    private final String language;
+    private final String languagename;
+    private final String logicalname;
+    private final String description;
 
-    private Map<String, String> languagedepprops;
+    private final Map<String, String> languagedepprops;
 
-    public  ScriptEntry(String language, String languagename,
-                       String location) {
+    protected ScriptEntry(ScriptEntry entry) {
+        this.language = entry.language;
+        this.languagename = entry.languagename;
+        this.logicalname = entry.languagename;
+        this.languagedepprops = entry.languagedepprops;
+        this.description = entry.description;
+    }
 
+    public ScriptEntry(String language, String languagename) {
+        this(language, languagename, new HashMap<String, String>(), "");
+    }
+
+    public ScriptEntry(String language, String languagename,
+                       Map<String, String> languagedepprops,
+                       String description) {
         this.language = language;
         this.languagename = languagename;
         // logical name/ function name concept
@@ -41,53 +52,8 @@ public class ScriptEntry implements Cloneable {
         // function name ( from xml ) will be used
         // as logical name also
         this.logicalname = languagename;
-        this.location = location;
-        this.languagedepprops =  new HashMap<String, String>();
-    }
-
-    public ScriptEntry(ScriptEntry entry) {
-        this.language = entry.language;
-        this.languagename = entry.languagename;
-        this.logicalname = entry.languagename;
-        this.location = entry.location;
-        this.languagedepprops = entry.languagedepprops;
-        this.description = entry.description;
-    }
-
-    public ScriptEntry(String language, String languagename,
-                       String location, Map<String, String> languagedepprops) {
-        this(language, languagename, location);
-        this.languagedepprops = languagedepprops;
-    }
-
-    public ScriptEntry(String language, String languagename,
-                       String location, Map<String, String> languagedepprops,
-                       String description) {
-        this(language, languagename, location);
         this.languagedepprops = languagedepprops;
         this.description = description;
-    }
-
-    public ScriptEntry(String languagename, String location) {
-        this("Java", languagename, location);
-    }
-
-    @Override
-    public Object clone() throws CloneNotSupportedException {
-        return super.clone();
-    }
-
-    public boolean equals(ScriptEntry other) {
-        return language.equals(other.getLanguage()) &&
-               languagename.equals(other.getLanguageName()) &&
-               logicalname.equals(other.getLogicalName()) &&
-               languagedepprops.equals(other.getLanguageProperties()) &&
-               location.equals(other.getLocation());
-    }
-
-    @Override
-    public int hashCode() {
-        return 0;
     }
 
     public Map<String, String> getLanguageProperties() {
@@ -102,16 +68,8 @@ public class ScriptEntry implements Cloneable {
         return logicalname;
     }
 
-    public void setLogicalName(String name) {
-        logicalname = name;
-    }
-
     public String getLanguage() {
         return language;
-    }
-
-    public  String getLocation() {
-        return location;
     }
 
     public String getDescription() {
@@ -122,7 +80,6 @@ public class ScriptEntry implements Cloneable {
     public String toString() {
         return "\nLogicalName = " + logicalname +
                "\nLanguageName = " + languagename +
-               "\nLocation = " + location +
                "\nLanguaguageProperties = " + languagedepprops;
     }
 }

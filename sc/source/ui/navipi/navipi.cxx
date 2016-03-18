@@ -916,7 +916,7 @@ void ScNavigatorDlg::SetCurrentCell( SCCOL nColNo, SCROW nRowNo )
         ppBoundItems[0]->ClearCache();
 
         ScAddress aScAddress( nColNo, nRowNo, 0 );
-        OUString aAddr(aScAddress.Format(SCA_ABS));
+        OUString aAddr(aScAddress.Format(ScRefFlags::ADDR_ABS));
 
         bool bUnmark = false;
         if ( GetViewData() )
@@ -1088,7 +1088,7 @@ void ScNavigatorDlg::SetListMode( NavListMode eMode, bool bSetSize )
                 break;
 
             case NAV_LMODE_SCENARIOS:
-                ShowScenarios( true, bSetSize );
+                ShowScenarios( bSetSize );
                 break;
         }
 
@@ -1151,36 +1151,22 @@ void ScNavigatorDlg::ShowList( bool bShow, bool bSetSize )
     }
 }
 
-void ScNavigatorDlg::ShowScenarios( bool bShow, bool bSetSize )
+void ScNavigatorDlg::ShowScenarios( bool bSetSize )
 {
     FloatingWindow* pFloat = pContextWin!=nullptr ? pContextWin->GetFloatingWindow() : nullptr;
     Size aSize = GetParent()->GetOutputSizePixel();
 
-    if ( bShow )
-    {
-        Size aMinSize = aInitSize;
-        aMinSize.Height() += nInitListHeight;
-        if ( pFloat )
-            pFloat->SetMinOutputSizePixel( aMinSize );
-        aSize.Height() = nListModeHeight;
+    Size aMinSize = aInitSize;
+    aMinSize.Height() += nInitListHeight;
+    if ( pFloat )
+        pFloat->SetMinOutputSizePixel( aMinSize );
+    aSize.Height() = nListModeHeight;
 
-        rBindings.Invalidate( SID_SELECT_SCENARIO );
-        rBindings.Update( SID_SELECT_SCENARIO );
+    rBindings.Invalidate( SID_SELECT_SCENARIO );
+    rBindings.Update( SID_SELECT_SCENARIO );
 
-        aWndScenarios->Show();
-        aLbDocuments->Show();
-    }
-    else
-    {
-        if ( pFloat )
-        {
-            pFloat->SetMinOutputSizePixel( aInitSize );
-            nListModeHeight = aSize.Height();
-        }
-        aSize.Height() = aInitSize.Height();
-        aWndScenarios->Hide();
-        aLbDocuments->Hide();
-    }
+    aWndScenarios->Show();
+    aLbDocuments->Show();
     aLbEntries->Hide();
 
     if ( pFloat )

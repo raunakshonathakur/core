@@ -721,7 +721,7 @@ void on_registrar_available( GDBusConnection * /*connection*/,
     if ( pSalMenu != nullptr )
     {
         GtkSalMenu* pGtkSalMenu = static_cast<GtkSalMenu*>(pSalMenu);
-        pGtkSalMenu->Display( true );
+        pGtkSalMenu->EnableUnity(true);
         pGtkSalMenu->UpdateFull();
     }
 }
@@ -742,7 +742,7 @@ void on_registrar_unavailable( GDBusConnection * /*connection*/,
 
     if ( pSalMenu ) {
         GtkSalMenu* pGtkSalMenu = static_cast< GtkSalMenu* >( pSalMenu );
-        pGtkSalMenu->Display( false );
+        pGtkSalMenu->EnableUnity(false);
     }
 }
 #endif
@@ -1234,10 +1234,12 @@ void GtkSalFrame::Init( SalFrame* pParent, SalFrameStyleFlags nStyle )
     g_object_set_data( G_OBJECT( m_pWindow ), "libo-version", const_cast<char *>(LIBO_VERSION_DOTTED));
 
     // force wm class hint
-    m_nExtStyle = ~0;
-    if (m_pParent)
-        m_sWMClass = m_pParent->m_sWMClass;
-    SetExtendedFrameStyle( 0 );
+    if (!isChild())
+    {
+        if (m_pParent)
+            m_sWMClass = m_pParent->m_sWMClass;
+        updateWMClass();
+    }
 
     if( m_pParent && m_pParent->m_pWindow && ! isChild() )
         gtk_window_set_screen( GTK_WINDOW(m_pWindow), gtk_window_get_screen( GTK_WINDOW(m_pParent->m_pWindow) ) );
@@ -1472,7 +1474,7 @@ void GtkSalFrame::SetIcon( sal_uInt16 nIcon )
     else if (nIcon == SV_ICON_ID_FORMULA)
         appicon = g_strdup ("libreoffice-math");
     else
-        appicon = g_strdup ("libreoffice-main");
+        appicon = g_strdup ("libreoffice-startcenter");
 
     gtk_window_set_icon_name (GTK_WINDOW (m_pWindow), appicon);
 }
@@ -3840,7 +3842,12 @@ uno::Reference<accessibility::XAccessibleEditableText>
     if (xState.is())
     {
         if (xState->contains(accessibility::AccessibleStateType::FOCUSED))
-            return uno::Reference<accessibility::XAccessibleEditableText>(xContext, uno::UNO_QUERY);
+        {
+            uno::Reference< accessibility::XAccessibleEditableText > xText =
+                uno::Reference<accessibility::XAccessibleEditableText>(xContext, uno::UNO_QUERY);
+            if (xText.is())
+                return xText;
+        }
     }
 
     for (sal_Int32 i = 0; i < xContext->getAccessibleChildCount(); ++i)

@@ -578,7 +578,7 @@ uno::Any SAL_CALL Content::execute(
         }
 
         // Remove own and all children's Additional Core Properties.
-        removeAdditionalPropertySet( true );
+        removeAdditionalPropertySet();
     }
     else if ( aCommand.Name == "transfer" )
     {
@@ -1359,8 +1359,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
 
             // Adapt Additional Core Properties.
             renameAdditionalPropertySet( xOldId->getContentIdentifier(),
-                                         xNewId->getContentIdentifier(),
-                                         true );
+                                         xNewId->getContentIdentifier() );
         }
         else
         {
@@ -2061,7 +2060,7 @@ void Content::transfer(
         }
 
         // Remove own and all children's Additional Core Properties.
-        xSource->removeAdditionalPropertySet( true );
+        xSource->removeAdditionalPropertySet();
     }
 }
 

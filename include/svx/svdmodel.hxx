@@ -141,11 +141,6 @@ public:
 };
 
 
-// Flag for cleaning up after the loading of the pools, meaning the
-// recalculate the RefCounts and dispose unused items)
-// sal_False == active
-#define LOADREFCOUNTS (false)
-
 struct SdrModelImpl;
 
 class SVX_DLLPUBLIC SdrModel : public SfxBroadcaster, public tools::WeakBase< SdrModel >, public OutlinerSearchable
@@ -288,8 +283,8 @@ public:
     // If, however, you use objects inheriting from SdrObject you are free
     // to chose a pool of your liking.
     explicit SdrModel();
-    explicit SdrModel(SfxItemPool* pPool, ::comphelper::IEmbeddedHelper* pPers, bool bUseExtColorTable, bool bLoadRefCounts);
-    explicit SdrModel(const OUString& rPath, SfxItemPool* pPool, ::comphelper::IEmbeddedHelper* pPers, bool bUseExtColorTable, bool bLoadRefCounts);
+    explicit SdrModel(SfxItemPool* pPool, ::comphelper::IEmbeddedHelper* pPers, bool bUseExtColorTable);
+    explicit SdrModel(const OUString& rPath, SfxItemPool* pPool, ::comphelper::IEmbeddedHelper* pPers, bool bUseExtColorTable);
     virtual ~SdrModel();
     void ClearModel(bool bCalledFromDestructor);
 
@@ -336,8 +331,6 @@ public:
     OutputDevice*        GetRefDevice() const                   { return pRefOutDev.get(); }
     /// The actual implementation of the vcl::ITiledRenderable::registerCallback() API.
     void                 registerLibreOfficeKitCallback(LibreOfficeKitCallback pCallback, void* pLibreOfficeKitData);
-    /// Gets the LOK callback registered by registerLibreOfficeKitCallback().
-    LibreOfficeKitCallback getLibreOfficeKitCallback() const;
     /// Gets the LOK data registered by registerLibreOfficeKitCallback().
     void*                getLibreOfficeKitData() const;
     /// Invokes the registered callback, if there are any.
@@ -406,7 +399,7 @@ public:
     static void      TakeUnitStr(FieldUnit eUnit, OUString& rStr);
     void             TakeMetricStr(long nVal, OUString& rStr, bool bNoUnitChars = false, sal_Int32 nNumDigits = -1) const;
     static void      TakeAngleStr(long nAngle, OUString& rStr, bool bNoDegChar = false);
-    static void      TakePercentStr(const Fraction& rVal, OUString& rStr, bool bNoPercentChar = false);
+    static void      TakePercentStr(const Fraction& rVal, OUString& rStr);
 
     // RecalcPageNums is ordinarily only called by the Page.
     bool             IsPagNumsDirty() const                     { return bPagNumsDirty; };
@@ -446,7 +439,7 @@ public:
     // For that to work, override the virtual method GetDocumentStream().
     // Default=FALSE. Flag is not persistent.
     bool            IsSwapGraphics() const { return bSwapGraphics; }
-    void            SetSwapGraphics(bool bJa = true);
+    void            SetSwapGraphics();
     void            SetSwapGraphicsMode(SdrSwapGraphicsMode nMode) { nSwapGraphicsMode = nMode; }
     SdrSwapGraphicsMode GetSwapGraphicsMode() const { return nSwapGraphicsMode; }
 

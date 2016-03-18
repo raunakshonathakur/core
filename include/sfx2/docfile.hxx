@@ -74,7 +74,7 @@ public:
                          */
                         SfxMedium( const OUString &rName,
                                    StreamMode nOpenMode,
-                                   const SfxFilter *pFilter = nullptr,
+                                   std::shared_ptr<const SfxFilter> pFilter = nullptr,
                                    SfxItemSet *pSet = nullptr );
                         /**
                          * @param pSet Takes ownership
@@ -82,7 +82,7 @@ public:
                         SfxMedium( const OUString &rName,
                                    const OUString &rReferer,
                                    StreamMode nOpenMode,
-                                   const SfxFilter *pFilter = nullptr,
+                                   std::shared_ptr<const SfxFilter> pFilter = nullptr,
                                    SfxItemSet *pSet = nullptr );
 
                         /**
@@ -113,10 +113,13 @@ public:
     void                SetLoadTargetFrame(SfxFrame* pFrame );
     SfxFrame*           GetLoadTargetFrame() const;
 
-    void                SetFilter(const SfxFilter *pFlt, bool bResetOrig = false);
-    const SfxFilter* GetFilter() const;
-    const SfxFilter *   GetOrigFilter( bool bNotCurrent = false ) const;
-    const OUString& GetOrigURL() const;
+    /**
+     * Does not take ownership of pFlt but pFlt needs to be around as long as the SfxMedium instance.
+     */
+    void                SetFilter(std::shared_ptr<const SfxFilter> pFilter);
+    std::shared_ptr<const SfxFilter>    GetFilter() const;
+    std::shared_ptr<const SfxFilter>    GetOrigFilter() const;
+    const OUString&     GetOrigURL() const;
 
     SfxItemSet  *       GetItemSet() const;
     void                Close();
@@ -206,14 +209,14 @@ public:
     SAL_DLLPRIVATE void CloseAndReleaseStreams_Impl();
     SAL_DLLPRIVATE void AddVersion_Impl( css::util::RevisionTag& rVersion );
     SAL_DLLPRIVATE bool TransferVersionList_Impl( SfxMedium& rMedium );
-    SAL_DLLPRIVATE void SaveVersionList_Impl( bool bUseXML );
+    SAL_DLLPRIVATE void SaveVersionList_Impl();
     SAL_DLLPRIVATE void RemoveVersion_Impl( const OUString& rVersion );
 
     SAL_DLLPRIVATE void SetExpired_Impl( const DateTime& rDateTime );
     SAL_DLLPRIVATE SvKeyValueIterator* GetHeaderAttributes_Impl();
 
     SAL_DLLPRIVATE void Init_Impl();
-    SAL_DLLPRIVATE void ForceSynchronStream_Impl( bool bSynchron );
+    SAL_DLLPRIVATE void ForceSynchronStream_Impl();
 
     SAL_DLLPRIVATE void GetLockingStream_Impl();
     SAL_DLLPRIVATE void GetMedium_Impl();

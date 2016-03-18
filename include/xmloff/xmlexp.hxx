@@ -172,10 +172,10 @@ private:
 
     SAL_DLLPRIVATE void ImplExportMeta(); // <office:meta>
     SAL_DLLPRIVATE void ImplExportSettings(); // <office:settings>
-    SAL_DLLPRIVATE void ImplExportStyles( bool bUsed ); // <office:styles>
-    SAL_DLLPRIVATE void ImplExportAutoStyles( bool bUsed );
+    SAL_DLLPRIVATE void ImplExportStyles(); // <office:styles>
+    SAL_DLLPRIVATE void ImplExportAutoStyles();
         // <office:automatic-styles>
-    SAL_DLLPRIVATE void ImplExportMasterStyles( bool bUsed );
+    SAL_DLLPRIVATE void ImplExportMasterStyles();
         // <office:master-styles>
     SAL_DLLPRIVATE void ImplExportContent(); // <office:body>
     virtual void SetBodyAttributes();
@@ -328,12 +328,10 @@ public:
         be added, as well.</p>
 
         @param i_rNamespace         the namespace to be declared
-        @param i_rPreferredPrefix   (opt.) preferred prefix for the namespace
 
         @returns the actual prefix that the namespace is associated with
       */
-    OUString EnsureNamespace(OUString const & i_rNamespace,
-                             OUString const & i_rPreferredPrefix = OUString("gen") );
+    OUString EnsureNamespace(OUString const & i_rNamespace );
 
     // Check if common attribute list is empty.
 #ifndef DBG_UTIL
@@ -374,24 +372,15 @@ public:
         @param  bWriteEmpty
                 Whether to write empty *:language and *:country attribute
                 values in case of an empty locale (denoting system).
-
-        @param  eClass
-                default, XML_LANGUAGE: XML_SCRIPT, XML_COUNTRY, XML_RFC_LANGUAGE_TAG
-                XML_LANGUAGE_ASIAN: XML_SCRIPT_ASIAN, XML_COUNTRY_ASIAN, XML_RFC_LANGUAGE_TAG_ASIAN
-                    also switches nPrefix XML_NAMESPACE_FO to XML_NAMESPACE_STYLE
-                XML_LANGUAGE_COMPLEX: XML_SCRIPT_COMPLEX, XML_COUNTRY_COMPLEX, XML_RFC_LANGUAGE_TAG_COMPLEX
-                    also switches nPrefix XML_NAMESPACE_FO to XML_NAMESPACE_STYLE
      */
     void AddLanguageTagAttributes( sal_uInt16 nPrefix, sal_uInt16 nPrefixRfc,
-            const css::lang::Locale& rLocale, bool bWriteEmpty,
-            enum ::xmloff::token::XMLTokenEnum eClass = ::xmloff::token::XML_LANGUAGE );
+            const css::lang::Locale& rLocale, bool bWriteEmpty);
 
     /** Same as AddLanguageTagAttributes() but with LanguageTag parameter
         instead of Locale.
      */
     void AddLanguageTagAttributes( sal_uInt16 nPrefix, sal_uInt16 nPrefixRfc,
-            const LanguageTag& rLanguageTag, bool bWriteEmpty,
-            enum ::xmloff::token::XMLTokenEnum eClass = ::xmloff::token::XML_LANGUAGE );
+            const LanguageTag& rLanguageTag, bool bWriteEmpty );
 
     // add several attributes to the common attribute list
     void AddAttributeList( const css::uno::Reference<

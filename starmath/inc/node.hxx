@@ -54,8 +54,6 @@ enum class FontSizeType {
 #define FLG_HORALIGN    0x0040
 
 
-extern SmFormat *pActiveFormat;
-
 class SmVisitor;
 class SmDocShell;
 class SmNode;
@@ -108,6 +106,9 @@ protected:
     sal_Int32       mnAccIndex;
 
 public:
+    SmNode(const SmNode&) = delete;
+    SmNode& operator=(const SmNode&) = delete;
+
     virtual             ~SmNode();
 
     virtual bool        IsVisible() const;
@@ -145,8 +146,6 @@ public:
     virtual void Prepare(const SmFormat &rFormat, const SmDocShell &rDocShell);
     void PrepareAttributes();
 
-    sal_uInt16 FindIndex() const;
-
     void         SetRectHorAlign(RectHorAlign eHorAlign, bool bApplyToSubTree = true );
     RectHorAlign GetRectHorAlign() const { return meRectHorAlign; }
 
@@ -158,7 +157,7 @@ public:
     virtual void Arrange(OutputDevice &rDev, const SmFormat &rFormat);
     virtual void CreateTextFromNode(OUString &rText);
 
-    virtual void    GetAccessibleText( OUStringBuffer &rText ) const;
+    virtual void    GetAccessibleText( OUStringBuffer &rText ) const = 0;
     sal_Int32       GetAccessibleIndex() const { return mnAccIndex; }
     const SmNode *  FindNodeWithAccessibleIndex(sal_Int32 nAccIndex) const;
 
@@ -182,21 +181,11 @@ public:
     /** Accept a visitor
      * Calls the method for this class on the visitor
      */
-    virtual void Accept(SmVisitor* pVisitor);
+    virtual void Accept(SmVisitor* pVisitor) = 0;
 
     /** True if this node is selected */
     bool IsSelected() const {return mbIsSelected;}
     void SetSelected(bool Selected = true) {mbIsSelected = Selected;}
-
-#ifdef DEBUG_ENABLE_DUMPASDOT
-    /** The tree as dot graph for graphviz, usable for debugging
-     * Convert the output to a image using $ dot graph.gv -Tpng > graph.png
-     */
-    inline void DumpAsDot(std::ostream &out, OUString* label = NULL) const{
-        int id = 0;
-        DumpAsDot(out, label, -1, id, -1);
-    }
-#endif /* DEBUG_ENABLE_DUMPASDOT */
 
     /** Get the parent node of this node */
     SmStructureNode* GetParent(){ return mpParentNode; }
@@ -300,7 +289,6 @@ protected:
     {}
 
 public:
-            SmStructureNode( const SmStructureNode &rNode );
     virtual ~SmStructureNode();
 
     virtual bool        IsVisible() const override;
@@ -312,8 +300,6 @@ public:
     virtual SmNode *    GetSubNode(sal_uInt16 nIndex) override;
             void SetSubNodes(SmNode *pFirst, SmNode *pSecond, SmNode *pThird = nullptr);
             void SetSubNodes(const SmNodeArray &rNodeArray);
-
-    SmStructureNode & operator = ( const SmStructureNode &rNode );
 
     virtual void  GetAccessibleText( OUStringBuffer &rText ) const override;
 

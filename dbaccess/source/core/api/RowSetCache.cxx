@@ -1133,10 +1133,10 @@ bool ORowSetCache::last(  )
         OSL_ENSURE(m_bBeforeFirst,"ORowSetCache::last return false and BeforeFirst isn't true");
         m_aMatrixIter = m_pMatrix->end();
     }
-#if OSL_DEBUG_LEVEL > 1
+#if OSL_DEBUG_LEVEL > 0
     if(bRet)
     {
-        OSL_ENSURE((*m_aMatrixIter).is(),"ORowSetCache::last: Row not valid!");
+        assert((*m_aMatrixIter).is() && "ORowSetCache::last: Row not valid!");
     }
 #endif
 
@@ -1488,6 +1488,19 @@ void ORowSetCache::rotateCacheIterator(ORowSetMatrix::difference_type _nDist)
     }
 }
 
+void ORowSetCache::rotateAllCacheIterators()
+{
+    // now correct the iterator in our iterator vector
+    auto aCacheEnd  = m_aCacheIterators.end();
+    for (auto aCacheIter = m_aCacheIterators.begin(); aCacheIter != aCacheEnd; ++aCacheIter)
+    {
+        if (!aCacheIter->second.pRowSet->isInsertRow() && !m_bModified)
+        {
+            aCacheIter->second.aIterator = m_pMatrix->end();
+        }
+    }
+}
+
 void ORowSetCache::setUpdateIterator(const ORowSetMatrix::iterator& _rOriginalRow)
 {
     m_aInsertRow = m_pInsertMatrix->begin();
@@ -1541,7 +1554,7 @@ bool ORowSetCache::checkInnerJoin(const ::connectivity::OSQLParseNode *pNode,con
         OSL_ENSURE(pNode->count() == 3,"checkInnerJoin: Fehler im Parse Tree");
         if (!(SQL_ISRULE(pNode->getChild(0),column_ref) &&
                 SQL_ISRULE(pNode->getChild(2),column_ref) &&
-                pNode->getChild(1)->getNodeType() == SQL_NODE_EQUAL))
+                pNode->getChild(1)->getNodeType() == SQLNodeType::Equal))
         {
             bOk = false;
         }
@@ -1676,7 +1689,7 @@ bool ORowSetCache::reFillMatrix(sal_Int32 _nNewStartPos, sal_Int32 _nNewEndPos)
     bool bRet = fillMatrix(nNewSt,_nNewEndPos);
     m_nStartPos = nNewSt;
     m_nEndPos = _nNewEndPos;
-    rotateCacheIterator(static_cast<ORowSetMatrix::difference_type>(m_nFetchSize+1)); // invalidate every iterator
+    rotateAllCacheIterators(); // invalidate every iterator
     return bRet;
 }
 

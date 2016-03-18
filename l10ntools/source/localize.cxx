@@ -86,15 +86,7 @@ bool passesNegativeList(const OUString& rUrl) {
 
 bool passesPositiveList(const OUString& rUrl) {
     static const AsciiString list[] = {
-        { RTL_CONSTASCII_STRINGPARAM(
-            "/chart2/source/controller/dialogs/res_DataLabel_tmpl.hrc") },
-        { RTL_CONSTASCII_STRINGPARAM(
-            "/chart2/source/controller/dialogs/res_ErrorBar_tmpl.hrc") },
-        { RTL_CONSTASCII_STRINGPARAM(
-            "/dbaccess/source/ui/inc/toolbox_tmpl.hrc") },
-        { RTL_CONSTASCII_STRINGPARAM("/description.xml") },
-        { RTL_CONSTASCII_STRINGPARAM("/svx/inc/globlmn_tmpl.hrc") },
-        { RTL_CONSTASCII_STRINGPARAM("/sw/source/uibase/inc/redline_tmpl.hrc") }
+        { RTL_CONSTASCII_STRINGPARAM("/description.xml") }
     };
     return matchList(rUrl, list, SAL_N_ELEMENTS(list));
 }

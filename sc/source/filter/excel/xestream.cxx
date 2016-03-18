@@ -325,22 +325,17 @@ void XclExpStream::WriteUnicodeBuffer( const ScfUInt16Vec& rBuffer, sal_uInt8 nF
 // Xcl has an obscure sense of whether starting a new record or not,
 // and crashes if it encounters the string header at the very end of a record.
 // Thus we add 1 to give some room, seems like they do it that way but with another count (10?)
-void XclExpStream::WriteByteString( const OString& rString, sal_uInt16 nMaxLen, bool b16BitCount )
+void XclExpStream::WriteByteString( const OString& rString )
 {
     SetSliceSize( 0 );
-    sal_Size nLen = ::std::min< sal_Size >( rString.getLength(), nMaxLen );
-    if( !b16BitCount )
-        nLen = ::std::min< sal_Size >( nLen, 0xFF );
+    sal_Size nLen = ::std::min< sal_Size >( rString.getLength(), 0x00FF );
+    nLen = ::std::min< sal_Size >( nLen, 0xFF );
 
     sal_uInt16 nLeft = PrepareWrite();
-    sal_uInt16 nLenFieldSize = b16BitCount ? 2 : 1;
-    if( mbInRec && (nLeft <= nLenFieldSize) )
+    if( mbInRec && (nLeft <= 1) )
         StartContinue();
 
-    if( b16BitCount )
-        operator<<( static_cast< sal_uInt16 >( nLen ) );
-    else
-        operator<<( static_cast< sal_uInt8 >( nLen ) );
+    operator<<( static_cast< sal_uInt8 >( nLen ) );
     Write( rString.getStr(), nLen );
 }
 
@@ -720,7 +715,7 @@ OString XclXmlUtils::ToOString( const OUString& s )
 
 OStringBuffer& XclXmlUtils::ToOString( OStringBuffer& s, const ScAddress& rAddress )
 {
-    rAddress.Format(s, SCA_VALID, nullptr, ScAddress::Details( FormulaGrammar::CONV_XL_A1));
+    rAddress.Format(s, ScRefFlags::VALID, nullptr, ScAddress::Details( FormulaGrammar::CONV_XL_A1));
     return s;
 }
 
@@ -737,14 +732,14 @@ OString XclXmlUtils::ToOString( const ScfUInt16Vec& rBuffer )
 
 OString XclXmlUtils::ToOString( const ScRange& rRange )
 {
-    OUString sRange(rRange.Format(SCA_VALID, nullptr, ScAddress::Details( FormulaGrammar::CONV_XL_A1)));
+    OUString sRange(rRange.Format(ScRefFlags::VALID, nullptr, ScAddress::Details( FormulaGrammar::CONV_XL_A1)));
     return ToOString( sRange );
 }
 
 OString XclXmlUtils::ToOString( const ScRangeList& rRangeList )
 {
     OUString s;
-    rRangeList.Format(s, SCA_VALID, nullptr, FormulaGrammar::CONV_XL_A1, ' ');
+    rRangeList.Format(s, ScRefFlags::VALID, nullptr, FormulaGrammar::CONV_XL_A1, ' ');
     return ToOString( s );
 }
 

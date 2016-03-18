@@ -59,17 +59,6 @@ enum PrinterSupport
 };
 
 
-class VCL_DLLPUBLIC PrinterPage
-{
-    GDIMetaFile*    mpMtf;
-
-public:
-
-                    PrinterPage( GDIMetaFile* pMtf ) : mpMtf( pMtf ) {}
-                    ~PrinterPage() { delete mpMtf; }
-};
-
-
 class VCL_DLLPUBLIC QueueInfo
 {
     friend class               Printer;
@@ -220,7 +209,7 @@ private:
 
     SAL_DLLPRIVATE void         ImplInitData();
     SAL_DLLPRIVATE void         ImplInit( SalPrinterQueueInfo* pInfo );
-    SAL_DLLPRIVATE void         ImplInitDisplay( const vcl::Window* pWindow );
+    SAL_DLLPRIVATE void         ImplInitDisplay();
     SAL_DLLPRIVATE static SalPrinterQueueInfo*
                                 ImplGetQueueInfo( const OUString& rPrinterName, const OUString* pDriver );
     SAL_DLLPRIVATE void         ImplUpdatePageData();
@@ -334,8 +323,8 @@ public:
     Paper                       GetPaper() const;
     static OUString             GetPaperName( Paper ePaper );
 
-    /** @return A UI string for the current paper; i_bPaperUser == false means an empty string for PAPER_USER */
-    OUString                    GetPaperName( bool i_bPaperUser = true ) const;
+    /** @return A UI string for the current paper; an empty string for PAPER_USER */
+    OUString                    GetPaperName() const;
 
     /** @return Number of available paper formats */
     int                         GetPaperInfoCount() const;
@@ -605,10 +594,8 @@ public:
     /** Process a new set of properties
 
         merges changed properties and returns "true" if any occurred
-        if the optional output set is not NULL then the names of the changed properties are returned
     */
-    bool                 processProperties( const css::uno::Sequence< css::beans::PropertyValue >& i_rNewProp,
-                             std::set< OUString >* o_pChangeProp = nullptr );
+    bool                 processProperties( const css::uno::Sequence< css::beans::PropertyValue >& i_rNewProp );
 
     /** Append to a sequence of property values the ui property sequence passed at creation
 
@@ -630,10 +617,10 @@ public:
     sal_Int64            getIntValue( const char* i_pPropName, sal_Int64 i_nDefault ) const
                              { return getIntValue( OUString::createFromAscii( i_pPropName ), i_nDefault ); }
 
-    OUString             getStringValue( const OUString& i_rPropertyName, const OUString& i_rDefault = OUString() ) const;
+    OUString             getStringValue( const OUString& i_rPropertyName ) const;
     // convenience for fixed strings
-    OUString             getStringValue( const char* i_pPropName, const OUString& i_rDefault = OUString() ) const
-                             { return getStringValue( OUString::createFromAscii( i_pPropName ), i_rDefault ); }
+    OUString             getStringValue( const char* i_pPropName ) const
+                             { return getStringValue( OUString::createFromAscii( i_pPropName ) ); }
 
     // helper functions for user to create a single control
     struct UIControlOptions
@@ -649,14 +636,13 @@ public:
 
                          UIControlOptions( const OUString& i_rDependsOnName = OUString(),
                              sal_Int32 i_nDependsOnEntry = -1, bool i_bAttachToDependency = false,
-                             const OUString& i_rGroupHint = OUString(), bool i_bInternalOnly = false,
-                             bool i_bEnabled = true)
+                             const OUString& i_rGroupHint = OUString())
                              : maDependsOnName( i_rDependsOnName )
                              , mnDependsOnEntry( i_nDependsOnEntry )
                              , mbAttachToDependency( i_bAttachToDependency )
                              , maGroupHint( i_rGroupHint )
-                             , mbInternalOnly( i_bInternalOnly )
-                             , mbEnabled( i_bEnabled ) {}
+                             , mbInternalOnly( false )
+                             , mbEnabled( true ) {}
     };
 
     // note: in the following helper functions HelpIds are expected as an OUString

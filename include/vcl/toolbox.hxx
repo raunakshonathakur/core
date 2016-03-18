@@ -159,6 +159,7 @@ private:
                                        bool bInvalidateLower = true);
     SAL_DLLPRIVATE void InvalidateMenuButton();
 
+    SAL_DLLPRIVATE void            ImplInitToolBoxData();
     SAL_DLLPRIVATE void            ImplInit( vcl::Window* pParent, WinBits nStyle );
     using DockingWindow::ImplInitSettings;
     SAL_DLLPRIVATE void            ImplInitSettings( bool bFont, bool bForeground, bool bBackground );
@@ -167,9 +168,9 @@ private:
     SAL_DLLPRIVATE bool            ImplCalcItem();
     SAL_DLLPRIVATE sal_uInt16      ImplCalcBreaks( long nWidth, long* pMaxLineWidth, bool bCalcHorz );
     SAL_DLLPRIVATE void            ImplFormat( bool bResize = false );
-    SAL_DLLPRIVATE void            ImplDrawSpin(vcl::RenderContext& rRenderContext, bool bUpperIn, bool bLowerIn);
+    SAL_DLLPRIVATE void            ImplDrawSpin(vcl::RenderContext& rRenderContext);
     SAL_DLLPRIVATE void            ImplDrawSeparator(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, const Rectangle& rRect);
-    SAL_DLLPRIVATE void            ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, sal_uInt16 nHighlight = 0, bool bPaint = false, bool bLayout = false );
+    SAL_DLLPRIVATE void            ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, sal_uInt16 nHighlight = 0 );
     using Window::ImplInvalidate;
     SAL_DLLPRIVATE void            ImplInvalidate( bool bNewCalc = false, bool bFullPaint = false );
     SAL_DLLPRIVATE void            ImplUpdateItem( sal_uInt16 nIndex = 0xFFFF );
@@ -247,8 +248,10 @@ protected:
     }
 
 public:
-                        ToolBox( vcl::Window* pParent, WinBits nStyle = 0 );
-                        ToolBox( vcl::Window* pParent, const ResId& rResId );
+    ToolBox( vcl::Window* pParent, WinBits nStyle = 0 );
+    ToolBox( vcl::Window* pParent, const ResId& rResId );
+    ToolBox(vcl::Window* pParent, const OString& rID, const OUString& rUIXMLDescription,
+        const css::uno::Reference<css::frame::XFrame> &rFrame = css::uno::Reference<css::frame::XFrame>());
     virtual             ~ToolBox();
     virtual void        dispose() override;
 
@@ -283,9 +286,9 @@ public:
     virtual void        EndDocking( const Rectangle& rRect, bool bFloatMode ) override;
     virtual void        Resizing( Size& rSize ) override;
     virtual Size        GetOptimalSize() const override;
+    virtual void        doDeferredInit(WinBits nBits) override;
 
-    void                InsertItem( const ResId& rResId,
-                                    sal_uInt16 nPos = TOOLBOX_APPEND );
+    void                InsertItem( const ResId& rResId );
     /// Insert a command (like '.uno:Save').
     virtual void        InsertItem( const OUString& rCommand,
                                     const css::uno::Reference<css::frame::XFrame>& rFrame,
@@ -305,11 +308,11 @@ public:
     void                InsertWindow( sal_uInt16 nItemId, vcl::Window* pWindow,
                                       ToolBoxItemBits nBits = ToolBoxItemBits::NONE,
                                       sal_uInt16 nPos = TOOLBOX_APPEND );
-    void                InsertSpace( sal_uInt16 nPos = TOOLBOX_APPEND );
+    void                InsertSpace();
     void                InsertSeparator( sal_uInt16 nPos = TOOLBOX_APPEND, sal_uInt16 nPixSize = 0 );
     void                InsertBreak( sal_uInt16 nPos = TOOLBOX_APPEND );
     void                RemoveItem( sal_uInt16 nPos );
-    void                CopyItem( const ToolBox& rToolBox, sal_uInt16 nItemId, sal_uInt16 nNewPos = TOOLBOX_APPEND );
+    void                CopyItem( const ToolBox& rToolBox, sal_uInt16 nItemId );
     void                Clear();
 
     const ImageList&    GetImageList() const { return maImageList; }
@@ -376,7 +379,7 @@ public:
     void                StartSelection();
     void                EndSelection();
 
-    void                SetItemDown( sal_uInt16 nItemId, bool bDown, bool bRelease = true );
+    void                SetItemDown( sal_uInt16 nItemId, bool bDown );
 
     void                SetItemState( sal_uInt16 nItemId, TriState eState );
     TriState            GetItemState( sal_uInt16 nItemId ) const;
@@ -387,7 +390,7 @@ public:
     void                EnableItem( sal_uInt16 nItemId, bool bEnable = true );
     bool                IsItemEnabled( sal_uInt16 nItemId ) const;
 
-    void                TriggerItem( sal_uInt16 nItemId, bool bShift = false, bool bCtrl = false );
+    void                TriggerItem( sal_uInt16 nItemId );
 
     /// Shows or hides items.
     void                ShowItem(sal_uInt16 nItemId, bool bVisible = true);

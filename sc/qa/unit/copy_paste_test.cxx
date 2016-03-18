@@ -53,8 +53,8 @@ void ScCopyPasteTest::testCopyPasteXLS()
     CPPUNIT_ASSERT( xTargetFrame.is() );
 
     // 1. Open the document
-    ScDocShellRef xDocSh = loadDoc("chartx.", FORMAT_XLS);
-    CPPUNIT_ASSERT_MESSAGE("Failed to load chartx.xls.", xDocSh.Is());
+    ScDocShellRef xDocSh = loadDoc("chartx2.", FORMAT_XLS);
+    CPPUNIT_ASSERT_MESSAGE("Failed to load chartx2.xls.", xDocSh.Is());
 
     uno::Reference< frame::XModel2 > xModel2 ( xDocSh->GetModel(), UNO_QUERY );
     CPPUNIT_ASSERT( xModel2.is() );
@@ -77,8 +77,8 @@ void ScCopyPasteTest::testCopyPasteXLS()
 
     // 2. Highlight B2:C5
     ScRange aSrcRange;
-    sal_uInt16 nRes = aSrcRange.Parse("B2:C5", &rDoc, rDoc.GetAddressConvention());
-    CPPUNIT_ASSERT_MESSAGE("Failed to parse.", (nRes & SCA_VALID) != 0);
+    ScRefFlags nRes = aSrcRange.Parse("B2:C5", &rDoc, rDoc.GetAddressConvention());
+    CPPUNIT_ASSERT_MESSAGE("Failed to parse.", (nRes & ScRefFlags::VALID));
 
     ScMarkData aMark;
     aMark.SetMarkArea(aSrcRange);
@@ -118,7 +118,7 @@ void ScCopyPasteTest::testCopyPasteXLS()
     // 6. Paste
     pViewShell->GetViewData().GetView()->PasteFromClip(InsertDeleteFlags::ALL, &aClipDoc);
 
-    xDocSh->DoClose();
+    xComponent->dispose();
 }
 
 ScCopyPasteTest::ScCopyPasteTest()

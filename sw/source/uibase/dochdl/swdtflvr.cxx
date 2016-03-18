@@ -123,10 +123,13 @@
 #include <vcl/svapp.hxx>
 #include <swserv.hxx>
 #include <calbck.hxx>
+#include <fmtmeta.hxx>
 
 #include <vcl/GraphicNativeTransform.hxx>
 #include <vcl/GraphicNativeMetadata.hxx>
 #include <comphelper/lok.hxx>
+#include <sfx2/classificationhelper.hxx>
+#include <sfx2/sfxresid.hxx>
 
 #include <memory>
 
@@ -378,6 +381,8 @@ namespace
         rDest.ReplaceStyles(rSrc, false);
 
         rSrcWrtShell.Copy(&rDest);
+
+        rDest.GetMetaFieldManager().copyDocumentProperties(rSrc);
     }
 
     void lclCheckAndPerformRotation(Graphic& aGraphic)
@@ -1554,38 +1559,21 @@ bool SwTransferable::PasteData( TransferableDataHelper& rData,
     return bRet;
 }
 
-SotExchangeDest SwTransferable::GetSotDestination( const SwWrtShell& rSh,
-                                            const Point* pPt )
+SotExchangeDest SwTransferable::GetSotDestination( const SwWrtShell& rSh )
 {
     SotExchangeDest nRet = SotExchangeDest::NONE;
 
-    ObjCntType eOType;
-    if( pPt )
-    {
-        SdrObject *pObj = nullptr;
-        eOType = rSh.GetObjCntType( *pPt, pObj );
-    }
-    else
-        eOType = rSh.GetObjCntTypeOfSelection();
+    ObjCntType eOType = rSh.GetObjCntTypeOfSelection();
 
     switch( eOType )
     {
     case OBJCNT_GRF:
         {
             bool bIMap, bLink;
-            if( pPt )
-            {
-                bIMap = nullptr != rSh.GetFormatFromObj( *pPt )->GetURL().GetMap();
-                OUString aDummy;
-                rSh.GetGrfAtPos( *pPt, aDummy, bLink );
-            }
-            else
-            {
-                bIMap = nullptr != rSh.GetFlyFrameFormat()->GetURL().GetMap();
-                OUString aDummy;
-                rSh.GetGrfNms( &aDummy, nullptr );
-                bLink = !aDummy.isEmpty();
-            }
+            bIMap = nullptr != rSh.GetFlyFrameFormat()->GetURL().GetMap();
+            OUString aDummy;
+            rSh.GetGrfNms( &aDummy, nullptr );
+            bLink = !aDummy.isEmpty();
 
             if( bLink && bIMap )
                 nRet = SotExchangeDest::DOC_LNKD_GRAPH_W_IMAP;
@@ -1678,7 +1666,7 @@ bool SwTransferable::_PasteFileContent( TransferableDataHelper& rData,
             {
                 pStream = &xStrm;
                 if( SotClipboardFormatId::RTF == nFormat )
-                    pRead = SwReaderWriter::GetReader( READER_WRITER_RTF );
+                    pRead = SwReaderWriter::GetRtfReader();
                 else if( !pRead )
                 {
                     pRead = ReadHTML;
@@ -2580,7 +2568,7 @@ bool SwTransferable::_PasteFileName( TransferableDataHelper& rData,
 
                 //Own FileFormat? --> insert, not for StarWriter/Web
                 OUString sFileURL = URIHelper::SmartRel2Abs(INetURLObject(), sFile, Link<OUString *, bool>(), false );
-                const SfxFilter* pFlt = SwPasteSdr::SetAttr == nAction
+                std::shared_ptr<const SfxFilter> pFlt = SwPasteSdr::SetAttr == nAction
                         ? nullptr : SwIoSystem::GetFileFilter(sFileURL);
                 if( pFlt && dynamic_cast< const SwWebDocShell *>( rSh.GetView().GetDocShell() ) == nullptr )
                 {
@@ -3225,6 +3213,25 @@ void SwTransferable::DragFinished( sal_Int8 nAction )
     m_pWrtShell->GetViewOptions()->SetIdle( m_bOldIdle );
 }
 
+namespace
+{
+
+bool lcl_checkClassification(SwDoc* pSourceDoc, SwDoc* pDestinationDoc)
+{
+    if (!pSourceDoc || !pDestinationDoc)
+        return true;
+
+    SwDocShell* pSourceShell = pSourceDoc->GetDocShell();
+    SwDocShell* pDestinationShell = pDestinationDoc->GetDocShell();
+    if (!pSourceShell || !pDestinationShell)
+        return true;
+
+    SfxClassificationCheckPasteResult eResult = SfxClassificationHelper::CheckPaste(pSourceShell->getDocProperties(), pDestinationShell->getDocProperties());
+    return SfxClassificationHelper::ShowPasteInfo(eResult);
+}
+
+}
+
 bool SwTransferable::PrivatePaste( SwWrtShell& rShell )
 {
     // first, ask for the SelectionType, then action-bracketing !!!!
@@ -3282,7 +3289,9 @@ bool SwTransferable::PrivatePaste( SwWrtShell& rShell )
             }
     }
 
-    bool bRet = rShell.Paste( m_pClpDocFac->GetDoc() );
+    bool bRet = true;
+    if (lcl_checkClassification(m_pWrtShell->GetDoc(), rShell.GetDoc()))
+        bRet = rShell.Paste(m_pClpDocFac->GetDoc());
 
     if( bKillPaMs )
         rShell.KillPams();

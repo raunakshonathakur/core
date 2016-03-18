@@ -3318,7 +3318,7 @@ void SwEditWin::MouseButtonDown(const MouseEvent& _rMEvt)
                                 if (!comphelper::LibreOfficeKit::isActive())
                                 {
                                     GetView().GetViewFrame()->GetBindings().Execute(
-                                        FN_FORMAT_GRAFIC_DLG, nullptr, 0,
+                                        FN_FORMAT_GRAFIC_DLG, nullptr,
                                         SfxCallMode::RECORD|SfxCallMode::SLOT);
                                 }
                                 return;
@@ -3337,7 +3337,7 @@ void SwEditWin::MouseButtonDown(const MouseEvent& _rMEvt)
                                 if (!comphelper::LibreOfficeKit::isActive())
                                 {
                                     GetView().GetViewFrame()->GetBindings().Execute(
-                                        FN_FORMAT_FRAME_DLG, nullptr, 0,
+                                        FN_FORMAT_FRAME_DLG, nullptr,
                                         SfxCallMode::RECORD|SfxCallMode::SLOT);
                                 }
                                 return;
@@ -4079,27 +4079,34 @@ void SwEditWin::MouseMove(const MouseEvent& _rMEvt)
                     if( bIsDocReadOnly )
                         break;
 
-                    bool bIsSelectionGfx = rSh.GetSelectionType() & nsSelectionType::SEL_GRF;
+                    bool bResizeKeepRatio = rSh.GetSelectionType() & nsSelectionType::SEL_GRF ||
+                                            rSh.GetSelectionType() & nsSelectionType::SEL_MEDIA ||
+                                            rSh.GetSelectionType() & nsSelectionType::SEL_OLE;
                     bool bisResize = g_eSdrMoveHdl != HDL_MOVE;
 
                     if (pSdrView)
                     {
+                        // Resize proportionally when media is selected and the user drags on a corner
+                        const Point aSttPt(PixelToLogic(m_aStartPos));
+                        SdrHdl* pHdl = pSdrView->PickHandle(aSttPt);
+                        if (pHdl)
+                            bResizeKeepRatio = bResizeKeepRatio && pHdl->IsCornerHdl();
+
                         if (pSdrView->GetDragMode() == SDRDRAG_CROP)
                             bisResize = false;
-
                         if (rMEvt.IsShift())
                         {
-                            pSdrView->SetAngleSnapEnabled(!bIsSelectionGfx);
+                            pSdrView->SetAngleSnapEnabled(!bResizeKeepRatio);
                             if (bisResize)
-                                pSdrView->SetOrtho(!bIsSelectionGfx);
+                                pSdrView->SetOrtho(!bResizeKeepRatio);
                             else
                                 pSdrView->SetOrtho(true);
                         }
                         else
                         {
-                            pSdrView->SetAngleSnapEnabled(bIsSelectionGfx);
+                            pSdrView->SetAngleSnapEnabled(bResizeKeepRatio);
                             if (bisResize)
-                                pSdrView->SetOrtho(bIsSelectionGfx);
+                                pSdrView->SetOrtho(bResizeKeepRatio);
                             else
                                 pSdrView->SetOrtho(false);
                         }
@@ -5985,7 +5992,7 @@ void QuickHelpData::Start( SwWrtShell& rSh, sal_uInt16 nWrdLen )
 void QuickHelpData::Stop( SwWrtShell& rSh )
 {
     if( !m_bIsTip )
-        rSh.DeleteExtTextInput( nullptr, false );
+        rSh.DeleteExtTextInput( false );
     else if( nTipId )
     {
         vcl::Window& rWin = rSh.GetView().GetEditWin();

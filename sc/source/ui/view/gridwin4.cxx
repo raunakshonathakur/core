@@ -1450,7 +1450,7 @@ void ScGridWindow::DrawButtons(SCCOL nX1, SCCOL nX2, const ScTableInfo& rTabInfo
             aComboButton.SetPosPixel( aRect.TopLeft() );
             aComboButton.SetSizePixel( aRect.GetSize() );
             pContentDev->SetClipRegion(vcl::Region(aRect));
-            aComboButton.Draw( false );
+            aComboButton.Draw();
             pContentDev->SetClipRegion();           // always called from Draw() without clip region
             aComboButton.SetPosPixel( aOldPos );    // restore old state
             aComboButton.SetSizePixel( aOldSize );  // for MouseUp/Down (AutoFilter)
@@ -1608,6 +1608,17 @@ void ScGridWindow::GetSelectionRects( ::std::vector< Rectangle >& rPixelRects )
             nX2 = nXRight;
         if (nY2 > nYBottom)
             nY2 = nYBottom;
+    }
+    else
+    {
+        SCCOL nMaxTiledCol;
+        SCROW nMaxTiledRow;
+        pDoc->GetTiledRenderingArea( nTab, nMaxTiledCol, nMaxTiledRow );
+
+        if (nX2 > nMaxTiledCol)
+            nX2 = nMaxTiledCol;
+        if (nY2 > nMaxTiledRow)
+            nY2 = nMaxTiledRow;
     }
 
     double nPPTX = pViewData->GetPPTX();

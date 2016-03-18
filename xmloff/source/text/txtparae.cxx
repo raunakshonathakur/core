@@ -109,6 +109,7 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
+#include <iterator>
 
 using namespace ::std;
 using namespace ::com::sun::star;
@@ -586,8 +587,7 @@ static bool lcl_validPropState( const XMLPropertyState& rState )
 
 void XMLTextParagraphExport::Add( sal_uInt16 nFamily,
                                   MultiPropertySetHelper& rPropSetHelper,
-                                  const Reference < XPropertySet > & rPropSet,
-                                  const XMLPropertyState** ppAddStates)
+                                  const Reference < XPropertySet > & rPropSet)
 {
     rtl::Reference < SvXMLExportPropertyMapper > xPropMapper;
     switch( nFamily )
@@ -599,14 +599,6 @@ void XMLTextParagraphExport::Add( sal_uInt16 nFamily,
     DBG_ASSERT( xPropMapper.is(), "There is the property mapper?" );
 
     vector< XMLPropertyState > xPropStates(xPropMapper->Filter( rPropSet ));
-    if( ppAddStates )
-    {
-        while( *ppAddStates )
-        {
-            xPropStates.push_back( **ppAddStates );
-            ++ppAddStates;
-        }
-    }
 
     if( rPropSetHelper.hasProperty( NUMBERING_RULES_AUTO ) )
     {
@@ -1365,8 +1357,7 @@ SvXMLExportPropertyMapper *XMLTextParagraphExport::CreateParaDefaultExtPropMappe
     return new XMLTextExportPropertySetMapper( pPropMapper, rExport );
 }
 
-void XMLTextParagraphExport::exportPageFrames( bool bAutoStyles,
-                                               bool bIsProgress )
+void XMLTextParagraphExport::exportPageFrames( bool bIsProgress )
 {
     const TextContentSet& rTexts = pBoundFrameSets->GetTexts()->GetPageBoundContents();
     const TextContentSet& rGraphics = pBoundFrameSets->GetGraphics()->GetPageBoundContents();
@@ -1375,19 +1366,19 @@ void XMLTextParagraphExport::exportPageFrames( bool bAutoStyles,
     for(TextContentSet::const_iterator_t it = rTexts.getBegin();
         it != rTexts.getEnd();
         ++it)
-        exportTextFrame(*it, bAutoStyles, bIsProgress, true);
+        exportTextFrame(*it, false/*bAutoStyles*/, bIsProgress, true);
     for(TextContentSet::const_iterator_t it = rGraphics.getBegin();
         it != rGraphics.getEnd();
         ++it)
-        exportTextGraphic(*it, bAutoStyles);
+        exportTextGraphic(*it, false/*bAutoStyles*/);
     for(TextContentSet::const_iterator_t it = rEmbeddeds.getBegin();
         it != rEmbeddeds.getEnd();
         ++it)
-        exportTextEmbedded(*it, bAutoStyles);
+        exportTextEmbedded(*it, false/*bAutoStyles*/);
     for(TextContentSet::const_iterator_t it = rShapes.getBegin();
         it != rShapes.getEnd();
         ++it)
-        exportShape(*it, bAutoStyles);
+        exportShape(*it, false/*bAutoStyles*/);
 }
 
 void XMLTextParagraphExport::exportFrameFrames(
@@ -3394,7 +3385,7 @@ void XMLTextParagraphExport::exportTextRange(
 }
 
 void XMLTextParagraphExport::exportText( const OUString& rText,
-                                           bool& rPrevCharIsSpace, TextPNS /*eExtensionNS*/ )
+                                           bool& rPrevCharIsSpace )
 {
     sal_Int32 nExpStartPos = 0;
     sal_Int32 nEndPos = rText.getLength();
@@ -3566,9 +3557,9 @@ void XMLTextParagraphExport::exportTextDeclarations(
     pFieldExport->ExportFieldDeclarations(rText);
 }
 
-void XMLTextParagraphExport::exportUsedDeclarations( bool bOnlyUsed )
+void XMLTextParagraphExport::exportUsedDeclarations()
 {
-    pFieldExport->SetExportOnlyUsedFieldDeclarations( bOnlyUsed );
+    pFieldExport->SetExportOnlyUsedFieldDeclarations( false/*bOnlyUsed*/ );
 }
 
 void XMLTextParagraphExport::exportTrackedChanges(bool bAutoStyles)

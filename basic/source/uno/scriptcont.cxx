@@ -94,6 +94,11 @@ void SfxScriptLibraryContainer::setLibraryPassword( const OUString& rLibraryName
             pImplLib->mbDoc50Password = true;
             pImplLib->mbPasswordProtected = true;
             pImplLib->maPassword = rPassword;
+            SfxScriptLibrary *const pSL(dynamic_cast<SfxScriptLibrary *>(pImplLib));
+            if (pSL && pSL->mbLoaded)
+            {
+                pSL->mbLoadedSource = true; // must store source code now!
+            }
         }
     }
     catch(const NoSuchElementException& ) {}
@@ -486,6 +491,11 @@ void SAL_CALL SfxScriptLibraryContainer::changeLibraryPassword( const OUString& 
         pImplLib->mbPasswordProtected = true;
         pImplLib->mbPasswordVerified = true;
         pImplLib->maPassword = NewPassword;
+        SfxScriptLibrary *const pSL(dynamic_cast<SfxScriptLibrary *>(pImplLib));
+        if (pSL && pSL->mbLoaded)
+        {
+            pSL->mbLoadedSource = true; // must store source code now!
+        }
 
         maModifiable.setModified( true );
         pImplLib->implSetModified( true );
@@ -513,7 +523,7 @@ void SAL_CALL SfxScriptLibraryContainer::changeLibraryPassword( const OUString& 
 
                 INetURLObject aElementInetObj( aLibDirPath );
                 aElementInetObj.insertName( aElementName, false,
-                                            INetURLObject::LAST_SEGMENT, true,
+                                            INetURLObject::LAST_SEGMENT,
                                             INetURLObject::ENCODE_ALL );
                 if( bKillUncryptedFiles )
                 {
@@ -710,7 +720,7 @@ bool SfxScriptLibraryContainer::implStorePasswordLibrary( SfxLibrary* pLib, cons
             if( bExport )
             {
                 INetURLObject aInetObj( aTargetURL );
-                aInetObj.insertName( aName, true, INetURLObject::LAST_SEGMENT, true,
+                aInetObj.insertName( aName, true, INetURLObject::LAST_SEGMENT,
                                      INetURLObject::ENCODE_ALL );
                 aLibDirPath = aInetObj.GetMainURL( INetURLObject::NO_DECODE );
 
@@ -730,7 +740,7 @@ bool SfxScriptLibraryContainer::implStorePasswordLibrary( SfxLibrary* pLib, cons
 
                 INetURLObject aElementInetObj( aLibDirPath );
                 aElementInetObj.insertName( aElementName, false,
-                                            INetURLObject::LAST_SEGMENT, true,
+                                            INetURLObject::LAST_SEGMENT,
                                             INetURLObject::ENCODE_ALL );
                 aElementInetObj.setExtension( "pba" );
                 OUString aElementPath = aElementInetObj.GetMainURL( INetURLObject::NO_DECODE );
@@ -1028,7 +1038,7 @@ bool SfxScriptLibraryContainer::implLoadPasswordLibrary
 
                 INetURLObject aElementInetObj( aLibDirPath );
                 aElementInetObj.insertName( aElementName, false,
-                    INetURLObject::LAST_SEGMENT, true, INetURLObject::ENCODE_ALL );
+                    INetURLObject::LAST_SEGMENT, INetURLObject::ENCODE_ALL );
                 aElementInetObj.setExtension( "pba" );
                 OUString aElementPath = aElementInetObj.GetMainURL( INetURLObject::NO_DECODE );
 

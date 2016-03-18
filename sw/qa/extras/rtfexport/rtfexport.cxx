@@ -664,7 +664,7 @@ DECLARE_RTFEXPORT_TEST(testFdo66743, "fdo66743.rtf")
 
 DECLARE_RTFEXPORT_TEST(testFdo68787, "fdo68787.rtf")
 {
-    uno::Reference<beans::XPropertySet> xPageStyle(getStyles("PageStyles")->getByName(DEFAULT_STYLE), uno::UNO_QUERY);
+    uno::Reference<beans::XPropertySet> xPageStyle(getStyles("PageStyles")->getByName("Standard"), uno::UNO_QUERY);
     // This was 0, the 'lack of \chftnsep' <-> '0 line width' mapping was missing in the RTF tokenizer / exporter.
     CPPUNIT_ASSERT_EQUAL(sal_Int32(25), getProperty<sal_Int32>(xPageStyle, "FootnoteLineRelativeWidth"));
 }
@@ -969,7 +969,7 @@ DECLARE_RTFEXPORT_TEST(testTdf94377, "tdf94377.rtf")
 DECLARE_RTFEXPORT_TEST(testPageBackground, "page-background.rtf")
 {
     // The problem was that \background was ignored.
-    uno::Reference<beans::XPropertySet> xPageStyle(getStyles("PageStyles")->getByName(DEFAULT_STYLE), uno::UNO_QUERY);
+    uno::Reference<beans::XPropertySet> xPageStyle(getStyles("PageStyles")->getByName("Standard"), uno::UNO_QUERY);
     CPPUNIT_ASSERT_EQUAL(sal_Int32(0x92D050), getProperty<sal_Int32>(xPageStyle, "BackColor"));
 }
 
@@ -987,6 +987,16 @@ DECLARE_RTFEXPORT_TEST(testRedline, "redline.rtf")
 {
     CPPUNIT_ASSERT_EQUAL(OUString("Rebecca Lopez"), getProperty<OUString>(getRun(getParagraph(1), 2), "RedlineAuthor"));
     CPPUNIT_ASSERT_EQUAL(OUString("Dorothy Jones"), getProperty<OUString>(getRun(getParagraph(2), 2), "RedlineAuthor"));
+}
+
+DECLARE_RTFEXPORT_TEST(testCustomDocProps, "custom-doc-props.rtf")
+{
+    // Custom document properties were not improved, this resulted in a beans::UnknownPropertyException.
+    uno::Reference<document::XDocumentPropertiesSupplier> xDocumentPropertiesSupplier(mxComponent, uno::UNO_QUERY);
+    uno::Reference<document::XDocumentProperties> xDocumentProperties = xDocumentPropertiesSupplier->getDocumentProperties();
+    uno::Reference<beans::XPropertyContainer> xUserDefinedProperties = xDocumentProperties->getUserDefinedProperties();
+    CPPUNIT_ASSERT_EQUAL(OUString("2016-03-08T10:55:18,531376147"), getProperty<OUString>(xUserDefinedProperties, "urn:bails:IntellectualProperty:Authorization:StartValidity"));
+    CPPUNIT_ASSERT_EQUAL(OUString("None"), getProperty<OUString>(xUserDefinedProperties, "urn:bails:IntellectualProperty:Authorization:StopValidity"));
 }
 
 CPPUNIT_PLUGIN_IMPLEMENT();

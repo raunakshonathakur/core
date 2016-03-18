@@ -210,12 +210,18 @@ void LayoutManager::impl_clearUpMenuBar()
     }
 
     // reset inplace menubar manager
-    m_pInplaceMenuBar = nullptr;
+    Menu *pMenuBar = nullptr;
+    if (m_pInplaceMenuBar)
+    {
+        pMenuBar = m_pInplaceMenuBar->GetMenuBar();
+        m_pInplaceMenuBar = nullptr;
+    }
     if ( m_xInplaceMenuBar.is() )
     {
         m_xInplaceMenuBar->dispose();
         m_xInplaceMenuBar.clear();
     }
+    delete pMenuBar;
 
     Reference< XComponent > xComp( m_xMenuBar, UNO_QUERY );
     if ( xComp.is() )
@@ -720,11 +726,13 @@ Reference< XUIElement > LayoutManager::implts_createElement( const OUString& aNa
     Reference< ui::XUIElement > xUIElement;
 
     SolarMutexGuard g;
-    Sequence< PropertyValue > aPropSeq( 2 );
+    Sequence< PropertyValue > aPropSeq( 3 );
     aPropSeq[0].Name = "Frame";
     aPropSeq[0].Value <<= m_xFrame;
     aPropSeq[1].Name = "Persistent";
     aPropSeq[1].Value <<= sal_True;
+    aPropSeq[2].Name = "Container";
+    aPropSeq[2].Value <<= m_xContainerWindow;
 
     try
     {
@@ -1150,10 +1158,19 @@ throw (uno::RuntimeException, std::exception)
         SolarMutexGuard aGuard;
 
         // Reset old inplace menubar!
-        m_pInplaceMenuBar = nullptr;
-        if ( m_xInplaceMenuBar.is() )
+        Menu *pOldMenuBar = nullptr;
+        if (m_pInplaceMenuBar)
+        {
+            pOldMenuBar = m_pInplaceMenuBar->GetMenuBar();
+            m_pInplaceMenuBar = nullptr;
+        }
+        if (m_xInplaceMenuBar.is())
+        {
             m_xInplaceMenuBar->dispose();
-        m_xInplaceMenuBar.clear();
+            m_xInplaceMenuBar.clear();
+        }
+        delete pOldMenuBar;
+
         m_bInplaceMenuSet = false;
 
         if ( m_xFrame.is() && m_xContainerWindow.is() )
@@ -1201,10 +1218,18 @@ throw (uno::RuntimeException)
     }
 
     // Remove inplace menu bar
-    m_pInplaceMenuBar = nullptr;
-    if ( m_xInplaceMenuBar.is() )
+    Menu *pMenuBar = nullptr;
+    if (m_pInplaceMenuBar)
+    {
+        pMenuBar = m_pInplaceMenuBar->GetMenuBar();
+        m_pInplaceMenuBar = nullptr;
+    }
+    if (m_xInplaceMenuBar.is())
+    {
         m_xInplaceMenuBar->dispose();
-    m_xInplaceMenuBar.clear();
+        m_xInplaceMenuBar.clear();
+    }
+    delete pMenuBar;
 }
 
 void SAL_CALL LayoutManager::attachFrame( const Reference< XFrame >& xFrame )
@@ -2283,10 +2308,9 @@ throw (RuntimeException, std::exception)
 
 //  ILayoutNotifications
 
-void LayoutManager::requestLayout( Hint eHint )
+void LayoutManager::requestLayout()
 {
-    if ( eHint == HINT_TOOLBARSPACE_HAS_CHANGED )
-        doLayout();
+    doLayout();
 }
 
 void LayoutManager::implts_doLayout_notify( bool bOuterResize )
@@ -2807,12 +2831,18 @@ throw( RuntimeException, std::exception )
         implts_destroyElements();
         impl_clearUpMenuBar();
         m_xMenuBar.clear();
-        if ( m_xInplaceMenuBar.is() )
+        Menu *pMenuBar = nullptr;
+        if (m_pInplaceMenuBar)
         {
+            pMenuBar = m_pInplaceMenuBar->GetMenuBar();
             m_pInplaceMenuBar = nullptr;
-            m_xInplaceMenuBar->dispose();
         }
-        m_xInplaceMenuBar.clear();
+        if (m_xInplaceMenuBar.is())
+        {
+            m_xInplaceMenuBar->dispose();
+            m_xInplaceMenuBar.clear();
+        }
+        delete pMenuBar;
         m_xContainerWindow.clear();
         m_xContainerTopWindow.clear();
 
@@ -2865,12 +2895,18 @@ throw( RuntimeException, std::exception )
         }
         impl_clearUpMenuBar();
         m_xMenuBar.clear();
-        if ( m_xInplaceMenuBar.is() )
+        Menu *pMenuBar = nullptr;
+        if (m_pInplaceMenuBar)
         {
+            pMenuBar = m_pInplaceMenuBar->GetMenuBar();
             m_pInplaceMenuBar = nullptr;
-            m_xInplaceMenuBar->dispose();
         }
-        m_xInplaceMenuBar.clear();
+        if (m_xInplaceMenuBar.is())
+        {
+            m_xInplaceMenuBar->dispose();
+            m_xInplaceMenuBar.clear();
+        }
+        delete pMenuBar;
         m_xContainerWindow.clear();
         m_xContainerTopWindow.clear();
     }

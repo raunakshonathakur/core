@@ -42,9 +42,9 @@ $(call gb_Helper_abbreviate_dirs,\
 	$(if $(filter YES,$(CXXOBJECT_X64)), $(CXX_X64_BINARY), \
 		$(if $(filter %.c,$(3)), $(gb_CC), $(gb_CXX))) \
 		$(DEFS) \
-		$(if $(EXTERNAL_CODE),,$(gb_DEFS_INTERNAL)) \
 		$(gb_LTOFLAGS) \
 		$(2) \
+		$(if $(EXTERNAL_CODE),$(if $(COM_IS_CLANG),-Wno-undef),$(gb_DEFS_INTERNAL)) \
 		$(if $(WARNINGS_NOT_ERRORS),,$(gb_CFLAGS_WERROR)) \
 		-Fd$(PDBFILE) \
 		$(PCHFLAGS) \
@@ -79,7 +79,7 @@ $(call gb_Helper_abbreviate_dirs,\
 	unset INCLUDE && \
 	$(gb_CXX) \
 		$(4) $(5) -Fd$(PDBFILE) \
-		$(if $(EXTERNAL_CODE),,$(gb_DEFS_INTERNAL)) \
+		$(if $(EXTERNAL_CODE),$(if $(COM_IS_CLANG),-Wno-undef),$(gb_DEFS_INTERNAL)) \
 		$(gb_LTOFLAGS) \
 		$(gb_COMPILERDEPFLAGS) \
 		-I$(dir $(3)) \
@@ -171,7 +171,8 @@ $(call gb_Helper_abbreviate_dirs,\
 		$(if $(filter YES,$(LIBRARY_X64)), \
 			-LIBPATH:$(COMPATH)/lib/amd64 \
 			-LIBPATH:$(WINDOWS_SDK_HOME)/lib/x64 \
-		    $(if $(filter 80 81,$(WINDOWS_SDK_VERSION)),-LIBPATH:$(WINDOWS_SDK_HOME)/lib/$(WINDOWS_SDK_LIB_SUBDIR)/um/x64)) \
+		    $(if $(filter 80 81 10,$(WINDOWS_SDK_VERSION)),-LIBPATH:$(WINDOWS_SDK_HOME)/lib/$(WINDOWS_SDK_LIB_SUBDIR)/um/x64) \
+		    $(if $(filter-out 120,$(VCVER)),-LIBPATH:$(WINDOWS_SDK_HOME)/lib/$(WINDOWS_SDK_LIB_SUBDIR)/ucrt/x64)) \
 		$(T_LDFLAGS) \
 		@$${RESPONSEFILE} \
 		$(foreach lib,$(LINKED_LIBS),$(call gb_Library_get_ilibfilename,$(lib))) \

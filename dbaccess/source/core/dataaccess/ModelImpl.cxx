@@ -937,7 +937,7 @@ Reference< XModel> ODatabaseModelImpl::getModel_noCreate() const
     return m_xModel;
 }
 
-Reference< XModel > ODatabaseModelImpl::createNewModel_deliverOwnership( bool _bInitialize )
+Reference< XModel > ODatabaseModelImpl::createNewModel_deliverOwnership()
 {
     Reference< XModel > xModel( m_xModel );
     OSL_PRECOND( !xModel.is(), "ODatabaseModelImpl::createNewModel_deliverOwnership: not to be called if there already is a model!" );
@@ -968,20 +968,6 @@ Reference< XModel > ODatabaseModelImpl::createNewModel_deliverOwnership( bool _b
             // #i105505#
             xModel->attachResource( xModel->getURL(), m_aMediaDescriptor.getPropertyValues() );
         }
-
-        if ( _bInitialize )
-        {
-            try
-            {
-                Reference< XLoadable > xLoad( xModel, UNO_QUERY_THROW );
-                xLoad->initNew();
-            }
-            catch( RuntimeException& ) { throw; }
-            catch( const Exception& )
-            {
-                DBG_UNHANDLED_EXCEPTION();
-            }
-        }
     }
     return xModel;
 }
@@ -1009,9 +995,10 @@ void ODatabaseModelImpl::commitStorages()
     getDocumentStorageAccess()->commitStorages();
 }
 
-Reference< XStorage > ODatabaseModelImpl::getStorage( const ObjectType _eType, const sal_Int32 _nDesiredMode )
+Reference< XStorage > ODatabaseModelImpl::getStorage( const ObjectType _eType )
 {
-    return getDocumentStorageAccess()->getDocumentSubStorage( getObjectContainerStorageName( _eType ), _nDesiredMode );
+    return getDocumentStorageAccess()->getDocumentSubStorage( getObjectContainerStorageName( _eType ),
+                    css::embed::ElementModes::READWRITE );
 }
 
 const AsciiPropertyValue* ODatabaseModelImpl::getDefaultDataSourceSettings()

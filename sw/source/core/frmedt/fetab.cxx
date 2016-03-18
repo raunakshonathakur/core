@@ -196,7 +196,7 @@ bool SwFEShell::InsertRow( sal_uInt16 nCnt, bool bBehind )
 
     // search boxes via the layout
     SwSelBoxes aBoxes;
-    bool bSelectAll = StartsWithTable() && ExtendedSelectedAll(/*bFootnotes=*/false);
+    bool bSelectAll = StartsWithTable() && ExtendedSelectedAll();
     if (bSelectAll)
     {
         // Set the end of the selection to the last paragraph of the last cell of the table.
@@ -2034,10 +2034,9 @@ void SwFEShell::SetMouseTabCols( const SwTabCols &rNew, bool bCurRowOnly,
     }
 }
 
-sal_uInt16 SwFEShell::GetCurMouseColNum( const Point &rPt,
-                                    SwGetCurColNumPara* pPara ) const
+sal_uInt16 SwFEShell::GetCurMouseColNum( const Point &rPt ) const
 {
-    return _GetCurColNum( GetBox( rPt ), pPara );
+    return _GetCurColNum( GetBox( rPt ), nullptr );
 }
 
 size_t SwFEShell::GetCurMouseTabColNum( const Point &rPt ) const

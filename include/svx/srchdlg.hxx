@@ -72,7 +72,7 @@ public:
     void Insert( const SearchAttrItem& rItem )
         { SrchAttrItemList::push_back( rItem ); }
     // deletes the pointer to the items
-    void Remove(size_t nPos, size_t nLen = 1);
+    void Remove(size_t nPos);
 };
 
 
@@ -180,6 +180,7 @@ private:
     VclPtr<CheckBox>       m_pSelectionBtn;
     VclPtr<CheckBox>       m_pBackwardsBtn;
     VclPtr<CheckBox>       m_pRegExpBtn;
+    VclPtr<CheckBox>       m_pWildcardBtn;
     VclPtr<CheckBox>       m_pSimilarityBox;
     VclPtr<PushButton>     m_pSimilarityBtn;
     VclPtr<CheckBox>       m_pLayoutBtn;

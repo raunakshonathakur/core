@@ -159,8 +159,7 @@ public:
     virtual void    AddAttribute( enum ::xmloff::token::XMLTokenEnum i_eName,
                                   enum ::xmloff::token::XMLTokenEnum i_eValue ) override;
 
-    virtual void    StartElement( enum ::xmloff::token::XMLTokenEnum i_eName,
-                                  const bool i_bIgnoreWhitespace ) override;
+    virtual void    StartElement( enum ::xmloff::token::XMLTokenEnum i_eName ) override;
     virtual void    EndElement(   const bool i_bIgnoreWhitespace ) override;
 
     virtual void    Characters( const OUString& i_rCharacters ) override;
@@ -182,10 +181,10 @@ void SettingsExportFacade::AddAttribute( enum ::xmloff::token::XMLTokenEnum i_eN
     m_rExport.AddAttribute( XML_NAMESPACE_CONFIG, i_eName, i_eValue );
 }
 
-void SettingsExportFacade::StartElement( enum ::xmloff::token::XMLTokenEnum i_eName, const bool i_bIgnoreWhitespace )
+void SettingsExportFacade::StartElement( enum ::xmloff::token::XMLTokenEnum i_eName )
 {
     const OUString sElementName( m_rExport.GetNamespaceMap().GetQNameByKey( XML_NAMESPACE_CONFIG, GetXMLToken( i_eName ) ) );
-    m_rExport.StartElement( sElementName, i_bIgnoreWhitespace );
+    m_rExport.StartElement( sElementName, true/*i_bIgnoreWhitespace*/ );
     m_aElements.push( sElementName );
 }
 
@@ -900,22 +899,22 @@ uno::Sequence< OUString > SAL_CALL SvXMLExport::getSupportedServiceNames(  )
 }
 
 OUString
-SvXMLExport::EnsureNamespace(OUString const & i_rNamespace,
-    OUString const & i_rPreferredPrefix)
+SvXMLExport::EnsureNamespace(OUString const & i_rNamespace)
 {
+    OUString const aPreferredPrefix("gen");
     OUString sPrefix;
     sal_uInt16 nKey( _GetNamespaceMap().GetKeyByName( i_rNamespace ) );
     if( XML_NAMESPACE_UNKNOWN == nKey )
     {
         // There is no prefix for the namespace, so
         // we have to generate one and have to add it.
-        sPrefix = i_rPreferredPrefix;
+        sPrefix = aPreferredPrefix;
         nKey = _GetNamespaceMap().GetKeyByPrefix( sPrefix );
         sal_Int32 n( 0 );
         OUStringBuffer buf;
         while( nKey != USHRT_MAX )
         {
-            buf.append( i_rPreferredPrefix );
+            buf.append( aPreferredPrefix );
             buf.append( ++n );
             sPrefix = buf.makeStringAndClear();
             nKey = _GetNamespaceMap().GetKeyByPrefix( sPrefix );
@@ -1007,8 +1006,7 @@ void SvXMLExport::AddAttribute( const OUString& rQName,
 }
 
 void SvXMLExport::AddLanguageTagAttributes( sal_uInt16 nPrefix, sal_uInt16 nPrefixRfc,
-        const css::lang::Locale& rLocale, bool bWriteEmpty,
-        enum ::xmloff::token::XMLTokenEnum eClass )
+        const css::lang::Locale& rLocale, bool bWriteEmpty )
 {
     if (rLocale.Variant.isEmpty())
     {
@@ -1017,26 +1015,8 @@ void SvXMLExport::AddLanguageTagAttributes( sal_uInt16 nPrefix, sal_uInt16 nPref
         // to convert to LanguageTag first. Also catches the case of empty
         // locale denoting system locale.
         xmloff::token::XMLTokenEnum eLanguage, eCountry;
-        switch (eClass)
-        {
-            default:
-            case XML_LANGUAGE:
-                eLanguage = XML_LANGUAGE;
-                eCountry  = XML_COUNTRY;
-                break;
-            case XML_LANGUAGE_ASIAN:
-                eLanguage = XML_LANGUAGE_ASIAN;
-                eCountry  = XML_COUNTRY_ASIAN;
-                if (nPrefix == XML_NAMESPACE_FO)
-                    nPrefix = XML_NAMESPACE_STYLE;
-                break;
-            case XML_LANGUAGE_COMPLEX:
-                eLanguage = XML_LANGUAGE_COMPLEX;
-                eCountry  = XML_COUNTRY_COMPLEX;
-                if (nPrefix == XML_NAMESPACE_FO)
-                    nPrefix = XML_NAMESPACE_STYLE;
-                break;
-        }
+        eLanguage = XML_LANGUAGE;
+        eCountry  = XML_COUNTRY;
         if (bWriteEmpty || !rLocale.Language.isEmpty())
             AddAttribute( nPrefix, eLanguage, rLocale.Language);
         if (bWriteEmpty || !rLocale.Country.isEmpty())
@@ -1045,55 +1025,28 @@ void SvXMLExport::AddLanguageTagAttributes( sal_uInt16 nPrefix, sal_uInt16 nPref
     else
     {
         LanguageTag aLanguageTag( rLocale);
-        AddLanguageTagAttributes( nPrefix, nPrefixRfc, aLanguageTag, bWriteEmpty, eClass);
+        AddLanguageTagAttributes( nPrefix, nPrefixRfc, aLanguageTag, bWriteEmpty);
     }
 }
 
 void SvXMLExport::AddLanguageTagAttributes( sal_uInt16 nPrefix, sal_uInt16 nPrefixRfc,
-        const LanguageTag& rLanguageTag, bool bWriteEmpty, xmloff::token::XMLTokenEnum eClass )
+        const LanguageTag& rLanguageTag, bool bWriteEmpty )
 {
-    xmloff::token::XMLTokenEnum eLanguage, eScript, eCountry, eRfcLanguageTag;
-    switch (eClass)
-    {
-        default:
-        case XML_LANGUAGE:
-            eLanguage       = XML_LANGUAGE;
-            eScript         = XML_SCRIPT;
-            eCountry        = XML_COUNTRY;
-            eRfcLanguageTag = XML_RFC_LANGUAGE_TAG;
-            break;
-        case XML_LANGUAGE_ASIAN:
-            eLanguage       = XML_LANGUAGE_ASIAN;
-            eScript         = XML_SCRIPT_ASIAN;
-            eCountry        = XML_COUNTRY_ASIAN;
-            eRfcLanguageTag = XML_RFC_LANGUAGE_TAG_ASIAN;
-            if (nPrefix == XML_NAMESPACE_FO)
-                nPrefix = XML_NAMESPACE_STYLE;
-            break;
-        case XML_LANGUAGE_COMPLEX:
-            eLanguage       = XML_LANGUAGE_COMPLEX;
-            eScript         = XML_SCRIPT_COMPLEX;
-            eCountry        = XML_COUNTRY_COMPLEX;
-            eRfcLanguageTag = XML_RFC_LANGUAGE_TAG_COMPLEX;
-            if (nPrefix == XML_NAMESPACE_FO)
-                nPrefix = XML_NAMESPACE_STYLE;
-            break;
-    }
     if (rLanguageTag.isIsoODF())
     {
         if (bWriteEmpty || !rLanguageTag.isSystemLocale())
         {
-            AddAttribute( nPrefix, eLanguage, rLanguageTag.getLanguage());
+            AddAttribute( nPrefix, XML_LANGUAGE, rLanguageTag.getLanguage());
             if (rLanguageTag.hasScript() && getDefaultVersion() >= SvtSaveOptions::ODFVER_012)
-                AddAttribute( nPrefix, eScript, rLanguageTag.getScript());
+                AddAttribute( nPrefix, XML_SCRIPT, rLanguageTag.getScript());
             if (bWriteEmpty || !rLanguageTag.getCountry().isEmpty())
-                AddAttribute( nPrefix, eCountry, rLanguageTag.getCountry());
+                AddAttribute( nPrefix, XML_COUNTRY, rLanguageTag.getCountry());
         }
     }
     else
     {
         if (getDefaultVersion() >= SvtSaveOptions::ODFVER_012)
-            AddAttribute( nPrefixRfc, eRfcLanguageTag, rLanguageTag.getBcp47());
+            AddAttribute( nPrefixRfc, XML_RFC_LANGUAGE_TAG, rLanguageTag.getBcp47());
         // Also in case of non-pure-ISO tag store best matching fo: attributes
         // for consumers not handling *:rfc-language-tag, ensuring that only
         // valid ISO codes are stored. Here the bWriteEmpty parameter has no
@@ -1102,11 +1055,11 @@ void SvXMLExport::AddLanguageTagAttributes( sal_uInt16 nPrefix, sal_uInt16 nPref
         rLanguageTag.getIsoLanguageScriptCountry( aLanguage, aScript, aCountry);
         if (!aLanguage.isEmpty())
         {
-            AddAttribute( nPrefix, eLanguage, aLanguage);
+            AddAttribute( nPrefix, XML_LANGUAGE, aLanguage);
             if (!aScript.isEmpty() && getDefaultVersion() >= SvtSaveOptions::ODFVER_012)
-                AddAttribute( nPrefix, eScript, aScript);
+                AddAttribute( nPrefix, XML_SCRIPT, aScript);
             if (!aCountry.isEmpty())
-                AddAttribute( nPrefix, eCountry, aCountry);
+                AddAttribute( nPrefix, XML_COUNTRY, aCountry);
         }
     }
 }
@@ -1182,7 +1135,7 @@ void SvXMLExport::ImplExportSettings()
     }
 }
 
-void SvXMLExport::ImplExportStyles( bool )
+void SvXMLExport::ImplExportStyles()
 {
     CheckAttrList();
 
@@ -1212,7 +1165,7 @@ void SvXMLExport::ImplExportStyles( bool )
     }
 }
 
-void SvXMLExport::ImplExportAutoStyles( bool )
+void SvXMLExport::ImplExportAutoStyles()
 {
     // transfer style names (+ families) FROM other components (if appropriate)
     OUString sStyleNames( "StyleNames" );
@@ -1238,7 +1191,7 @@ void SvXMLExport::ImplExportAutoStyles( bool )
     }
 }
 
-void SvXMLExport::ImplExportMasterStyles( bool )
+void SvXMLExport::ImplExportMasterStyles()
 {
     {
         // <style:master-styles>
@@ -1489,15 +1442,15 @@ sal_uInt32 SvXMLExport::exportDoc( enum ::xmloff::token::XMLTokenEnum eClass )
 
         // styles
         if( mnExportFlags & SvXMLExportFlags::STYLES )
-            ImplExportStyles( false );
+            ImplExportStyles();
 
         // autostyles
         if( mnExportFlags & SvXMLExportFlags::AUTOSTYLES )
-            ImplExportAutoStyles( false );
+            ImplExportAutoStyles();
 
         // masterstyles
         if( mnExportFlags & SvXMLExportFlags::MASTERSTYLES )
-            ImplExportMasterStyles( false );
+            ImplExportMasterStyles();
 
         // content
         if( mnExportFlags & SvXMLExportFlags::CONTENT )
@@ -2416,7 +2369,7 @@ SvtSaveOptions::ODFSaneDefaultVersion SvXMLExport::getSaneDefaultVersion() const
         return mpImpl->maSaveOptions.GetODFSaneDefaultVersion();
 
     // fatal error, use current version as default
-    return SvtSaveOptions::ODFSVER_012;
+    return SvtSaveOptions::ODFSVER_LATEST;
 }
 
 OUString SvXMLExport::GetStreamName() const

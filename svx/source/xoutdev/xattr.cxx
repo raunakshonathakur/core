@@ -53,7 +53,6 @@
 #include <basegfx/tools/unotools.hxx>
 #include <vcl/gradient.hxx>
 
-#include <stdio.h>
 #include <libxml/xmlwriter.h>
 
 using namespace ::com::sun::star;
@@ -330,12 +329,10 @@ SvStream& XColorItem::Store( SvStream& rOut, sal_uInt16 nItemVersion ) const
     return rOut;
 }
 
-const Color& XColorItem::GetColorValue(const XColorList* pTable) const
+const Color& XColorItem::GetColorValue() const
 {
-    if (!IsIndex())
-        return aColor;
-    else
-        return pTable->GetColor(GetIndex())->GetColor();
+    assert(!IsIndex());
+    return aColor;
 
 }
 

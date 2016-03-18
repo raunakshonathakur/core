@@ -99,20 +99,18 @@ void BinaryXOutputStream::writeMemory( const void* pMem, sal_Int32 nBytes, size_
 }
 
 void
-BinaryOutputStream::writeCharArrayUC( const OUString& rString, rtl_TextEncoding eTextEnc, bool bAllowNulChars )
+BinaryOutputStream::writeCharArrayUC( const OUString& rString, rtl_TextEncoding eTextEnc )
 {
     OString sBuf( OUStringToOString( rString, eTextEnc ) );
-    if( !bAllowNulChars )
-        sBuf = sBuf.replace( '\0', '?' );
+    sBuf = sBuf.replace( '\0', '?' );
     writeMemory( static_cast< const void* >( sBuf.getStr() ), sBuf.getLength() );
 }
 
 void
-BinaryOutputStream::writeUnicodeArray( const OUString& rString, bool bAllowNulChars )
+BinaryOutputStream::writeUnicodeArray( const OUString& rString )
 {
     OUString sBuf( rString );
-    if( !bAllowNulChars )
-        sBuf = sBuf.replace( '\0', '?' );
+    sBuf = sBuf.replace( '\0', '?' );
 #ifdef OSL_BIGENDIAN
     // need a non-const buffer for swapping byte order
     sal_Unicode notConst[sBuf.getLength()];
@@ -123,14 +121,13 @@ BinaryOutputStream::writeUnicodeArray( const OUString& rString, bool bAllowNulCh
 #endif
 }
 
-void
-BinaryOutputStream::writeCompressedUnicodeArray( const OUString& rString, bool bCompressed, bool bAllowNulChars )
+void BinaryOutputStream::writeCompressedUnicodeArray( const OUString& rString, bool bCompressed )
 {
     if ( bCompressed )
          // ISO-8859-1 maps all byte values 0xHH to the same Unicode code point U+00HH
-        writeCharArrayUC( rString, RTL_TEXTENCODING_ISO_8859_1, bAllowNulChars );
+        writeCharArrayUC( rString, RTL_TEXTENCODING_ISO_8859_1 );
     else
-        writeUnicodeArray( rString, bAllowNulChars );
+        writeUnicodeArray( rString );
 }
 
 SequenceOutputStream::SequenceOutputStream( StreamDataSequence& rData ) :

@@ -8,6 +8,7 @@
  */
 
 #include <com/sun/star/beans/PropertyAttribute.hpp>
+#include <com/sun/star/document/DocumentProperties.hpp>
 #include <com/sun/star/drawing/XEnhancedCustomShapeDefaulter.hpp>
 #include <com/sun/star/graphic/GraphicProvider.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
@@ -21,6 +22,7 @@
 #include <unotools/streamwrap.hxx>
 #include <com/sun/star/drawing/XDrawPageSupplier.hpp>
 #include <vcl/wmf.hxx>
+#include <vcl/layout.hxx>
 #include <filter/msfilter/util.hxx>
 #include <comphelper/string.hxx>
 #include <tools/globname.hxx>
@@ -30,12 +32,15 @@
 #include <comphelper/sequenceashashmap.hxx>
 #include <comphelper/sequence.hxx>
 #include <sfx2/sfxbasemodel.hxx>
+#include <sfx2/classificationhelper.hxx>
+#include <sfx2/sfx.hrc>
+#include <sfx2/sfxresid.hxx>
 #include <oox/mathml/import.hxx>
 #include <ooxml/resourceids.hxx>
 #include <oox/token/namespaces.hxx>
 #include <oox/drawingml/drawingmltypes.hxx>
 #include <rtl/uri.hxx>
-#include <dmapper/DomainMapper_Impl.hxx>
+#include <dmapper/DomainMapperFactory.hxx>
 #include <rtfsdrimport.hxx>
 #include <rtflookahead.hxx>
 #include <rtfcharsets.hxx>
@@ -81,9 +86,9 @@ static void lcl_putNestedAttribute(RTFSprms& rSprms, Id nParent, Id nId, RTFValu
     rAttributes.set(nId, pValue, eOverwrite);
 }
 
-static void lcl_putNestedSprm(RTFSprms& rSprms, Id nParent, Id nId, RTFValue::Pointer_t pValue, RTFOverwrite eOverwrite = RTFOverwrite::NO_APPEND)
+static void lcl_putNestedSprm(RTFSprms& rSprms, Id nParent, Id nId, RTFValue::Pointer_t pValue)
 {
-    lcl_putNestedAttribute(rSprms, nParent, nId, pValue, eOverwrite, false);
+    lcl_putNestedAttribute(rSprms, nParent, nId, pValue, RTFOverwrite::NO_APPEND, false);
 }
 
 static RTFValue::Pointer_t lcl_getNestedAttribute(RTFSprms& rSprms, Id nParent, Id nId)
@@ -379,7 +384,7 @@ void RTFDocumentImpl::checkFirstRun()
         // start initial paragraph
         m_bFirstRun = false;
         assert(!m_bNeedSect);
-        setNeedSect(); // first call that succeeds
+        setNeedSect(true); // first call that succeeds
 
         // set the requested default font, if there are none
         RTFValue::Pointer_t pFont = lcl_getNestedAttribute(m_aDefaultState.aCharacterSprms, NS_ooxml::LN_EG_RPrBase_rFonts, NS_ooxml::LN_CT_Fonts_ascii);
@@ -739,6 +744,9 @@ void RTFDocumentImpl::resolve(Stream& rMapper)
         break;
     case RTFError::CHAR_OVER:
         SAL_INFO("writerfilter", "RTFDocumentImpl::resolve: characters after last '}'");
+        break;
+    case RTFError::CLASSIFICATION:
+        SAL_INFO("writerfilter", "RTFDocumentImpl::resolve: classification prevented paste");
         break;
     }
 }
@@ -1129,10 +1137,10 @@ RTFError RTFDocumentImpl::resolveChars(char ch)
 
 bool RTFFrame::inFrame()
 {
-    return nW > 0
-           || nH > 0
-           || nX > 0
-           || nY > 0;
+    return m_nW > 0
+           || m_nH > 0
+           || m_nX > 0
+           || m_nY > 0;
 }
 
 void RTFDocumentImpl::singleChar(sal_uInt8 nValue, bool bRunProps)
@@ -1290,6 +1298,8 @@ void RTFDocumentImpl::text(OUString& rString)
     case Destination::MGROW:
     case Destination::INDEXENTRY:
     case Destination::TOCENTRY:
+    case Destination::PROPNAME:
+    case Destination::STATICVAL:
         m_aStates.top().pDestinationText->append(rString);
         break;
     default:
@@ -1505,7 +1515,7 @@ void RTFDocumentImpl::replayBuffer(RTFBuffer_t& rBuffer,
 
 RTFError RTFDocumentImpl::dispatchDestination(RTFKeyword nKeyword)
 {
-    setNeedSect();
+    setNeedSect(true);
     checkUnicode(/*bUnicode =*/ true, /*bHex =*/ true);
     RTFSkipDestination aSkip(*this);
     // special case \upr: ignore everything except nested \ud
@@ -1565,7 +1575,7 @@ RTFError RTFDocumentImpl::dispatchDestination(RTFKeyword nKeyword)
                     aBuf.append(ch);
                 }
                 OUString aFieldCommand = OStringToOUString(aBuf.toString(), RTL_TEXTENCODING_UTF8);
-                std::tuple<OUString, std::vector<OUString>, std::vector<OUString> > aResult = writerfilter::dmapper::lcl_SplitFieldCommand(aFieldCommand);
+                std::tuple<OUString, std::vector<OUString>, std::vector<OUString> > aResult = writerfilter::dmapper::splitFieldCommand(aFieldCommand);
                 m_aPicturePath = std::get<1>(aResult).empty() ? OUString() : std::get<1>(aResult).front();
             }
 
@@ -1615,7 +1625,7 @@ RTFError RTFDocumentImpl::dispatchDestination(RTFKeyword nKeyword)
             m_aStates.top().eDestination = Destination::LEVELNUMBERS;
             break;
         case RTF_SHPPICT:
-            m_aStates.top().resetFrame();
+            resetFrame();
             m_aStates.top().eDestination = Destination::SHPPICT;
             break;
         case RTF_PICT:
@@ -2051,6 +2061,19 @@ RTFError RTFDocumentImpl::dispatchDestination(RTFKeyword nKeyword)
             m_aStates.top().eDestination = Destination::FOOTNOTESEPARATOR;
             m_aStates.top().aCharacterAttributes.set(NS_ooxml::LN_CT_FtnEdn_type, std::make_shared<RTFValue>(NS_ooxml::LN_Value_doc_ST_FtnEdn_separator));
             break;
+        case RTF_USERPROPS:
+            // Container of all user-defined properties.
+            m_aStates.top().eDestination = Destination::USERPROPS;
+            if (m_xDocumentProperties.is())
+                // Create a custom document properties to be able to process them later all at once.
+                m_xDocumentProperties = document::DocumentProperties::create(m_xContext);
+            break;
+        case RTF_PROPNAME:
+            m_aStates.top().eDestination = Destination::PROPNAME;
+            break;
+        case RTF_STATICVAL:
+            m_aStates.top().eDestination = Destination::STATICVAL;
+            break;
         default:
         {
             // Check if it's a math token.
@@ -2079,7 +2102,7 @@ RTFError RTFDocumentImpl::dispatchDestination(RTFKeyword nKeyword)
 
 RTFError RTFDocumentImpl::dispatchSymbol(RTFKeyword nKeyword)
 {
-    setNeedSect();
+    setNeedSect(true);
     if (nKeyword != RTF_HEXCHAR)
         checkUnicode(/*bUnicode =*/ true, /*bHex =*/ true);
     else
@@ -2563,7 +2586,7 @@ void RTFDocumentImpl::resetTableRowProperties()
 
 RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
 {
-    setNeedSect();
+    setNeedSect(true);
     checkUnicode(/*bUnicode =*/ true, /*bHex =*/ true);
     RTFSkipDestination aSkip(*this);
     int nParam = -1;
@@ -3013,7 +3036,7 @@ RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
             // Ideally getDefaultSPRM() would take care of this, but it would not when we're buffering.
             m_aStates.top().aParagraphSprms.set(NS_ooxml::LN_CT_PPrBase_tabs, std::make_shared<RTFValue>());
         }
-        m_aStates.top().resetFrame();
+        resetFrame();
 
         // Reset currently selected paragraph style as well.
         // By default the style with index 0 is applied.
@@ -3585,7 +3608,7 @@ RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
 
 RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
 {
-    setNeedSect();
+    setNeedSect(true);
     checkUnicode(/*bUnicode =*/ nKeyword != RTF_U, /*bHex =*/ true);
     RTFSkipDestination aSkip(*this);
     int nSprm = 0;
@@ -4462,7 +4485,8 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
             m_aFormfieldSprms.set(NS_ooxml::LN_CT_FFDDList_default, pIntValue);
         break;
     case RTF_FFRES:
-        if (m_nFormFieldType == RTFFormFieldType::CHECKBOX)
+        // 25 means undefined, see [MS-DOC] 2.9.79, FFDataBits.
+        if (m_nFormFieldType == RTFFormFieldType::CHECKBOX && nParam != 25)
             m_aFormfieldSprms.set(NS_ooxml::LN_CT_FFCheckBox_checked, pIntValue);
         else if (m_nFormFieldType == RTFFormFieldType::LIST)
             m_aFormfieldSprms.set(NS_ooxml::LN_CT_FFDDList_result, pIntValue);
@@ -4546,7 +4570,7 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     }
     break;
     case RTF_FLYANCHOR:
-        m_aStates.top().aFrame.nAnchorType = nParam;
+        m_aStates.top().aFrame.m_nAnchorType = nParam;
         break;
     case RTF_WMETAFILE:
         m_aStates.top().aPicture.eWMetafile = nParam;
@@ -4799,6 +4823,16 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
             lcl_putNestedSprm(m_aStates.top().aTableRowSprms, NS_ooxml::LN_CT_TblPrBase_tblCellMar, NS_ooxml::LN_CT_TblCellMar_right, std::make_shared<RTFValue>(aAttributes));
         }
         break;
+    case RTF_PROPTYPE:
+    {
+        switch (nParam)
+        {
+        case 30:
+            m_aStates.top().aPropType = cppu::UnoType<OUString>::get();
+            break;
+        }
+    }
+    break;
     default:
     {
         SAL_INFO("writerfilter", "TODO handle value '" << lcl_RtfToString(nKeyword) << "'");
@@ -4811,7 +4845,7 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
 
 RTFError RTFDocumentImpl::dispatchToggle(RTFKeyword nKeyword, bool bParam, int nParam)
 {
-    setNeedSect();
+    setNeedSect(true);
     checkUnicode(/*bUnicode =*/ true, /*bHex =*/ true);
     RTFSkipDestination aSkip(*this);
     int nSprm = -1;
@@ -5087,6 +5121,14 @@ void RTFDocumentImpl::resetAttributes()
     m_aStates.top().aTableAttributes.clear();
     m_aStates.top().aCharacterAttributes.clear();
     m_aStates.top().aParagraphAttributes.clear();
+}
+
+bool lcl_containsProperty(const uno::Sequence<beans::Property>& rProperties, const OUString& rName)
+{
+    return std::find_if(rProperties.begin(), rProperties.end(), [&](const beans::Property& rProperty)
+    {
+        return rProperty.Name == rName;
+    }) != rProperties.end();
 }
 
 RTFError RTFDocumentImpl::popState()
@@ -5642,8 +5684,8 @@ RTFError RTFDocumentImpl::popState()
         m_bNeedCr = m_bNeedCrOrig;
         if (aState.aFrame.inFrame())
         {
-            // parBreak modify m_aStates.top() so we can't apply resetFrame directly on aState
-            m_aStates.top().resetFrame();
+            // parBreak() modifies m_aStates.top() so we can't apply resetFrame() directly on aState
+            resetFrame();
             parBreak();
             // Save this state for later use, so we only reset frame status only for the first shape inside a frame.
             aState = m_aStates.top();
@@ -5873,6 +5915,78 @@ RTFError RTFDocumentImpl::popState()
         if (aState.bCreatedShapeGroup)
             m_pSdrImport->popParent();
         break;
+    case Destination::PROPNAME:
+        if (&m_aStates.top().aDestinationText != m_aStates.top().pDestinationText)
+            break; // not for nested group
+        aState.aPropName = m_aStates.top().pDestinationText->makeStringAndClear();
+        break;
+    case Destination::STATICVAL:
+        if (&m_aStates.top().aDestinationText != m_aStates.top().pDestinationText)
+            break; // not for nested group
+        if (m_xDocumentProperties.is())
+        {
+            // Find out what is the key, value type and value we want to set.
+            uno::Reference<beans::XPropertyContainer> xPropertyContainer = m_xDocumentProperties->getUserDefinedProperties();
+            uno::Reference<beans::XPropertySet> xPropertySet(xPropertyContainer, uno::UNO_QUERY);
+            const OUString& rKey = m_aStates.top().aPropName;
+            OUString aStaticVal = m_aStates.top().pDestinationText->makeStringAndClear();
+            uno::Any aAny;
+            if (m_aStates.top().aPropType == cppu::UnoType<OUString>::get())
+                aAny = uno::makeAny(aStaticVal);
+
+            xPropertyContainer->addProperty(rKey, beans::PropertyAttribute::REMOVABLE, aAny);
+        }
+        break;
+    case Destination::USERPROPS:
+    {
+        // These are the imported properties.
+        uno::Reference<document::XDocumentProperties> xDocumentProperties = m_xDocumentProperties;
+
+        // These are the real document properties.
+        uno::Reference<document::XDocumentPropertiesSupplier> xDocumentPropertiesSupplier(m_xDstDoc, uno::UNO_QUERY);
+        if (xDocumentPropertiesSupplier.is())
+            m_xDocumentProperties.set(xDocumentPropertiesSupplier->getDocumentProperties(), uno::UNO_QUERY);
+
+        if (m_xDocumentProperties.is())
+        {
+            if (!m_bIsNewDoc)
+            {
+                // Check classification.
+                if (!SfxClassificationHelper::ShowPasteInfo(SfxClassificationHelper::CheckPaste(xDocumentProperties, m_xDocumentProperties)))
+                    return RTFError::CLASSIFICATION;
+            }
+
+            uno::Reference<beans::XPropertyContainer> xClipboardPropertyContainer = xDocumentProperties->getUserDefinedProperties();
+            uno::Reference<beans::XPropertyContainer> xDocumentPropertyContainer = m_xDocumentProperties->getUserDefinedProperties();
+            uno::Reference<beans::XPropertySet> xClipboardPropertySet(xClipboardPropertyContainer, uno::UNO_QUERY);
+            uno::Reference<beans::XPropertySet> xDocumentPropertySet(xDocumentPropertyContainer, uno::UNO_QUERY);
+            uno::Sequence<beans::Property> aClipboardProperties = xClipboardPropertySet->getPropertySetInfo()->getProperties();
+            uno::Sequence<beans::Property> aDocumentProperties = xDocumentPropertySet->getPropertySetInfo()->getProperties();
+
+            for (const beans::Property& rProperty : aClipboardProperties)
+            {
+                const OUString& rKey = rProperty.Name;
+                uno::Any aValue = xClipboardPropertySet->getPropertyValue(rKey);
+
+                try
+                {
+                    if (lcl_containsProperty(aDocumentProperties, rKey))
+                    {
+                        // When pasting, don't update existing properties.
+                        if (!m_bIsNewDoc)
+                            xDocumentPropertySet->setPropertyValue(rKey, aValue);
+                    }
+                    else
+                        xDocumentPropertyContainer->addProperty(rKey, beans::PropertyAttribute::REMOVABLE, aValue);
+                }
+                catch (const uno::Exception& rException)
+                {
+                    SAL_WARN("writerfilter", "failed to set property " << rKey << ": " << rException.Message);
+                }
+            }
+        }
+    }
+    break;
     default:
         break;
     }
@@ -6142,6 +6256,10 @@ RTFError RTFDocumentImpl::popState()
                 m_aStates.top().aDrawingObject.nBottom = aState.aDrawingObject.nBottom;
         }
         break;
+    case Destination::PROPNAME:
+        if (m_aStates.top().eDestination == Destination::USERPROPS)
+            m_aStates.top().aPropName = aState.aPropName;
+        break;
     default:
     {
         if (!m_aStates.empty() && m_aStates.top().eDestination == Destination::PICT)
@@ -6329,9 +6447,9 @@ RTFParserState::RTFParserState(RTFDocumentImpl* pDocumentImpl)
 {
 }
 
-void RTFParserState::resetFrame()
+void RTFDocumentImpl::resetFrame()
 {
-    aFrame = RTFFrame(this);
+    m_aStates.top().aFrame = RTFFrame(&m_aStates.top());
 }
 
 RTFColorTableEntry::RTFColorTableEntry()
@@ -6389,18 +6507,18 @@ RTFDrawingObject::RTFDrawingObject()
 
 RTFFrame::RTFFrame(RTFParserState* pParserState)
     : m_pParserState(pParserState),
-      nX(0),
-      nY(0),
-      nW(0),
-      nH(0),
-      nHoriPadding(0),
-      nVertPadding(0),
-      nHoriAlign(0),
-      nHoriAnchor(0),
-      nVertAlign(0),
-      nVertAnchor(0),
-      nHRule(NS_ooxml::LN_Value_doc_ST_HeightRule_auto),
-      nAnchorType(0)
+      m_nX(0),
+      m_nY(0),
+      m_nW(0),
+      m_nH(0),
+      m_nHoriPadding(0),
+      m_nVertPadding(0),
+      m_nHoriAlign(0),
+      m_nHoriAnchor(0),
+      m_nVertAlign(0),
+      m_nVertAnchor(0),
+      m_nHRule(NS_ooxml::LN_Value_doc_ST_HeightRule_auto),
+      m_nAnchorType(0)
 {
 }
 
@@ -6414,37 +6532,37 @@ void RTFFrame::setSprm(Id nId, Id nValue)
     switch (nId)
     {
     case NS_ooxml::LN_CT_FramePr_w:
-        nW = nValue;
+        m_nW = nValue;
         break;
     case NS_ooxml::LN_CT_FramePr_h:
-        nH = nValue;
+        m_nH = nValue;
         break;
     case NS_ooxml::LN_CT_FramePr_x:
-        nX = nValue;
+        m_nX = nValue;
         break;
     case NS_ooxml::LN_CT_FramePr_y:
-        nY = nValue;
+        m_nY = nValue;
         break;
     case NS_ooxml::LN_CT_FramePr_hSpace:
-        nHoriPadding = nValue;
+        m_nHoriPadding = nValue;
         break;
     case NS_ooxml::LN_CT_FramePr_vSpace:
-        nVertPadding = nValue;
+        m_nVertPadding = nValue;
         break;
     case NS_ooxml::LN_CT_FramePr_xAlign:
-        nHoriAlign = nValue;
+        m_nHoriAlign = nValue;
         break;
     case NS_ooxml::LN_CT_FramePr_hAnchor:
-        nHoriAnchor = nValue;
+        m_nHoriAnchor = nValue;
         break;
     case NS_ooxml::LN_CT_FramePr_yAlign:
-        nVertAlign = nValue;
+        m_nVertAlign = nValue;
         break;
     case NS_ooxml::LN_CT_FramePr_vAnchor:
-        nVertAnchor = nValue;
+        m_nVertAnchor = nValue;
         break;
     case NS_ooxml::LN_CT_FramePr_wrap:
-        oWrap = nValue;
+        m_oWrap = nValue;
         break;
     default:
         break;
@@ -6481,66 +6599,66 @@ RTFSprms RTFFrame::getSprms()
         switch (nId)
         {
         case NS_ooxml::LN_CT_FramePr_x:
-            if (nX != 0)
-                pValue = std::make_shared<RTFValue>(nX);
+            if (m_nX != 0)
+                pValue = std::make_shared<RTFValue>(m_nX);
             break;
         case NS_ooxml::LN_CT_FramePr_y:
-            if (nY != 0)
-                pValue = std::make_shared<RTFValue>(nY);
+            if (m_nY != 0)
+                pValue = std::make_shared<RTFValue>(m_nY);
             break;
         case NS_ooxml::LN_CT_FramePr_h:
-            if (nH != 0)
+            if (m_nH != 0)
             {
-                if (nHRule == NS_ooxml::LN_Value_doc_ST_HeightRule_exact)
-                    pValue = std::make_shared<RTFValue>(-nH); // The negative value just sets nHRule
+                if (m_nHRule == NS_ooxml::LN_Value_doc_ST_HeightRule_exact)
+                    pValue = std::make_shared<RTFValue>(-m_nH); // The negative value just sets nHRule
                 else
-                    pValue = std::make_shared<RTFValue>(nH);
+                    pValue = std::make_shared<RTFValue>(m_nH);
             }
             break;
         case NS_ooxml::LN_CT_FramePr_w:
-            if (nW != 0)
-                pValue = std::make_shared<RTFValue>(nW);
+            if (m_nW != 0)
+                pValue = std::make_shared<RTFValue>(m_nW);
             break;
         case NS_ooxml::LN_CT_FramePr_hSpace:
-            if (nHoriPadding != 0)
-                pValue = std::make_shared<RTFValue>(nHoriPadding);
+            if (m_nHoriPadding != 0)
+                pValue = std::make_shared<RTFValue>(m_nHoriPadding);
             break;
         case NS_ooxml::LN_CT_FramePr_vSpace:
-            if (nVertPadding != 0)
-                pValue = std::make_shared<RTFValue>(nVertPadding);
+            if (m_nVertPadding != 0)
+                pValue = std::make_shared<RTFValue>(m_nVertPadding);
             break;
         case NS_ooxml::LN_CT_FramePr_hAnchor:
         {
-            if (nHoriAnchor == 0)
-                nHoriAnchor = NS_ooxml::LN_Value_doc_ST_HAnchor_margin;
-            pValue = std::make_shared<RTFValue>(nHoriAnchor);
+            if (m_nHoriAnchor == 0)
+                m_nHoriAnchor = NS_ooxml::LN_Value_doc_ST_HAnchor_margin;
+            pValue = std::make_shared<RTFValue>(m_nHoriAnchor);
         }
         break;
         case NS_ooxml::LN_CT_FramePr_vAnchor:
         {
-            if (nVertAnchor == 0)
-                nVertAnchor = NS_ooxml::LN_Value_doc_ST_VAnchor_margin;
-            pValue = std::make_shared<RTFValue>(nVertAnchor);
+            if (m_nVertAnchor == 0)
+                m_nVertAnchor = NS_ooxml::LN_Value_doc_ST_VAnchor_margin;
+            pValue = std::make_shared<RTFValue>(m_nVertAnchor);
         }
         break;
         case NS_ooxml::LN_CT_FramePr_xAlign:
-            pValue = std::make_shared<RTFValue>(nHoriAlign);
+            pValue = std::make_shared<RTFValue>(m_nHoriAlign);
             break;
         case NS_ooxml::LN_CT_FramePr_yAlign:
-            pValue = std::make_shared<RTFValue>(nVertAlign);
+            pValue = std::make_shared<RTFValue>(m_nVertAlign);
             break;
         case NS_ooxml::LN_CT_FramePr_hRule:
         {
-            if (nH < 0)
-                nHRule = NS_ooxml::LN_Value_doc_ST_HeightRule_exact;
-            else if (nH > 0)
-                nHRule = NS_ooxml::LN_Value_doc_ST_HeightRule_atLeast;
-            pValue = std::make_shared<RTFValue>(nHRule);
+            if (m_nH < 0)
+                m_nHRule = NS_ooxml::LN_Value_doc_ST_HeightRule_exact;
+            else if (m_nH > 0)
+                m_nHRule = NS_ooxml::LN_Value_doc_ST_HeightRule_atLeast;
+            pValue = std::make_shared<RTFValue>(m_nHRule);
         }
         break;
         case NS_ooxml::LN_CT_FramePr_wrap:
-            if (oWrap)
-                pValue = std::make_shared<RTFValue>(*oWrap);
+            if (m_oWrap)
+                pValue = std::make_shared<RTFValue>(*m_oWrap);
             break;
         default:
             break;
@@ -6557,10 +6675,10 @@ RTFSprms RTFFrame::getSprms()
 
 bool RTFFrame::hasProperties()
 {
-    return nX != 0 || nY != 0 || nW != 0 || nH != 0 ||
-           nHoriPadding != 0 || nVertPadding != 0 ||
-           nHoriAlign != 0 || nHoriAnchor != 0 || nVertAlign != 0 || nVertAnchor != 0 ||
-           nAnchorType != 0;
+    return m_nX != 0 || m_nY != 0 || m_nW != 0 || m_nH != 0 ||
+           m_nHoriPadding != 0 || m_nVertPadding != 0 ||
+           m_nHoriAlign != 0 || m_nHoriAnchor != 0 || m_nVertAlign != 0 || m_nVertAnchor != 0 ||
+           m_nAnchorType != 0;
 }
 
 } // namespace rtftok

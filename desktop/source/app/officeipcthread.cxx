@@ -249,10 +249,7 @@ rtl::Reference< OfficeIPCThread > OfficeIPCThread::pGlobalOfficeIPCThread;
 // Into a hex string of well known length ff132a86...
 OUString CreateMD5FromString( const OUString& aMsg )
 {
-#if (OSL_DEBUG_LEVEL > 2)
-    fprintf( stderr, "create md5 from '%s'\n",
-             OUStringToOString (aMsg, RTL_TEXTENCODING_UTF8).getStr() );
-#endif
+    SAL_INFO("desktop.app", "create md5 from '" << aMsg << "'");
 
     rtlDigest handle = rtl_digest_create( rtl_Digest_AlgorithmMD5 );
     if ( handle )
@@ -296,12 +293,8 @@ IMPL_STATIC_LINK_TYPED( ProcessEventsClass_Impl, ProcessDocumentsEvent, void*, p
 {
     // Documents requests are processed by the OfficeIPCThread implementation
     ProcessDocumentsRequest* pDocsRequest = static_cast<ProcessDocumentsRequest*>(pEvent);
-
-    if ( pDocsRequest )
-    {
-        OfficeIPCThread::ExecuteCmdLineRequests( *pDocsRequest );
-        delete pDocsRequest;
-    }
+    OfficeIPCThread::ExecuteCmdLineRequests(*pDocsRequest, false);
+    delete pDocsRequest;
 }
 
 void ImplPostForeignAppEvent( ApplicationEvent* pEvent )
@@ -395,28 +388,23 @@ void OfficeIPCThread::SetDowning()
     ::osl::MutexGuard   aGuard( GetMutex() );
 
     if ( pGlobalOfficeIPCThread.is() )
-        pGlobalOfficeIPCThread->mbDowning = true;
+        pGlobalOfficeIPCThread->mState = State::Downing;
 }
 
-static bool s_bInEnableRequests = false;
-
-void OfficeIPCThread::EnableRequests( bool i_bEnable )
+void OfficeIPCThread::EnableRequests()
 {
     // switch between just queueing the requests and executing them
     ::osl::MutexGuard   aGuard( GetMutex() );
 
     if ( pGlobalOfficeIPCThread.is() )
     {
-        s_bInEnableRequests = true;
-        pGlobalOfficeIPCThread->mbRequestsEnabled = i_bEnable;
-        if( i_bEnable )
-        {
-            // hit the compiler over the head
-            ProcessDocumentsRequest aEmptyReq = ProcessDocumentsRequest( boost::optional< OUString >() );
-            // trigger already queued requests
-            OfficeIPCThread::ExecuteCmdLineRequests( aEmptyReq );
+        if (pGlobalOfficeIPCThread->mState != State::Downing) {
+            pGlobalOfficeIPCThread->mState = State::RequestsEnabled;
         }
-        s_bInEnableRequests = false;
+        // hit the compiler over the head
+        ProcessDocumentsRequest aEmptyReq = ProcessDocumentsRequest( boost::optional< OUString >() );
+        // trigger already queued requests
+        OfficeIPCThread::ExecuteCmdLineRequests(aEmptyReq, true);
     }
 }
 
@@ -430,14 +418,14 @@ bool OfficeIPCThread::AreRequestsPending()
         return false;
 }
 
-void OfficeIPCThread::RequestsCompleted( int nCount )
+void OfficeIPCThread::RequestsCompleted()
 {
     // Remove nCount pending requests from our internal counter
     ::osl::MutexGuard   aGuard( GetMutex() );
     if ( pGlobalOfficeIPCThread.is() )
     {
         if ( pGlobalOfficeIPCThread->mnPendingRequests > 0 )
-            pGlobalOfficeIPCThread->mnPendingRequests -= nCount;
+            pGlobalOfficeIPCThread->mnPendingRequests --;
     }
 }
 
@@ -530,6 +518,10 @@ OfficeIPCThread::Status OfficeIPCThread::EnableOfficeIPCThread()
         if ( aUserInstallPathHashCode.isEmpty() )
             return IPC_STATUS_BOOTSTRAP_ERROR; // Something completely broken, we cannot create a valid hash code!
 
+#if HAVE_FEATURE_MACOSX_SANDBOX
+        nPipeMode = PIPEMODE_CREATED;
+#else
+
         OUString aPipeIdent( "SingleOfficeIPC_" + aUserInstallPathHashCode );
 
         do
@@ -573,6 +565,7 @@ OfficeIPCThread::Status OfficeIPCThread::EnableOfficeIPCThread()
             }
 
         } while ( nPipeMode == PIPEMODE_DONTKNOW );
+#endif
     }
 
     if ( nPipeMode == PIPEMODE_CREATED )
@@ -636,13 +629,13 @@ void OfficeIPCThread::DisableOfficeIPCThread(bool join)
             pGlobalOfficeIPCThread);
         pGlobalOfficeIPCThread.clear();
 
-        pOfficeIPCThread->mbDowning = true;
+        pOfficeIPCThread->mState = State::Downing;
         pOfficeIPCThread->maPipe.close();
 
         // release mutex to avoid deadlocks
         aMutex.clear();
 
-        OfficeIPCThread::SetReady(pOfficeIPCThread);
+        pOfficeIPCThread->cReady.set();
 
         // exit gracefully and join
         if (join)
@@ -654,10 +647,8 @@ void OfficeIPCThread::DisableOfficeIPCThread(bool join)
 
 OfficeIPCThread::OfficeIPCThread() :
     Thread( "OfficeIPCThread" ),
-    mbDowning( false ),
-    mbRequestsEnabled( false ),
-    mnPendingRequests( 0 ),
-    mpDispatchWatcher( nullptr )
+    mState( State::Starting ),
+    mnPendingRequests( 0 )
 {
 }
 
@@ -665,29 +656,27 @@ OfficeIPCThread::~OfficeIPCThread()
 {
     ::osl::ClearableMutexGuard  aGuard( GetMutex() );
 
-    if ( mpDispatchWatcher )
-        mpDispatchWatcher->release();
+    mpDispatchWatcher.clear();
     maPipe.close();
     pGlobalOfficeIPCThread.clear();
 }
 
-void OfficeIPCThread::SetReady(
-    rtl::Reference< OfficeIPCThread > const & pThread)
+void OfficeIPCThread::SetReady()
 {
-    rtl::Reference< OfficeIPCThread > const & t(
-        pThread.is() ? pThread : pGlobalOfficeIPCThread);
-    if (t.is())
+    osl::MutexGuard g(GetMutex());
+    if (pGlobalOfficeIPCThread.is())
     {
-        t->cReady.set();
+        pGlobalOfficeIPCThread->cReady.set();
     }
 }
 
-void OfficeIPCThread::WaitForReady(
-    rtl::Reference< OfficeIPCThread > const & pThread)
-
+void OfficeIPCThread::WaitForReady()
 {
-    rtl::Reference< OfficeIPCThread > const & t(
-        pThread.is() ? pThread : pGlobalOfficeIPCThread);
+    rtl::Reference<OfficeIPCThread> t;
+    {
+        osl::MutexGuard g(GetMutex());
+        t =  pGlobalOfficeIPCThread;
+    }
     if (t.is())
     {
         t->cReady.wait();
@@ -696,6 +685,7 @@ void OfficeIPCThread::WaitForReady(
 
 bool OfficeIPCThread::IsEnabled()
 {
+    osl::MutexGuard g(GetMutex());
     return pGlobalOfficeIPCThread.is();
 }
 
@@ -729,7 +719,7 @@ void OfficeIPCThread::execute()
             // down during wait
             osl::ClearableMutexGuard aGuard( GetMutex() );
 
-            if ( mbDowning )
+            if ( mState == State::Downing )
             {
                 break;
             }
@@ -757,8 +747,8 @@ void OfficeIPCThread::execute()
             }
             catch ( const CommandLineArgs::Supplier::Exception & )
             {
-#if (OSL_DEBUG_LEVEL > 1) || defined DBG_UTIL
-                fprintf( stderr, "Error in received command line arguments\n" );
+#if (OSL_DEBUG_LEVEL > 0) || defined DBG_UTIL
+                SAL_WARN("desktop.app", "Error in received command line arguments");
 #endif
                 continue;
             }
@@ -962,7 +952,7 @@ void OfficeIPCThread::execute()
                 PROCESSING_DONE, SAL_N_ELEMENTS(PROCESSING_DONE));
                 // incl. terminating NUL
             if (n != SAL_N_ELEMENTS(PROCESSING_DONE)) {
-                SAL_WARN("desktop", "short write: " << n);
+                SAL_WARN("desktop" , "short write: " << n);
                 continue;
             }
         }
@@ -970,14 +960,14 @@ void OfficeIPCThread::execute()
         {
             {
                 osl::MutexGuard aGuard( GetMutex() );
-                if ( mbDowning )
+                if ( mState == State::Downing )
                 {
                     break;
                 }
             }
 
-#if (OSL_DEBUG_LEVEL > 1) || defined DBG_UTIL
-            fprintf( stderr, "Error on accept: %d\n", (int)nError );
+#if (OSL_DEBUG_LEVEL > 0) || defined DBG_UTIL
+            SAL_WARN( "desktop.app", "Error on accept: " << (int)nError);
 #endif
             TimeValue tval;
             tval.Seconds = 1;
@@ -989,7 +979,7 @@ void OfficeIPCThread::execute()
 }
 
 static void AddToDispatchList(
-    DispatchWatcher::DispatchList& rDispatchList,
+    std::vector<DispatchWatcher::DispatchRequest>& rDispatchList,
     boost::optional< OUString > const & cwdUrl,
     std::vector< OUString > const & aRequestList,
     DispatchWatcher::RequestType nType,
@@ -999,13 +989,12 @@ static void AddToDispatchList(
     for (std::vector< OUString >::const_iterator i(aRequestList.begin());
          i != aRequestList.end(); ++i)
     {
-        rDispatchList.push_back(
-            DispatchWatcher::DispatchRequest( nType, *i, cwdUrl, aParam, aFactory ));
+        rDispatchList.push_back({nType, *i, cwdUrl, aParam, aFactory});
     }
 }
 
 static void AddConversionsToDispatchList(
-    DispatchWatcher::DispatchList& rDispatchList,
+    std::vector<DispatchWatcher::DispatchRequest>& rDispatchList,
     boost::optional< OUString > const & cwdUrl,
     std::vector< OUString > const & rRequestList,
     const OUString& rParam,
@@ -1049,18 +1038,18 @@ static void AddConversionsToDispatchList(
     for (std::vector< OUString >::const_iterator i(rRequestList.begin());
          i != rRequestList.end(); ++i)
     {
-        rDispatchList.push_back(
-            DispatchWatcher::DispatchRequest( nType, *i, cwdUrl, aParam, rFactory ));
+        rDispatchList.push_back({nType, *i, cwdUrl, aParam, rFactory});
     }
 }
 
 
-bool OfficeIPCThread::ExecuteCmdLineRequests( ProcessDocumentsRequest& aRequest )
+bool OfficeIPCThread::ExecuteCmdLineRequests(
+    ProcessDocumentsRequest& aRequest, bool noTerminate)
 {
     // protect the dispatch list
     osl::ClearableMutexGuard aGuard( GetMutex() );
 
-    static DispatchWatcher::DispatchList    aDispatchList;
+    static std::vector<DispatchWatcher::DispatchRequest> aDispatchList;
 
     // Create dispatch list for dispatch watcher
     AddToDispatchList( aDispatchList, aRequest.aCwdUrl, aRequest.aInFilter, DispatchWatcher::REQUEST_INFILTER, "", aRequest.aModule );
@@ -1080,20 +1069,19 @@ bool OfficeIPCThread::ExecuteCmdLineRequests( ProcessDocumentsRequest& aRequest 
             return bShutdown;
 
         pGlobalOfficeIPCThread->mnPendingRequests += aDispatchList.size();
-        if ( !pGlobalOfficeIPCThread->mpDispatchWatcher )
+        if ( !pGlobalOfficeIPCThread->mpDispatchWatcher.is() )
         {
-            pGlobalOfficeIPCThread->mpDispatchWatcher = DispatchWatcher::GetDispatchWatcher();
-            pGlobalOfficeIPCThread->mpDispatchWatcher->acquire();
+            pGlobalOfficeIPCThread->mpDispatchWatcher = new DispatchWatcher;
         }
 
         // copy for execute
-        DispatchWatcher::DispatchList aTempList( aDispatchList );
+        std::vector<DispatchWatcher::DispatchRequest> aTempList( aDispatchList );
         aDispatchList.clear();
 
         aGuard.clear();
 
         // Execute dispatch requests
-        bShutdown = pGlobalOfficeIPCThread->mpDispatchWatcher->executeDispatchRequests( aTempList, s_bInEnableRequests );
+        bShutdown = pGlobalOfficeIPCThread->mpDispatchWatcher->executeDispatchRequests( aTempList, noTerminate);
 
         // set processed flag
         if (aRequest.pcProcessed != nullptr)

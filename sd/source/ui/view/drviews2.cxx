@@ -170,6 +170,7 @@
 #include "undolayer.hxx"
 #include "unmodpg.hxx"
 #include <sfx2/sidebar/Sidebar.hxx>
+#include <sfx2/classificationhelper.hxx>
 
 #include "ViewShellBase.hxx"
 #include <memory>
@@ -641,7 +642,7 @@ void DrawViewShell::FuTemporary(SfxRequest& rReq)
                     else
                     {
                         WaitObject aWait( GetActiveWindow() );
-                        mpDrawView->ConvertMarkedToPolyObj(false);
+                        mpDrawView->ConvertMarkedToPolyObj();
                     }
                 }
 
@@ -801,7 +802,7 @@ void DrawViewShell::FuTemporary(SfxRequest& rReq)
                 ::Outliner* pOutl = mpDrawView->GetTextEditOutliner();
                 if (pOutl)
                 {
-                    pOutl->RemoveFields(true, checkSvxFieldData<SvxURLField>);
+                    pOutl->RemoveFields(checkSvxFieldData<SvxURLField>);
                 }
 
                 pSet.reset(new SfxItemSet( GetPool(), EE_ITEMS_START, EE_ITEMS_END ));
@@ -1048,7 +1049,7 @@ void DrawViewShell::FuTemporary(SfxRequest& rReq)
         {
             // The value (sal_uInt16)0xFFFF means set bullet on/off.
             SfxUInt16Item aItem(FN_SVX_SET_BULLET, (sal_uInt16)0xFFFF);
-            GetViewFrame()->GetDispatcher()->Execute( FN_SVX_SET_BULLET, SfxCallMode::RECORD, &aItem, 0L );
+            GetViewFrame()->GetDispatcher()->Execute( FN_SVX_SET_BULLET, SfxCallMode::RECORD, &aItem, 0 );
         }
         break;
 
@@ -1056,7 +1057,7 @@ void DrawViewShell::FuTemporary(SfxRequest& rReq)
         {
             // The value (sal_uInt16)0xFFFF means set bullet on/off.
             SfxUInt16Item aItem(FN_SVX_SET_NUMBER, (sal_uInt16)0xFFFF);
-            GetViewFrame()->GetDispatcher()->Execute( FN_SVX_SET_NUMBER, SfxCallMode::RECORD, &aItem, 0L );
+            GetViewFrame()->GetDispatcher()->Execute( FN_SVX_SET_NUMBER, SfxCallMode::RECORD, &aItem, 0 );
         }
         break;
 
@@ -1141,6 +1142,29 @@ void DrawViewShell::FuTemporary(SfxRequest& rReq)
         }
         break;
 #endif
+        case SID_CLASSIFICATION_APPLY:
+        {
+            const SfxItemSet* pArgs = rReq.GetArgs();
+            const SfxPoolItem* pItem = nullptr;
+            if (pArgs && pArgs->GetItemState(nSId, false, &pItem) == SfxItemState::SET)
+            {
+                const OUString& rName = static_cast<const SfxStringItem*>(pItem)->GetValue();
+                if (SfxViewFrame* pViewFrame = GetViewFrame())
+                {
+                    if (SfxObjectShell* pObjectShell = pViewFrame->GetObjectShell())
+                    {
+                        SfxClassificationHelper aHelper(pObjectShell->getDocProperties());
+                        aHelper.SetBACName(rName);
+                    }
+                }
+            }
+            else
+                SAL_WARN("sd.ui", "missing parameter for SID_CLASSIFICATION_APPLY");
+
+            Cancel();
+            rReq.Ignore();
+        }
+        break;
 
         case SID_COPYOBJECTS:
         {
@@ -1389,7 +1413,7 @@ void DrawViewShell::FuTemporary(SfxRequest& rReq)
                 aNewAttr.Put( SdAttrLayerThisPage() );
 
                 SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-                std::unique_ptr<AbstractSdInsertLayerDlg> pDlg(pFact ? pFact->CreateSdInsertLayerDlg(nullptr, aNewAttr, true, SD_RESSTR(STR_INSERTLAYER)) : nullptr);
+                std::unique_ptr<AbstractSdInsertLayerDlg> pDlg(pFact ? pFact->CreateSdInsertLayerDlg(aNewAttr, true, SD_RESSTR(STR_INSERTLAYER)) : nullptr);
                 if( pDlg )
                 {
                     pDlg->SetHelpId( SD_MOD()->GetSlotPool()->GetSlot( SID_INSERTLAYER )->GetCommand() );
@@ -1557,7 +1581,7 @@ void DrawViewShell::FuTemporary(SfxRequest& rReq)
                 aNewAttr.Put( SdAttrLayerThisPage() );
 
                 SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-                std::unique_ptr<AbstractSdInsertLayerDlg> pDlg(pFact ? pFact->CreateSdInsertLayerDlg(nullptr, aNewAttr, bDelete, SD_RESSTR(STR_MODIFYLAYER)) : nullptr);
+                std::unique_ptr<AbstractSdInsertLayerDlg> pDlg(pFact ? pFact->CreateSdInsertLayerDlg(aNewAttr, bDelete, SD_RESSTR(STR_MODIFYLAYER)) : nullptr);
                 if( pDlg )
                 {
                     pDlg->SetHelpId( SD_MOD()->GetSlotPool()->GetSlot( SID_MODIFYLAYER )->GetCommand() );
@@ -1716,7 +1740,7 @@ void DrawViewShell::FuTemporary(SfxRequest& rReq)
                                                         &aUrl, &aTarget,
                                                         &aFrm, &aReferer,
                                                         &aNewView, &aBrowsing,
-                                                        0L );
+                                                        0 );
                     }
                 }
             }
@@ -2076,7 +2100,7 @@ void DrawViewShell::FuTemporary(SfxRequest& rReq)
 
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "Dialog creation failed!");
-                std::unique_ptr<AbstractSvxObjectNameDialog> pDlg(pFact->CreateSvxObjectNameDialog(nullptr, aName));
+                std::unique_ptr<AbstractSvxObjectNameDialog> pDlg(pFact->CreateSvxObjectNameDialog(aName));
                 OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                 pDlg->SetCheckNameHdl(LINK(this, DrawViewShell, NameObjectHdl));
@@ -2109,7 +2133,7 @@ void DrawViewShell::FuTemporary(SfxRequest& rReq)
 
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "Dialog creation failed!");
-                std::unique_ptr<AbstractSvxObjectTitleDescDialog> pDlg(pFact->CreateSvxObjectTitleDescDialog(nullptr, aTitle, aDescription));
+                std::unique_ptr<AbstractSvxObjectTitleDescDialog> pDlg(pFact->CreateSvxObjectTitleDescDialog(aTitle, aDescription));
                 OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                 if(RET_OK == pDlg->Execute())

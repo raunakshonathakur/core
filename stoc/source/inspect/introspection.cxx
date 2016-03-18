@@ -290,92 +290,83 @@ IntrospectionAccessStatic_Impl::IntrospectionAccessStatic_Impl( Reference< XIdlR
 
 sal_Int32 IntrospectionAccessStatic_Impl::getPropertyIndex( const OUString& aPropertyName ) const
 {
-    sal_Int32 iHashResult = -1;
     IntrospectionAccessStatic_Impl* pThis = const_cast<IntrospectionAccessStatic_Impl*>(this);
     IntrospectionNameMap::iterator aIt = pThis->maPropertyNameMap.find( aPropertyName );
-    if( !( aIt == pThis->maPropertyNameMap.end() ) )
-        iHashResult = (*aIt).second;
-    return iHashResult;
+    if (aIt != pThis->maPropertyNameMap.end())
+        return aIt->second;
+
+    return -1;
 }
 
 sal_Int32 IntrospectionAccessStatic_Impl::getMethodIndex( const OUString& aMethodName ) const
 {
-    sal_Int32 iHashResult = -1;
     IntrospectionAccessStatic_Impl* pThis = const_cast<IntrospectionAccessStatic_Impl*>(this);
     IntrospectionNameMap::iterator aIt = pThis->maMethodNameMap.find( aMethodName );
-    if( !( aIt == pThis->maMethodNameMap.end() ) )
+    if (aIt != pThis->maMethodNameMap.end())
     {
-        iHashResult = (*aIt).second;
+        return aIt->second;
     }
+
     // #95159 Check if full qualified name matches
-    else
+    sal_Int32 nSearchFrom = aMethodName.getLength();
+    while( true )
     {
-        sal_Int32 nSearchFrom = aMethodName.getLength();
-        while( true )
+        // Strategy: Search back until the first '_' is found
+        sal_Int32 nFound = aMethodName.lastIndexOf( '_', nSearchFrom );
+        if( nFound == -1 )
+            break;
+
+        OUString aPureMethodName = aMethodName.copy( nFound + 1 );
+
+        aIt = pThis->maMethodNameMap.find( aPureMethodName );
+        if (aIt != pThis->maMethodNameMap.end())
         {
-            // Strategy: Search back until the first '_' is found
-            sal_Int32 nFound = aMethodName.lastIndexOf( '_', nSearchFrom );
-            if( nFound == -1 )
-                break;
-
-            OUString aPureMethodName = aMethodName.copy( nFound + 1 );
-
-            aIt = pThis->maMethodNameMap.find( aPureMethodName );
-            if( !( aIt == pThis->maMethodNameMap.end() ) )
+            // Check if it can be a type?
+            // Problem: Does not work if package names contain _ ?!
+            OUString aStr = aMethodName.copy( 0, nFound );
+            OUString aTypeName = aStr.replace( '_', '.' );
+            Reference< XIdlClass > xClass = mxCoreReflection->forName( aTypeName );
+            if( xClass.is() )
             {
-                // Check if it can be a type?
-                // Problem: Does not work if package names contain _ ?!
-                OUString aStr = aMethodName.copy( 0, nFound );
-                OUString aTypeName = aStr.replace( '_', '.' );
-                Reference< XIdlClass > xClass = mxCoreReflection->forName( aTypeName );
-                if( xClass.is() )
+                // If this is a valid class it could be the right method
+
+                // Could be the right method, type has to be checked
+                const sal_Int32 iHashResult = aIt->second;
+
+                const Reference<XIdlMethod> xMethod = maAllMethodSeq[iHashResult];
+
+                Reference< XIdlClass > xMethClass = xMethod->getDeclaringClass();
+                if( xClass->equals( xMethClass ) )
                 {
-                    // If this is a valid class it could be the right method
-
-                    // Could be the right method, type has to be checked
-                    iHashResult = (*aIt).second;
-
-                    const Reference<XIdlMethod> xMethod = maAllMethodSeq.at(iHashResult);
-
-                    Reference< XIdlClass > xMethClass = xMethod->getDeclaringClass();
-                    if( xClass->equals( xMethClass ) )
+                    return iHashResult;
+                }
+                else
+                {
+                    // Could also be another method with the same name
+                    // Iterate over all methods
+                    size_t nLen = maAllMethodSeq.size();
+                    for (size_t i = 0; i < nLen; ++i)
                     {
-                        break;
-                    }
-                    else
-                    {
-                        iHashResult = -1;
-
-                        // Could also be another method with the same name
-                        // Iterate over all methods
-                        size_t nLen = maAllMethodSeq.size();
-                        for (size_t i = 0; i < nLen; ++i)
+                        const Reference<XIdlMethod> xMethod2 = maAllMethodSeq[ i ];
+                        if( xMethod2->getName() == aPureMethodName )
                         {
-                            const Reference<XIdlMethod> xMethod2 = maAllMethodSeq[ i ];
-                            if( xMethod2->getName() == aPureMethodName )
-                            {
-                                Reference< XIdlClass > xMethClass2 = xMethod2->getDeclaringClass();
+                            Reference< XIdlClass > xMethClass2 = xMethod2->getDeclaringClass();
 
-                                if( xClass->equals( xMethClass2 ) )
-                                {
-                                    iHashResult = i;
-                                    break;
-                                }
+                            if( xClass->equals( xMethClass2 ) )
+                            {
+                                return i;
                             }
                         }
-
-                        if( iHashResult != -1 )
-                            break;
                     }
                 }
             }
-
-            nSearchFrom = nFound - 1;
-            if( nSearchFrom < 0 )
-                break;
         }
+
+        nSearchFrom = nFound - 1;
+        if( nSearchFrom < 0 )
+            break;
     }
-    return iHashResult;
+    return -1;
 }
 
 void IntrospectionAccessStatic_Impl::setPropertyValue( const Any& obj, const OUString& aPropertyName, const Any& aValue ) const
@@ -1539,7 +1530,7 @@ OUString ImplIntrospectionAccess::getExactName( const OUString& rApproximateName
     OUString aRetStr;
     LowerToExactNameMap::iterator aIt =
         mpStaticImpl->maLowerToExactNameMap.find( rApproximateName.toAsciiLowerCase() );
-    if( !( aIt == mpStaticImpl->maLowerToExactNameMap.end() ) )
+    if (aIt != mpStaticImpl->maLowerToExactNameMap.end())
         aRetStr = (*aIt).second;
     return aRetStr;
 }
@@ -1923,7 +1914,7 @@ css::uno::Reference<css::beans::XIntrospectionAccess> Implementation::inspect(
 
                         // Do we have the name already?
                         IntrospectionNameMap::iterator aIt = rPropNameMap.find( aPropName );
-                        if( !( aIt == rPropNameMap.end() ) )
+                        if (aIt != rPropNameMap.end())
                             continue;
 
                         // New entry in the hash table
@@ -2097,7 +2088,7 @@ css::uno::Reference<css::beans::XIntrospectionAccess> Implementation::inspect(
 
                             // Do we have the name already?
                             IntrospectionNameMap::iterator aIt = rPropNameMap.find( aPropName );
-                            if( !( aIt == rPropNameMap.end() ) )
+                            if (aIt != rPropNameMap.end())
                             {
                                 /* TODO
                                    OSL_TRACE(
@@ -2286,7 +2277,7 @@ css::uno::Reference<css::beans::XIntrospectionAccess> Implementation::inspect(
 
                             // Do we have the name already?
                             IntrospectionNameMap::iterator aIt = rPropNameMap.find( aPropName );
-                            if( !( aIt == rPropNameMap.end() ) )
+                            if (aIt != rPropNameMap.end())
                             {
                                 /* TODO:
                                    OSL_TRACE(
@@ -2378,9 +2369,9 @@ css::uno::Reference<css::beans::XIntrospectionAccess> Implementation::inspect(
                             }
                             else
                             {
-                                sal_Int32 iHashResult = (*aIt).second;
+                                sal_Int32 iHashResult = aIt->second;
 
-                                Reference<XIdlMethod> xExistingMethod = pAccess->maAllMethodSeq.at(iHashResult);
+                                Reference<XIdlMethod> xExistingMethod = pAccess->maAllMethodSeq[iHashResult];
 
                                 Reference< XIdlClass > xExistingMethClass =
                                     xExistingMethod->getDeclaringClass();
@@ -2389,7 +2380,7 @@ css::uno::Reference<css::beans::XIntrospectionAccess> Implementation::inspect(
                                     continue;
                             }
 
-                            pAccess->maAllMethodSeq.at(iAllExportedMethod) = rxMethod;
+                            pAccess->maAllMethodSeq[iAllExportedMethod] = rxMethod;
 
                             // If a concept has been set, is the method "normal"?
                             sal_Int32& rMethodConcept_i = pLocalMethodConcepts[ i ];

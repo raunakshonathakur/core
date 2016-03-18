@@ -46,26 +46,17 @@ GfxLink::GfxLink( const GfxLink& rGfxLink ) :
     ImplCopy( rGfxLink );
 }
 
-GfxLink::GfxLink( sal_uInt8* pBuf, sal_uInt32 nSize, GfxLinkType nType, bool bOwns ) :
+GfxLink::GfxLink( sal_uInt8* pBuf, sal_uInt32 nSize, GfxLinkType nType ) :
     mpImpData( new ImpGfxLink )
 {
-    DBG_ASSERT( (pBuf != nullptr && nSize) || (!bOwns && nSize == 0),
+    DBG_ASSERT( pBuf != nullptr && nSize,
                 "GfxLink::GfxLink(): empty/NULL buffer given" );
 
     meType = nType;
     mnBufSize = nSize;
     mpSwap = nullptr;
     mnUserId = 0UL;
-
-    if( bOwns )
-        mpBuf = new ImpBuffer( pBuf );
-    else if( nSize )
-    {
-        mpBuf = new ImpBuffer( nSize );
-        memcpy( mpBuf->mpBuffer, pBuf, nSize );
-    }
-    else
-        mpBuf = nullptr;
+    mpBuf = new ImpBuffer( pBuf );
 }
 
 GfxLink::~GfxLink()
@@ -174,22 +165,22 @@ bool GfxLink::LoadNative( Graphic& rGraphic )
             SvMemoryStream    aMemStm;
             ConvertDataFormat nCvtType;
 
-            aMemStm.SetBuffer( const_cast<sal_uInt8*>(pData), mnBufSize, false, mnBufSize );
+            aMemStm.SetBuffer( const_cast<sal_uInt8*>(pData), mnBufSize, mnBufSize );
 
             switch( meType )
             {
-                case( GFX_LINK_TYPE_NATIVE_GIF ): nCvtType = ConvertDataFormat::GIF; break;
+                case GFX_LINK_TYPE_NATIVE_GIF: nCvtType = ConvertDataFormat::GIF; break;
 
                 // #i15508# added BMP type for better exports (reload when swapped - checked, works)
-                case( GFX_LINK_TYPE_NATIVE_BMP ): nCvtType = ConvertDataFormat::BMP; break;
+                case GFX_LINK_TYPE_NATIVE_BMP: nCvtType = ConvertDataFormat::BMP; break;
 
-                case( GFX_LINK_TYPE_NATIVE_JPG ): nCvtType = ConvertDataFormat::JPG; break;
-                case( GFX_LINK_TYPE_NATIVE_PNG ): nCvtType = ConvertDataFormat::PNG; break;
-                case( GFX_LINK_TYPE_NATIVE_TIF ): nCvtType = ConvertDataFormat::TIF; break;
-                case( GFX_LINK_TYPE_NATIVE_WMF ): nCvtType = ConvertDataFormat::WMF; break;
-                case( GFX_LINK_TYPE_NATIVE_MET ): nCvtType = ConvertDataFormat::MET; break;
-                case( GFX_LINK_TYPE_NATIVE_PCT ): nCvtType = ConvertDataFormat::PCT; break;
-                case( GFX_LINK_TYPE_NATIVE_SVG ): nCvtType = ConvertDataFormat::SVG; break;
+                case GFX_LINK_TYPE_NATIVE_JPG: nCvtType = ConvertDataFormat::JPG; break;
+                case GFX_LINK_TYPE_NATIVE_PNG: nCvtType = ConvertDataFormat::PNG; break;
+                case GFX_LINK_TYPE_NATIVE_TIF: nCvtType = ConvertDataFormat::TIF; break;
+                case GFX_LINK_TYPE_NATIVE_WMF: nCvtType = ConvertDataFormat::WMF; break;
+                case GFX_LINK_TYPE_NATIVE_MET: nCvtType = ConvertDataFormat::MET; break;
+                case GFX_LINK_TYPE_NATIVE_PCT: nCvtType = ConvertDataFormat::PCT; break;
+                case GFX_LINK_TYPE_NATIVE_SVG: nCvtType = ConvertDataFormat::SVG; break;
 
                 default: nCvtType = ConvertDataFormat::Unknown; break;
             }
@@ -295,7 +286,7 @@ SvStream& ReadGfxLink( SvStream& rIStream, GfxLink& rGfxLink)
     pBuf = new sal_uInt8[ nSize ];
     rIStream.Read( pBuf, nSize );
 
-    rGfxLink = GfxLink( pBuf, nSize, (GfxLinkType) nType, true );
+    rGfxLink = GfxLink( pBuf, nSize, (GfxLinkType) nType );
     rGfxLink.SetUserId( nUserId );
 
     if( bMapAndSizeValid )

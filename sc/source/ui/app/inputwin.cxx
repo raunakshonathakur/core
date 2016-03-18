@@ -1886,7 +1886,6 @@ void ScTextWnd::TextGrabFocus()
 
 ScPosWnd::ScPosWnd( vcl::Window* pParent ) :
     ComboBox    ( pParent, WinBits(WB_HIDE | WB_DROPDOWN) ),
-    pAccel      ( nullptr ),
     nTipVisible ( 0 ),
     bFormulaMode( false )
 {
@@ -1912,7 +1911,6 @@ void ScPosWnd::dispose()
 
     HideTip();
 
-    delete pAccel;
     ComboBox::dispose();
 }
 
@@ -2096,9 +2094,9 @@ static ScNameInputType lcl_GetInputType( const OUString& rText )
 
         if (rText == ScGlobal::GetRscString(STR_MANAGE_NAMES))
             eRet = SC_MANAGE_NAMES;
-        else if ( aRange.Parse( rText, pDoc, eConv ) & SCA_VALID )
+        else if ( aRange.Parse( rText, pDoc, eConv ) & ScRefFlags::VALID )
             eRet = SC_NAME_INPUT_RANGE;
-        else if ( aAddress.Parse( rText, pDoc, eConv ) & SCA_VALID )
+        else if ( aAddress.Parse( rText, pDoc, eConv ) & ScRefFlags::VALID )
             eRet = SC_NAME_INPUT_CELL;
         else if ( ScRangeUtil::MakeRangeFromName( rText, pDoc, nTab, aRange, RUTL_NAMES, eConv ) )
             eRet = SC_NAME_INPUT_NAMEDRANGE;
@@ -2245,7 +2243,7 @@ void ScPosWnd::DoEnter()
                     {
                         ScRangeName aNewRanges( *pNames );
                         ScAddress aCursor( rViewData.GetCurX(), rViewData.GetCurY(), rViewData.GetTabNo() );
-                        OUString aContent(aSelection.Format(SCR_ABS_3D, &rDoc, rDoc.GetAddressConvention()));
+                        OUString aContent(aSelection.Format(ScRefFlags::RANGE_ABS_3D, &rDoc, rDoc.GetAddressConvention()));
                         ScRangeData* pNew = new ScRangeData( &rDoc, aText, aContent, aCursor );
                         if ( aNewRanges.insert(pNew) )
                         {
@@ -2271,7 +2269,7 @@ void ScPosWnd::DoEnter()
                         // be in Calc A1 format.  Convert the text.
                         ScRange aRange(0,0, rViewData.GetTabNo());
                         aRange.ParseAny(aText, &rDoc, rDoc.GetAddressConvention());
-                        aText = aRange.Format(SCR_ABS_3D, &rDoc, ::formula::FormulaGrammar::CONV_OOO);
+                        aText = aRange.Format(ScRefFlags::RANGE_ABS_3D, &rDoc, ::formula::FormulaGrammar::CONV_OOO);
                     }
 
                     SfxStringItem aPosItem( SID_CURRENTCELL, aText );
@@ -2279,7 +2277,7 @@ void ScPosWnd::DoEnter()
 
                     pViewSh->GetViewData().GetDispatcher().Execute( SID_CURRENTCELL,
                                         SfxCallMode::SYNCHRON | SfxCallMode::RECORD,
-                                        &aPosItem, &aUnmarkItem, 0L );
+                                        &aPosItem, &aUnmarkItem, 0 );
                 }
             }
         }

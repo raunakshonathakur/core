@@ -136,20 +136,18 @@ public:
     /// Forwarded to the print manager.
     virtual sal_uInt16 SetPrinter (
         SfxPrinter* pNewPrinter,
-        SfxPrinterChangeFlags nDiffFlags = SFX_PRINTER_ALL, bool bIsApi=false) override;
+        SfxPrinterChangeFlags nDiffFlags = SFX_PRINTER_ALL) override;
 
     /// Forward methods to main sub shell.
     virtual void WriteUserDataSequence (
-        css::uno::Sequence< css::beans::PropertyValue >&,
-        bool bBrowse = false) override;
+        css::uno::Sequence< css::beans::PropertyValue >&) override;
 
     /** Pass the given properties to the main view shell.  After that we
         ensure that the right view shell type is displayed in the center
         pane.
     */
     virtual void ReadUserDataSequence (
-        const css::uno::Sequence< css::beans::PropertyValue >&,
-        bool bBrowse = false) override;
+        const css::uno::Sequence< css::beans::PropertyValue >&) override;
 
     virtual void UIActivating( SfxInPlaceClient* ) override;
     virtual void UIDeactivated( SfxInPlaceClient* ) override;

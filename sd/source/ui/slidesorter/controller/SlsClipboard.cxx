@@ -216,16 +216,16 @@ void Clipboard::HandleSlotCall (SfxRequest& rRequest)
     }
 }
 
-void Clipboard::DoCut (vcl::Window* pWindow)
+void Clipboard::DoCut ()
 {
     if (mrSlideSorter.GetModel().GetPageCount() > 1)
     {
-        DoCopy(pWindow);
-        DoDelete(pWindow);
+        DoCopy();
+        DoDelete();
     }
 }
 
-void Clipboard::DoDelete (vcl::Window* )
+void Clipboard::DoDelete()
 {
     if (mrSlideSorter.GetModel().GetPageCount() > 1)
     {
@@ -233,18 +233,18 @@ void Clipboard::DoDelete (vcl::Window* )
     }
 }
 
-void Clipboard::DoCopy (vcl::Window* pWindow )
+void Clipboard::DoCopy ()
 {
-    CreateSlideTransferable( pWindow, false );
+    CreateSlideTransferable( nullptr, false );
 }
 
-void Clipboard::DoPaste (vcl::Window* pWindow)
+void Clipboard::DoPaste ()
 {
     SdTransferable* pClipTransferable = SD_MOD()->pTransferClip;
 
     if (pClipTransferable!=nullptr && pClipTransferable->IsPageTransferable())
     {
-        sal_Int32 nInsertPosition = GetInsertionPosition(pWindow);
+        sal_Int32 nInsertPosition = GetInsertionPosition();
 
         if (nInsertPosition >= 0)
         {
@@ -258,7 +258,7 @@ void Clipboard::DoPaste (vcl::Window* pWindow)
     }
 }
 
-sal_Int32 Clipboard::GetInsertionPosition (vcl::Window* pWindow)
+sal_Int32 Clipboard::GetInsertionPosition ()
 {
     sal_Int32 nInsertPosition = -1;
 
@@ -286,7 +286,7 @@ sal_Int32 Clipboard::GetInsertionPosition (vcl::Window* pWindow)
     else if (mrController.GetFocusManager().IsFocusShowing())
     {
         // Use the focus to determine the insertion position.
-        ScopedVclPtrInstance< SdInsertPasteDlg > aDialog(pWindow);
+        ScopedVclPtrInstance< SdInsertPasteDlg > aDialog(nullptr);
         if (aDialog->Execute() == RET_OK)
         {
             nInsertPosition = mrController.GetFocusManager().GetFocusedPageIndex();

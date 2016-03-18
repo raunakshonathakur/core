@@ -209,15 +209,15 @@ public:
     // Set a logical enclosing rectangle for all marked objects.
     // It is not guaranteed if this succeeds, as a horizontal
     // line has always a height of 0
-    void SetMarkedObjRect(const Rectangle& rRect, bool bCopy=false);
+    void SetMarkedObjRect(const Rectangle& rRect);
     void MoveMarkedObj(const Size& rSiz, bool bCopy=false);
     void ResizeMarkedObj(const Point& rRef, const Fraction& xFact, const Fraction& yFact, bool bCopy=false);
     void ResizeMultMarkedObj(const Point& rRef, const Fraction& xFact, const Fraction& yFact, const bool bCopy, const bool bWdh, const bool bHgt);
     long GetMarkedObjRotate() const;
     void RotateMarkedObj(const Point& rRef, long nAngle, bool bCopy=false);
     void MirrorMarkedObj(const Point& rRef1, const Point& rRef2, bool bCopy=false);
-    void MirrorMarkedObjHorizontal(bool bCopy=false);
-    void MirrorMarkedObjVertical(bool bCopy=false);
+    void MirrorMarkedObjHorizontal();
+    void MirrorMarkedObjVertical();
     long GetMarkedObjShear() const;
     void ShearMarkedObj(const Point& rRef, long nAngle, bool bVShear=false, bool bCopy=false);
     void CrookMarkedObj(const Point& rRef, const Point& rRad, SdrCrookMode eMode, bool bVertical=false, bool bNoContortion=false, bool bCopy=false);
@@ -225,12 +225,12 @@ public:
 
     // copy marked objects and mark them instead of the old ones
     void CopyMarkedObj();
-    void SetAllMarkedRect(const Rectangle& rRect, bool bCopy=false) { SetMarkedObjRect(rRect,bCopy); }
-    void MoveAllMarked(const Size& rSiz, bool bCopy=false) { MoveMarkedObj   (rSiz,bCopy); }
-    void ResizeAllMarked(const Point& rRef, const Fraction& xFact, const Fraction& yFact, bool bCopy=false) { ResizeMarkedObj (rRef,xFact,yFact,bCopy); }
-    void RotateAllMarked(const Point& rRef, long nAngle, bool bCopy=false) { RotateMarkedObj(rRef,nAngle,bCopy); }
-    void MirrorAllMarkedHorizontal(bool bCopy=false) { MirrorMarkedObjHorizontal(bCopy); }
-    void MirrorAllMarkedVertical(bool bCopy=false) { MirrorMarkedObjVertical(bCopy); }
+    void SetAllMarkedRect(const Rectangle& rRect) { SetMarkedObjRect(rRect); }
+    void MoveAllMarked(const Size& rSiz, bool bCopy=false) { MoveMarkedObj(rSiz,bCopy); }
+    void ResizeAllMarked(const Point& rRef, const Fraction& xFact, const Fraction& yFact) { ResizeMarkedObj(rRef,xFact,yFact); }
+    void RotateAllMarked(const Point& rRef, long nAngle) { RotateMarkedObj(rRef,nAngle); }
+    void MirrorAllMarkedHorizontal() { MirrorMarkedObjHorizontal(); }
+    void MirrorAllMarkedVertical() { MirrorMarkedObjVertical(); }
     void CopyMarked() { CopyMarkedObj(); }
     bool IsMoveAllowed() const { ForcePossibilities(); return bMoveAllowed && !bMoveProtect; }
     bool IsResizeAllowed(bool bProp=false) const;
@@ -323,10 +323,8 @@ public:
     // Subsequently mark the new group . If the group spawns multiple
     // pages a group is created per page.
     // All groups created are subsequently marked.
-    // Using pUserGrp an own group object can be set.
-    // This is not used immediately, but via Clone copied.
-    // The method creates SdrObjGroup-instancess if NULL is passed,
-    void GroupMarked(const SdrObject* pUserGrp=nullptr);
+    // The method creates SdrObjGroup-instances.
+    void GroupMarked();
 
     // All marked object groups are dissolved (1 level).
     // Now all previously marked member objects are marked.
@@ -341,15 +339,14 @@ public:
     // return sal_True, if at least one marked object could be converted.
     // Also member objects of group objects are converted.
     // For a better description see: SdrObj.HXX
-    bool IsConvertToPathObjPossible(bool bLineToArea) const { ForcePossibilities(); return bLineToArea ? bCanConvToPathLineToArea : bCanConvToPath; }
-    bool IsConvertToPolyObjPossible(bool bLineToArea) const { ForcePossibilities(); return bLineToArea ? bCanConvToPolyLineToArea : bCanConvToPoly; }
+    bool IsConvertToPathObjPossible() const { ForcePossibilities(); return bCanConvToPath; }
+    bool IsConvertToPolyObjPossible() const { ForcePossibilities(); return bCanConvToPoly; }
     bool IsConvertToContourPossible() const { ForcePossibilities(); return bCanConvToContour; }
     void ConvertMarkedToPathObj(bool bLineToArea);
-    void ConvertMarkedToPolyObj(bool bLineToArea);
+    void ConvertMarkedToPolyObj();
 
     // Align all marked objects vertically. Normally the SnapRect of an object is used.
-    // If bBoundRects=sal_True then BoundRects is used instead of SnapRect.
-    void AlignMarkedObjects(SdrHorAlign eHor, SdrVertAlign eVert, bool bBoundRects=false);
+    void AlignMarkedObjects(SdrHorAlign eHor, SdrVertAlign eVert);
     bool IsAlignPossible() const;
 
     // move marked objects "up"

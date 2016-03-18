@@ -74,6 +74,7 @@
 #include <basic/basmgr.hxx>
 #include <vbahelper/vbaaccesshelper.hxx>
 #include <memory>
+#include <stack>
 
 using namespace com::sun::star;
 using namespace formula;
@@ -969,13 +970,12 @@ void ScInterpreter::PopSingleRef( ScAddress& rAdr )
 
 void ScInterpreter::DoubleRefToVars( const formula::FormulaToken* p,
         SCCOL& rCol1, SCROW &rRow1, SCTAB& rTab1,
-        SCCOL& rCol2, SCROW &rRow2, SCTAB& rTab2,
-        bool bDontCheckForTableOp )
+        SCCOL& rCol2, SCROW &rRow2, SCTAB& rTab2 )
 {
     const ScComplexRefData& rCRef = *p->GetDoubleRef();
     SingleRefToVars( rCRef.Ref1, rCol1, rRow1, rTab1);
     SingleRefToVars( rCRef.Ref2, rCol2, rRow2, rTab2);
-    if (!pDok->m_TableOpList.empty() && !bDontCheckForTableOp)
+    if (!pDok->m_TableOpList.empty())
     {
         ScRange aRange( rCol1, rRow1, rTab1, rCol2, rRow2, rTab2 );
         if ( IsTableOpInRange( aRange ) )
@@ -1025,8 +1025,7 @@ ScDBRangeBase* ScInterpreter::PopDBDoubleRef()
 }
 
 void ScInterpreter::PopDoubleRef(SCCOL& rCol1, SCROW &rRow1, SCTAB& rTab1,
-                                 SCCOL& rCol2, SCROW &rRow2, SCTAB& rTab2,
-                                 bool bDontCheckForTableOp )
+                                 SCCOL& rCol2, SCROW &rRow2, SCTAB& rTab2)
 {
     if( sp )
     {
@@ -1038,8 +1037,7 @@ void ScInterpreter::PopDoubleRef(SCCOL& rCol1, SCROW &rRow1, SCTAB& rTab1,
                 nGlobalError = p->GetError();
                 break;
             case svDoubleRef:
-                DoubleRefToVars( p, rCol1, rRow1, rTab1, rCol2, rRow2, rTab2,
-                        bDontCheckForTableOp);
+                DoubleRefToVars( p, rCol1, rRow1, rTab1, rCol2, rRow2, rTab2);
                 break;
             default:
                 SetError( errIllegalParameter);
@@ -3567,7 +3565,36 @@ double applyImplicitIntersection(const sc::RangeMatrix& rMat, const ScAddress& r
     return fVal;
 }
 
+// Test for Functions that evaluate an error code and directly set nGlobalError to 0
+bool IsErrFunc(OpCode oc)
+{
+    switch (oc)
+    {
+        case ocCount :
+        case ocCount2 :
+        case ocErrorType :
+        case ocIsEmpty :
+        case ocIsErr :
+        case ocIsError :
+        case ocIsFormula :
+        case ocIsLogical :
+        case ocIsNA :
+        case ocIsNonString :
+        case ocIsRef :
+        case ocIsString :
+        case ocIsValue :
+        case ocN :
+        case ocType :
+        case ocIfError :
+        case ocIfNA :
+        case ocErrorType_ODF :
+            return true;
+        default:
+            return false;
+    }
 }
+
+} //namespace
 
 StackVar ScInterpreter::Interpret()
 {
@@ -3575,6 +3602,7 @@ StackVar ScInterpreter::Interpret()
     sal_uLong nRetIndexExpr = 0;
     sal_uInt16 nErrorFunction = 0;
     sal_uInt16 nErrorFunctionCount = 0;
+    std::stack<sal_uInt16> aErrorFunctionStack;
     sal_uInt16 nStackBase;
 
     nGlobalError = 0;
@@ -3995,7 +4023,15 @@ StackVar ScInterpreter::Interpret()
                 case ocGrowth           : ScGrowth();                   break;
                 case ocLinest           : ScLinest();                   break;
                 case ocLogest           : ScLogest();                   break;
-                case ocForecast         : ScForecast();                 break;
+                case ocForecast_LIN     :
+                case ocForecast         : ScForecast();                   break;
+                case ocForecast_ETS_ADD : ScForecast_Ets( etsAdd );       break;
+                case ocForecast_ETS_SEA : ScForecast_Ets( etsSeason );    break;
+                case ocForecast_ETS_MUL : ScForecast_Ets( etsMult );      break;
+                case ocForecast_ETS_PIA : ScForecast_Ets( etsPIAdd );     break;
+                case ocForecast_ETS_PIM : ScForecast_Ets( etsPIMult );    break;
+                case ocForecast_ETS_STA : ScForecast_Ets( etsStatAdd );   break;
+                case ocForecast_ETS_STM : ScForecast_Ets( etsStatMult );  break;
                 case ocGammaLn          :
                 case ocGammaLn_MS       : ScLogGamma();                 break;
                 case ocGamma            : ScGamma();                    break;
@@ -4108,53 +4144,34 @@ StackVar ScInterpreter::Interpret()
             else
                 nLevel = 0;
             if ( nLevel == 1 || (nLevel == 2 && aCode.IsEndOfPath()) )
+            {
+                if (nLevel == 1)
+                    aErrorFunctionStack.push( nErrorFunction);
                 bGotResult = JumpMatrix( nLevel );
+                if (aErrorFunctionStack.empty())
+                    assert(!"ScInterpreter::Interpret - aErrorFunctionStack empty in JumpMatrix context");
+                else
+                {
+                    nErrorFunction = aErrorFunctionStack.top();
+                    if (bGotResult)
+                        aErrorFunctionStack.pop();
+                }
+            }
             else
                 pJumpMatrix = nullptr;
         } while ( bGotResult );
 
-// Functions that evaluate an error code and directly set nGlobalError to 0,
-// usage: switch( OpCode ) { CASE_OCERRFUNC statements; }
-#define CASE_OCERRFUNC \
-    case ocCount : \
-    case ocCount2 : \
-    case ocErrorType : \
-    case ocIsEmpty : \
-    case ocIsErr : \
-    case ocIsError : \
-    case ocIsFormula : \
-    case ocIsLogical : \
-    case ocIsNA : \
-    case ocIsNonString : \
-    case ocIsRef : \
-    case ocIsString : \
-    case ocIsValue : \
-    case ocN : \
-    case ocType : \
-    case ocIfError : \
-    case ocIfNA : \
-    case ocErrorType_ODF :
+        if( IsErrFunc(eOp) )
+            ++nErrorFunction;
 
-        switch ( eOp )
-        {
-            CASE_OCERRFUNC
-                 ++ nErrorFunction;
-            default:
-                ;   // nothing
-        }
         if ( nGlobalError )
         {
             if ( !nErrorFunctionCount )
             {   // count of errorcode functions in formula
                 for ( FormulaToken* t = rArr.FirstRPN(); t; t = rArr.NextRPN() )
                 {
-                    switch ( t->GetOpCode() )
-                    {
-                        CASE_OCERRFUNC
-                             ++nErrorFunctionCount;
-                        default:
-                            ;   // nothing
-                    }
+                    if ( IsErrFunc(t->GetOpCode()) )
+                        ++nErrorFunctionCount;
                 }
             }
             if ( nErrorFunction >= nErrorFunctionCount )

@@ -91,8 +91,7 @@ public:
                         Polygon( const Rectangle& rRect,
                                  sal_uInt32 nHorzRound, sal_uInt32 nVertRound );
                         Polygon( const Point& rCenter,
-                                 long nRadX, long nRadY,
-                                 sal_uInt16 nPoints = 0 );
+                                 long nRadX, long nRadY );
                         Polygon( const Rectangle& rBound,
                                  const Point& rStart, const Point& rEnd,
                                  PolyStyle ePolyStyle = POLY_ARC,
@@ -123,7 +122,7 @@ public:
     bool                IsInside( const Point& rPt ) const;
     bool                IsRightOrientated() const;
     double              CalcDistance( sal_uInt16 nPt1, sal_uInt16 nPt2 );
-    void                Clip( const Rectangle& rRect, bool bPolygon = true );
+    void                Clip( const Rectangle& rRect );
     void                Optimize( PolyOptimizeFlags nOptimizeFlags );
 
     /** Adaptive subdivision of polygons with curves
@@ -153,7 +152,7 @@ public:
     void                Rotate( const Point& rCenter, double fSin, double fCos );
     void                Rotate( const Point& rCenter, sal_uInt16 nAngle10 );
 
-    void                Insert( sal_uInt16 nPos, const Point& rPt, PolyFlags eFlags = POLY_NORMAL );
+    void                Insert( sal_uInt16 nPos, const Point& rPt );
     void                Insert( sal_uInt16 nPos, const tools::Polygon& rPoly );
 
     const Point&        operator[]( sal_uInt16 nPos ) const { return GetPoint( nPos ); }
@@ -227,16 +226,11 @@ public:
         @param rResult
         The resulting subdivided polygon
 
-        @param d
-        This parameter controls the amount of subdivision. The
-        original curve is guaranteed to not differ by more than this
-        amount per bezier segment from the subdivided
-        lines. Concretely, if the polygon is in device coordinates and
-        d equals 1.0, then the difference between the subdivided and
+        If the polygon is in device coordinates, then the difference between the subdivided and
         the original polygon is guaranteed to be smaller than one
         pixel.
      */
-    void                AdaptiveSubdivide( tools::PolyPolygon& rResult, const double d = 1.0 ) const;
+    void                AdaptiveSubdivide( tools::PolyPolygon& rResult ) const;
     static tools::PolyPolygon  SubdivideBezier( const tools::PolyPolygon& rPolyPoly );
 
     void                GetIntersection( const tools::PolyPolygon& rPolyPoly, tools::PolyPolygon& rResult ) const;

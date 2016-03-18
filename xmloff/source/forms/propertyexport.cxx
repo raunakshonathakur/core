@@ -472,11 +472,11 @@ namespace xmloff
     }
 
     void OPropertyExport::exportStringSequenceAttribute(const sal_uInt16 _nAttributeNamespaceKey, const sal_Char* _pAttributeName,
-        const OUString& _rPropertyName,
-        const sal_Unicode _aQuoteCharacter, const sal_Unicode _aListSeparator)
+        const OUString& _rPropertyName)
     {
+        const sal_Unicode _aListSeparator = ',';
+        const sal_Unicode _aQuoteCharacter = '"';
         DBG_CHECK_PROPERTY( _rPropertyName, Sequence< OUString > );
-        OSL_ENSURE(_aListSeparator != 0, "OPropertyExport::exportStringSequenceAttribute: invalid separator character!");
 
         Sequence< OUString > aItems;
         m_xProps->getPropertyValue( _rPropertyName ) >>= aItems;
@@ -497,10 +497,8 @@ namespace xmloff
                 ++pItems
             )
         {
-            OSL_ENSURE(!_aQuoteCharacter || (-1 == pItems->indexOf(_aQuoteCharacter)),
+            OSL_ENSURE(-1 == pItems->indexOf(_aQuoteCharacter),
                 "OPropertyExport::exportStringSequenceAttribute: there is an item which contains the quote character!");
-            OSL_ENSURE(_aQuoteCharacter || (-1 == pItems->indexOf(_aListSeparator)),
-                "OPropertyExport::exportStringSequenceAttribute: no quote character, but there is an item containing the separator character!");
 
             if (bQuote)
                 sFinalList += sQuote;

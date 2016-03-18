@@ -229,24 +229,11 @@ void Outliner::Init( sal_uInt16 nMode )
     EnableUndo(bWasUndoEnabled);
 }
 
-void Outliner::SetMaxDepth( sal_Int16 nDepth, bool bCheckParagraphs )
+void Outliner::SetMaxDepth( sal_Int16 nDepth )
 {
     if( nMaxDepth != nDepth )
     {
         nMaxDepth = std::min( nDepth, (sal_Int16)(SVX_MAX_NUM-1) );
-
-        if( bCheckParagraphs )
-        {
-            sal_Int32 nParagraphs = pParaList->GetParagraphCount();
-            for ( sal_Int32 nPara = 0; nPara < nParagraphs; nPara++ )
-            {
-                Paragraph* pPara = pParaList->GetParagraph( nPara );
-                if( pPara && pPara->GetDepth() > nMaxDepth )
-                {
-                    SetDepth( pPara, nMaxDepth );
-                }
-            }
-        }
     }
 }
 
@@ -506,7 +493,7 @@ void Outliner::SetText( const OUString& rText, Paragraph* pPara )
 
 // pView == 0 -> Ignore tabs
 
-bool Outliner::ImpConvertEdtToOut( sal_Int32 nPara,EditView* pView)
+bool Outliner::ImpConvertEdtToOut( sal_Int32 nPara )
 {
 
     bool bConverted = false;
@@ -565,13 +552,7 @@ bool Outliner::ImpConvertEdtToOut( sal_Int32 nPara,EditView* pView)
 
     if ( aDelSel.HasRange() )
     {
-        if ( pView )
-        {
-            pView->SetSelection( aDelSel );
-            pView->DeleteSelected();
-        }
-        else
-            pEditEngine->QuickDelete( aDelSel );
+        pEditEngine->QuickDelete( aDelSel );
     }
 
     const SfxInt16Item& rLevel = static_cast<const SfxInt16Item&>( pEditEngine->GetParaAttrib( nPara, EE_PARA_OUTLLEVEL ) );
@@ -599,7 +580,7 @@ void Outliner::SetText( const OutlinerParaObject& rPObj )
 
     bFirstParaIsEmpty = false;
 
-    pParaList->Clear( true );
+    pParaList->Clear();
     for( sal_Int32 nCurPara = 0; nCurPara < rPObj.Count(); nCurPara++ )
     {
         Paragraph* pPara = new Paragraph( rPObj.GetParagraphData(nCurPara));
@@ -629,7 +610,7 @@ void Outliner::AddText( const OutlinerParaObject& rPObj )
     sal_Int32 nPara;
     if( bFirstParaIsEmpty )
     {
-        pParaList->Clear( true );
+        pParaList->Clear();
         pEditEngine->SetText(rPObj.GetTextObject());
         nPara = 0;
     }
@@ -709,14 +690,12 @@ void Outliner::ImplCheckNumBulletItem( sal_Int32 nPara )
             pPara->aBulSize.Width() = -1;
 }
 
-void Outliner::ImplSetLevelDependendStyleSheet( sal_Int32 nPara, SfxStyleSheet* pLevelStyle )
+void Outliner::ImplSetLevelDependendStyleSheet( sal_Int32 nPara )
 {
 
     DBG_ASSERT( ( ImplGetOutlinerMode() == OUTLINERMODE_OUTLINEOBJECT ) || ( ImplGetOutlinerMode() == OUTLINERMODE_OUTLINEVIEW ), "SetLevelDependendStyleSheet: Wrong Mode!" );
 
-    SfxStyleSheet* pStyle = pLevelStyle;
-    if ( !pStyle )
-        pStyle = GetStyleSheet( nPara );
+    SfxStyleSheet* pStyle = GetStyleSheet( nPara );
 
     if ( pStyle )
     {
@@ -743,7 +722,7 @@ void Outliner::ImplSetLevelDependendStyleSheet( sal_Int32 nPara, SfxStyleSheet* 
     }
 }
 
-void Outliner::ImplInitDepth( sal_Int32 nPara, sal_Int16 nDepth, bool bCreateUndo, bool bUndoAction )
+void Outliner::ImplInitDepth( sal_Int32 nPara, sal_Int16 nDepth, bool bCreateUndo )
 {
 
     DBG_ASSERT( ( nDepth >= nMinDepth ) && ( nDepth <= nMaxDepth ), "ImplInitDepth - Depth is invalid!" );
@@ -762,8 +741,6 @@ void Outliner::ImplInitDepth( sal_Int32 nPara, sal_Int16 nDepth, bool bCreateUnd
         pEditEngine->SetUpdateMode( false );
 
         bool bUndo = bCreateUndo && IsUndoEnabled();
-        if ( bUndo && bUndoAction )
-            UndoActionStart( OLUNDO_DEPTH );
 
         SfxItemSet aAttrs( pEditEngine->GetParaAttribs( nPara ) );
         aAttrs.Put( SfxInt16Item( EE_PARA_OUTLLEVEL, nDepth ) );
@@ -774,8 +751,6 @@ void Outliner::ImplInitDepth( sal_Int32 nPara, sal_Int16 nDepth, bool bCreateUnd
         if ( bUndo )
         {
             InsertUndo( new OutlinerUndoChangeDepth( this, nPara, nOldDepth, nDepth ) );
-            if ( bUndoAction )
-                UndoActionEnd( OLUNDO_DEPTH );
         }
 
         pEditEngine->SetUpdateMode( bUpdate );
@@ -802,7 +777,6 @@ bool Outliner::Expand( Paragraph* pPara )
             pUndo->nCount = pParaList->GetAbsPos( pPara );
         }
         pHdlParagraph = pPara;
-        bIsExpanding = true;
         pParaList->Expand( pPara );
         InvalidateBullet(pParaList->GetAbsPos(pPara));
         if( bUndo )
@@ -833,7 +807,6 @@ bool Outliner::Collapse( Paragraph* pPara )
         }
 
         pHdlParagraph = pPara;
-        bIsExpanding = false;
         pParaList->Collapse( pPara );
         InvalidateBullet(pParaList->GetAbsPos(pPara));
         if( bUndo )
@@ -1130,7 +1103,7 @@ sal_uLong Outliner::Read( SvStream& rInput, const OUString& rBaseURL, sal_uInt16
     bFirstParaIsEmpty = false;
 
     sal_Int32 nParas = pEditEngine->GetParagraphCount();
-     pParaList->Clear( true );
+     pParaList->Clear();
     for ( sal_Int32 n = 0; n < nParas; n++ )
     {
         Paragraph* pPara = new Paragraph( 0 );
@@ -1280,23 +1253,24 @@ bool Outliner::ImpCanDeleteSelectedPages( OutlinerView* pCurView )
     return RemovingPagesHdl( pCurView );
 }
 
-Outliner::Outliner( SfxItemPool* pPool, sal_uInt16 nMode )
-: nMinDepth( -1 )
+Outliner::Outliner(SfxItemPool* pPool, sal_uInt16 nMode)
+    : pHdlParagraph(nullptr)
+    , mnFirstSelPage(0)
+    , nDepthChangedHdlPrevDepth(0)
+    , mnDepthChangeHdlPrevFlags(ParaFlag::NONE)
+    , nMaxDepth(9)
+    , nMinDepth(-1)
+    , nFirstPage(1)
+    , bFirstParaIsEmpty(true)
+    , nBlockInsCallback(0)
+    , bStrippingPortions(false)
+    , bPasting(false)
 {
-
-    bStrippingPortions  = false;
-    bPasting            = false;
-
-    nFirstPage          = 1;
-    nBlockInsCallback   = 0;
-
-    nMaxDepth           = 9;
 
     pParaList = new ParagraphList;
     pParaList->SetVisibleStateChangedHdl( LINK( this, Outliner, ParaVisibleStateChangedHdl ) );
     Paragraph* pPara = new Paragraph( 0 );
     pParaList->Append(pPara);
-    bFirstParaIsEmpty = true;
 
     pEditEngine = new OutlinerEditEng( this, pPool );
     pEditEngine->SetBeginMovingParagraphsHdl( LINK( this, Outliner, BeginMovingParagraphsHdl ) );
@@ -1310,7 +1284,7 @@ Outliner::Outliner( SfxItemPool* pPool, sal_uInt16 nMode )
 Outliner::~Outliner()
 {
 
-    pParaList->Clear( true );
+    pParaList->Clear();
     delete pParaList;
     delete pEditEngine;
 }
@@ -1940,7 +1914,7 @@ void Outliner::Clear()
     {
         ImplBlockInsertionCallbacks( true );
         pEditEngine->Clear();
-        pParaList->Clear( true );
+        pParaList->Clear();
         pParaList->Append( new Paragraph( nMinDepth ));
         bFirstParaIsEmpty = true;
         ImplBlockInsertionCallbacks( false );

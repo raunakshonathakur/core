@@ -107,10 +107,10 @@ namespace
         const OSQLParseNode* pNewSqlParseNode = _rParser.parseTree( aErrorMsg, _rStatement );
         if ( !pNewSqlParseNode )
         {
-            OUString sSQLStateGeneralError( getStandardSQLState( SQL_GENERAL_ERROR ) );
+            OUString sSQLStateGeneralError( getStandardSQLState( StandardSQLState::GENERAL_ERROR ) );
             SQLException aError2( aErrorMsg, _rxContext, sSQLStateGeneralError, 1000, Any() );
             SQLException aError1( _rStatement, _rxContext, sSQLStateGeneralError, 1000, makeAny( aError2 ) );
-            throw SQLException(_rParser.getContext().getErrorMessage(OParseContext::ERROR_GENERAL),_rxContext,sSQLStateGeneralError,1000,makeAny(aError1));
+            throw SQLException(_rParser.getContext().getErrorMessage(OParseContext::ErrorCode::General),_rxContext,sSQLStateGeneralError,1000,makeAny(aError1));
         }
         return pNewSqlParseNode;
     }
@@ -126,7 +126,7 @@ namespace
         // determine the statement type
         _rIterator.setParseTree( pStatementNode );
         _rIterator.traverseAll();
-        bool bIsSingleSelect = ( _rIterator.getStatementType() == SQL_STATEMENT_SELECT );
+        bool bIsSingleSelect = ( _rIterator.getStatementType() == OSQLStatementType::Select );
 
         // throw the error, if necessary
         if ( !bIsSingleSelect || SQL_ISRULE( pStatementNode, union_statement ) ) // #i4229# OJ
@@ -134,9 +134,9 @@ namespace
             // restore the old node before throwing the exception
             _rIterator.setParseTree( pOldNode );
             // and now really ...
-            SQLException aError1( _rOriginatingCommand, _rxContext, getStandardSQLState( SQL_GENERAL_ERROR ), 1000, Any() );
+            SQLException aError1( _rOriginatingCommand, _rxContext, getStandardSQLState( StandardSQLState::GENERAL_ERROR ), 1000, Any() );
             throw SQLException( DBACORE_RESSTRING( RID_STR_ONLY_QUERY ), _rxContext,
-                getStandardSQLState( SQL_GENERAL_ERROR ), 1000, makeAny( aError1 ) );
+                getStandardSQLState( StandardSQLState::GENERAL_ERROR ), 1000, makeAny( aError1 ) );
         }
 
         delete pOldNode;
@@ -488,8 +488,8 @@ OUString OSingleSelectQueryComposer::impl_getColumnRealName_throw(const Referenc
                 if(sTableName.indexOf('.') != -1)
                 {
                     OUString aCatlog,aSchema,aTable;
-                    ::dbtools::qualifiedNameComponents(m_xMetaData,sTableName,aCatlog,aSchema,aTable,::dbtools::eInDataManipulation);
-                    sTableName = ::dbtools::composeTableName( m_xMetaData, aCatlog, aSchema, aTable, true, ::dbtools::eInDataManipulation );
+                    ::dbtools::qualifiedNameComponents(m_xMetaData,sTableName,aCatlog,aSchema,aTable,::dbtools::EComposeRule::InDataManipulation);
+                    sTableName = ::dbtools::composeTableName( m_xMetaData, aCatlog, aSchema, aTable, true, ::dbtools::EComposeRule::InDataManipulation );
                 }
                 else if (!sTableName.isEmpty())
                     sTableName = ::dbtools::quoteName(aQuote,sTableName);
@@ -1089,22 +1089,22 @@ sal_Int32 OSingleSelectQueryComposer::getPredicateType(OSQLParseNode * _pPredica
     sal_Int32 nPredicate = SQLFilterOperator::EQUAL;
     switch (_pPredicate->getNodeType())
     {
-        case SQL_NODE_EQUAL:
+        case SQLNodeType::Equal:
             nPredicate = SQLFilterOperator::EQUAL;
             break;
-        case SQL_NODE_NOTEQUAL:
+        case SQLNodeType::NotEqual:
             nPredicate = SQLFilterOperator::NOT_EQUAL;
             break;
-        case SQL_NODE_LESS:
+        case SQLNodeType::Less:
             nPredicate = SQLFilterOperator::LESS;
             break;
-        case SQL_NODE_LESSEQ:
+        case SQLNodeType::LessEq:
             nPredicate = SQLFilterOperator::LESS_EQUAL;
             break;
-        case SQL_NODE_GREAT:
+        case SQLNodeType::Great:
             nPredicate = SQLFilterOperator::GREATER;
             break;
-        case SQL_NODE_GREATEQ:
+        case SQLNodeType::GreatEq:
             nPredicate = SQLFilterOperator::GREATER_EQUAL;
             break;
         default:
@@ -1130,7 +1130,7 @@ bool OSingleSelectQueryComposer::setComparsionPredicate(OSQLParseNode * pConditi
 
             aItem.Handle = getPredicateType(pCondition->getChild(i));
             // don't display the equal
-            if (pCondition->getChild(i)->getNodeType() == SQL_NODE_EQUAL)
+            if (pCondition->getChild(i)->getNodeType() == SQLNodeType::Equal)
                 i++;
 
             // go forward
@@ -1145,34 +1145,34 @@ bool OSingleSelectQueryComposer::setComparsionPredicate(OSQLParseNode * pConditi
             sal_Int32 i = pCondition->count() - 2;
             switch (pCondition->getChild(i)->getNodeType())
             {
-                case SQL_NODE_EQUAL:
+                case SQLNodeType::Equal:
                     // don't display the equal
                     i--;
                     aItem.Handle = SQLFilterOperator::EQUAL;
                     break;
-                case SQL_NODE_NOTEQUAL:
+                case SQLNodeType::NotEqual:
                     i--;
                     aItem.Handle = SQLFilterOperator::NOT_EQUAL;
                     break;
-                case SQL_NODE_LESS:
+                case SQLNodeType::Less:
                     // take the opposite as we change the order
                     i--;
                     aValue = ">=";
                     aItem.Handle = SQLFilterOperator::GREATER_EQUAL;
                     break;
-                case SQL_NODE_LESSEQ:
+                case SQLNodeType::LessEq:
                     // take the opposite as we change the order
                     i--;
                     aValue = ">";
                     aItem.Handle = SQLFilterOperator::GREATER;
                     break;
-                case SQL_NODE_GREAT:
+                case SQLNodeType::Great:
                     // take the opposite as we change the order
                     i--;
                     aValue = "<=";
                     aItem.Handle = SQLFilterOperator::LESS_EQUAL;
                     break;
-                case SQL_NODE_GREATEQ:
+                case SQLNodeType::GreatEq:
                     // take the opposite as we change the order
                     i--;
                     aValue = "<";
@@ -1305,7 +1305,7 @@ OUString OSingleSelectQueryComposer::getTableAlias(const Reference< XPropertySet
         }
         else
         {
-            aComposedName = ::dbtools::composeTableName( m_xMetaData, aCatalog, aSchema, aTable, false, ::dbtools::eInDataManipulation );
+            aComposedName = ::dbtools::composeTableName( m_xMetaData, aCatalog, aSchema, aTable, false, ::dbtools::EComposeRule::InDataManipulation );
 
             // Is this the right case for the table name?
             // Else, look for it with different case, if applicable.
@@ -1338,7 +1338,7 @@ OUString OSingleSelectQueryComposer::getTableAlias(const Reference< XPropertySet
         }
         if(pBegin != pEnd)
         {
-            sReturn = ::dbtools::composeTableName( m_xMetaData, aCatalog, aSchema, aTable, true, ::dbtools::eInDataManipulation ) + ".";
+            sReturn = ::dbtools::composeTableName( m_xMetaData, aCatalog, aSchema, aTable, true, ::dbtools::EComposeRule::InDataManipulation ) + ".";
         }
     }
     return sReturn;
@@ -1591,8 +1591,8 @@ void OSingleSelectQueryComposer::setConditionByColumn( const Reference< XPropert
             if(sTableName.indexOf('.') != -1)
             {
                 OUString aCatlog,aSchema,aTable;
-                ::dbtools::qualifiedNameComponents(m_xMetaData,sTableName,aCatlog,aSchema,aTable,::dbtools::eInDataManipulation);
-                sTableName = ::dbtools::composeTableName( m_xMetaData, aCatlog, aSchema, aTable, true, ::dbtools::eInDataManipulation );
+                ::dbtools::qualifiedNameComponents(m_xMetaData,sTableName,aCatlog,aSchema,aTable,::dbtools::EComposeRule::InDataManipulation);
+                sTableName = ::dbtools::composeTableName( m_xMetaData, aCatlog, aSchema, aTable, true, ::dbtools::EComposeRule::InDataManipulation );
             }
             else
                 sTableName = ::dbtools::quoteName(aQuote,sTableName);

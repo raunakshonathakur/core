@@ -97,7 +97,7 @@ OUString lcl_GetExtensionsList ( ::std::vector< FilterDesc > const& rFilterDescL
 }
 
 void lcl_AddFilter ( ::std::vector< FilterDesc >& rFilterDescList,
-                     const SfxFilter *pFilter )
+                     std::shared_ptr<const SfxFilter> pFilter )
 {
     if (pFilter)
         rFilterDescList.push_back( ::std::make_pair( pFilter->GetUIName(), pFilter->GetDefaultExtension() ) );
@@ -165,7 +165,7 @@ void FuInsertFile::DoExecute( SfxRequest& rReq )
             try
             {
                 // Get main filter
-                const SfxFilter* pFilter = SfxFilter::GetDefaultFilterFromFactory( aOwnCont );
+                std::shared_ptr<const SfxFilter> pFilter = SfxFilter::GetDefaultFilterFromFactory( aOwnCont );
                 lcl_AddFilter( aFilterVector, pFilter );
 
                 // get template filter
@@ -259,9 +259,9 @@ void FuInsertFile::DoExecute( SfxRequest& rReq )
     mpDocSh->SetWaitCursor( true );
 
     std::unique_ptr<SfxMedium>  xMedium(new SfxMedium(aFile, StreamMode::READ | StreamMode::NOCREATE));
-    const SfxFilter*    pFilter = nullptr;
+    std::shared_ptr<const SfxFilter> pFilter;
 
-    SfxGetpApp()->GetFilterMatcher().GuessFilter(*xMedium, &pFilter);
+    SfxGetpApp()->GetFilterMatcher().GuessFilter(*xMedium, pFilter);
 
     bool                bDrawMode = mpViewShell && dynamic_cast< const DrawViewShell *>( mpViewShell ) !=  nullptr;
     bool                bInserted = false;
@@ -327,7 +327,7 @@ bool FuInsertFile::InsSDDinDrMode(SfxMedium* pMedium)
 
     mpDocSh->SetWaitCursor( false );
     SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-    std::unique_ptr<AbstractSdInsertPagesObjsDlg> pDlg(pFact ? pFact->CreateSdInsertPagesObjsDlg( nullptr, mpDoc, pMedium, aFile ) : nullptr);
+    std::unique_ptr<AbstractSdInsertPagesObjsDlg> pDlg(pFact ? pFact->CreateSdInsertPagesObjsDlg( mpDoc, pMedium, aFile ) : nullptr);
 
     if( !pDlg )
         return false;
@@ -419,7 +419,7 @@ bool FuInsertFile::InsSDDinDrMode(SfxMedium* pMedium)
 void FuInsertFile::InsTextOrRTFinDrMode(SfxMedium* pMedium)
 {
     SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-    std::unique_ptr<AbstractSdInsertPagesObjsDlg> pDlg(pFact ? pFact->CreateSdInsertPagesObjsDlg(nullptr, mpDoc, nullptr, aFile ) : nullptr);
+    std::unique_ptr<AbstractSdInsertPagesObjsDlg> pDlg(pFact ? pFact->CreateSdInsertPagesObjsDlg( mpDoc, nullptr, aFile ) : nullptr);
     if( !pDlg )
         return;
 
@@ -726,7 +726,7 @@ bool FuInsertFile::InsSDDinOlMode(SfxMedium* pMedium)
 void FuInsertFile::GetSupportedFilterVector( ::std::vector< OUString >& rFilterVector )
 {
     SfxFilterMatcher&   rMatcher = SfxGetpApp()->GetFilterMatcher();
-    const SfxFilter*    pSearchFilter = nullptr;
+    std::shared_ptr<const SfxFilter> pSearchFilter;
 
     rFilterVector.clear();
 

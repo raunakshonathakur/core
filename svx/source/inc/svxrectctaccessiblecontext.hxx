@@ -214,7 +214,7 @@ protected:
         @param nIndexOfChild
             Index of the new child which should be selected.
     */
-    void selectChild( long nIndexOfChild, bool bFireFocus = true);
+    void selectChild( long nIndexOfChild );
 
 public:
     /** Selects a new child by point.
@@ -225,7 +225,7 @@ public:
         @param eButton
             Button which belongs to the child which should be selected.
     */
-    void selectChild( RECT_POINT ePoint, bool bFireFocus = true );
+    void selectChild( RECT_POINT ePoint );
     void FireChildFocus( RECT_POINT eButton );
 
 protected:
@@ -421,7 +421,7 @@ public:
 
     // internal
     /// Sets the checked status
-    void setStateChecked(bool bChecked, bool bFireFocus = true);
+    void setStateChecked(bool bChecked);
     void FireFocusEvent();
 
 protected:

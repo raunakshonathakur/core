@@ -567,7 +567,7 @@ bool SwFEShell::Copy( SwFEShell* pDestShell, const Point& rSttPt,
                 }
             }
 
-            if( this != pDestShell && !pDestShell->HasShFcs() )
+            if (this != pDestShell && !pDestShell->HasShellFocus())
                 pDestShell->Imp()->GetDrawView()->hideMarkHandles();
         }
     }
@@ -664,7 +664,7 @@ bool SwFEShell::Copy( SwFEShell* pDestShell, const Point& rSttPt,
             pDestShell->StartAllAction();
     }
     pDestShell->GetDoc()->getIDocumentFieldsAccess().UnlockExpFields();
-    pDestShell->GetDoc()->getIDocumentFieldsAccess().UpdateFields(nullptr, false);
+    pDestShell->GetDoc()->getIDocumentFieldsAccess().UpdateFields(false);
 
     pDestShell->EndAllAction();
     return bRet;
@@ -683,11 +683,10 @@ namespace {
     }
 }
 
-bool SwFEShell::Paste( SwDoc* pClpDoc, bool bIncludingPageFrames )
+bool SwFEShell::Paste( SwDoc* pClpDoc )
 {
     SET_CURR_SHELL( this );
     OSL_ENSURE( pClpDoc, "no clipboard document"  );
-    const sal_uInt16 nStartPageNumber = GetPhyPageNum();
     // then till end of the nodes array
     SwNodeIndex aIdx( pClpDoc->GetNodes().GetEndOfExtras(), 2 );
     SwPaM aCpyPam( aIdx ); //DocStart
@@ -1052,8 +1051,6 @@ bool SwFEShell::Paste( SwDoc* pClpDoc, bool bIncludingPageFrames )
                 // ** Update SwDoc::Append, if you change the following code **
                 // **
 
-                // find out if the clipboard document starts with a table
-                bool bStartWithTable = nullptr != aCpyPam.Start()->nNode.GetNode().FindTableNode();
                 SwPosition aInsertPosition( rInsPos );
 
                 {
@@ -1086,28 +1083,6 @@ bool SwFEShell::Paste( SwDoc* pClpDoc, bool bIncludingPageFrames )
                 }
 
                 SaveTableBoxContent( &rInsPos );
-                if(bIncludingPageFrames && bStartWithTable)
-                {
-                    //remove the paragraph in front of the table
-                    SwPaM aPara(aInsertPosition);
-                    GetDoc()->getIDocumentContentOperations().DelFullPara(aPara);
-                }
-                //additionally copy page bound frames
-                if( bIncludingPageFrames && pClpDoc->GetSpzFrameFormats()->size() )
-                {
-                    // create a draw view if necessary
-                    if( !Imp()->GetDrawView() )
-                        MakeDrawView();
-
-                    for ( auto pCpyFormat : *pClpDoc->GetSpzFrameFormats() )
-                    {
-                        SwFormatAnchor aAnchor( pCpyFormat->GetAnchor() );
-                        if ( FLY_AT_PAGE != aAnchor.GetAnchorId() )
-                            continue;
-                        aAnchor.SetPageNum( aAnchor.GetPageNum() + nStartPageNumber - 1 );
-                        GetDoc()->getIDocumentLayoutAccess().CopyLayoutFormat( *pCpyFormat, aAnchor, true, true );
-                    }
-                }
             }
         }
     }
@@ -1127,7 +1102,7 @@ bool SwFEShell::Paste( SwDoc* pClpDoc, bool bIncludingPageFrames )
             StartAllAction();
     }
     GetDoc()->getIDocumentFieldsAccess().UnlockExpFields();
-    GetDoc()->getIDocumentFieldsAccess().UpdateFields(nullptr, false);
+    GetDoc()->getIDocumentFieldsAccess().UpdateFields(false);
     EndAllAction();
 
     return bRet;
@@ -1212,7 +1187,7 @@ bool SwFEShell::PastePages( SwFEShell& rToFill, sal_uInt16 nStartPage, sal_uInt1
         }
     }
     GetDoc()->getIDocumentFieldsAccess().UnlockExpFields();
-    GetDoc()->getIDocumentFieldsAccess().UpdateFields(nullptr, false);
+    GetDoc()->getIDocumentFieldsAccess().UpdateFields(false);
     Pop(false);
     EndAllAction();
 

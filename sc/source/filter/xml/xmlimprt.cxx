@@ -2302,9 +2302,7 @@ SvXMLImportContext *ScXMLImport::CreateScriptContext(
 
     if( !(IsStylesOnlyMode()) )
     {
-        pContext = new XMLScriptContext( *this,
-            XML_NAMESPACE_OFFICE, rLocalName,
-            GetModel() );
+        pContext = new XMLScriptContext( *this, rLocalName, GetModel() );
     }
 
     if( !pContext )
@@ -3266,7 +3264,7 @@ void SAL_CALL ScXMLImport::endDocument()
     SvXMLImport::endDocument();
 
     if(pDoc && bSelfImportingXMLSet)
-        ScModelObj::getImplementation(GetModel())->AfterXMLLoading(true);
+        ScModelObj::getImplementation(GetModel())->AfterXMLLoading();
 }
 
 // XEventListener
@@ -3339,10 +3337,10 @@ void ScXMLImport::SetRangeOverflowType(sal_uInt32 nType)
         pDoc->SetRangeOverflowType( nType );
 }
 
-void ScXMLImport::ProgressBarIncrement(bool bEditCell, sal_Int32 nInc)
+void ScXMLImport::ProgressBarIncrement()
 {
-    nProgressCount += nInc;
-    if (bEditCell || nProgressCount > 100)
+    nProgressCount++;
+    if (nProgressCount > 100)
     {
         GetProgressBarHelper()->Increment(nProgressCount);
         nProgressCount = 0;

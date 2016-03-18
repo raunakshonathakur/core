@@ -372,11 +372,11 @@ namespace dbaui
             DBSubComponentController_Base::disposing( _rSource );
     }
 
-    void DBSubComponentController::appendError( const OUString& _rErrorMessage, const ::dbtools::StandardSQLState _eSQLState,
-            const sal_Int32 _nErrorCode )
+    void DBSubComponentController::appendError( const OUString& _rErrorMessage )
     {
-        m_pImpl->m_aCurrentError.append( ::dbtools::SQLExceptionInfo::SQL_EXCEPTION, _rErrorMessage, getStandardSQLState( _eSQLState ),
-            _nErrorCode );
+        m_pImpl->m_aCurrentError.append( ::dbtools::SQLExceptionInfo::TYPE::SQLException, _rErrorMessage,
+                                        getStandardSQLState( ::dbtools::StandardSQLState::GENERAL_ERROR ),
+                                        1000 );
     }
     void DBSubComponentController::clearError()
     {

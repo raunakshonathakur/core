@@ -61,7 +61,7 @@ enum OOoBaseErrorCode
 class OOO_DLLPUBLIC_DBTOOLS SQLExceptionInfo
 {
 public:
-    enum TYPE { SQL_EXCEPTION, SQL_WARNING, SQL_CONTEXT, UNDEFINED };
+    enum class TYPE { SQLException, SQLWarning, SQLContext, Undefined };
 
 private:
     css::uno::Any  m_aContent;
@@ -91,12 +91,8 @@ public:
     /** prepends a plain error message to the chain of exceptions
         @param  _rSimpleErrorMessage
             the error message to prepend
-        @param  _rSQLState
-            the SQLState of the to-be-constructed SQLException, or NULL if this should be defaulted to HY000
-        @param  _nErrorCode
-            the ErrorCode of the to-be-constructed SQLException
     */
-    void    prepend( const OUString& _rErrorMessage, const OUString& _rSQLState = OUString(), const sal_Int32 _nErrorCode = 0 );
+    void    prepend( const OUString& _rErrorMessage );
 
     /** appends a plain message to the chain of exceptions
         @param  _eType
@@ -128,7 +124,7 @@ public:
 
     bool        isKindOf(TYPE _eType) const;
         // not just a simple comparisation ! e.g. getType() == SQL_CONTEXT implies isKindOf(SQL_EXCEPTION) == sal_True !
-    bool        isValid() const { return m_eType != UNDEFINED; }
+    bool        isValid() const { return m_eType != TYPE::Undefined; }
     TYPE        getType() const { return m_eType; }
 
     operator const css::sdbc::SQLException*    () const;
@@ -139,7 +135,7 @@ public:
     void    clear()
     {
         m_aContent.clear();
-        m_eType = UNDEFINED;
+        m_eType = TYPE::Undefined;
     }
 
 protected:
@@ -222,8 +218,7 @@ OOO_DLLPUBLIC_DBTOOLS OUString getStandardSQLState( StandardSQLState _eState );
 */
 OOO_DLLPUBLIC_DBTOOLS void throwFunctionNotSupportedSQLException(
         const OUString& _rFunctionName,
-        const css::uno::Reference< css::uno::XInterface >& _rxContext,
-        const css::uno::Any& _rNextException = css::uno::Any()
+        const css::uno::Reference< css::uno::XInterface >& _rxContext
     )
     throw ( css::sdbc::SQLException );
 
@@ -276,13 +271,10 @@ OOO_DLLPUBLIC_DBTOOLS void throwGenericSQLException(
         name is built from the name of the interface plus its method, for instance "XParameters::updateBinaryStream"
     @param _rxContext
         the context of the exception
-    @param _pNextException
-        the next exception to chain into the thrown exception, if any
 */
 OOO_DLLPUBLIC_DBTOOLS void throwFeatureNotImplementedSQLException(
         const OUString& _rFeatureName,
-        const css::uno::Reference< css::uno::XInterface >& _rxContext,
-        const css::uno::Any* _pNextException = nullptr
+        const css::uno::Reference< css::uno::XInterface >& _rxContext
     )
     throw (css::sdbc::SQLException);
 
@@ -292,8 +284,6 @@ OOO_DLLPUBLIC_DBTOOLS void throwFeatureNotImplementedSQLException(
         name is built from the name of the interface plus its method, for instance "XParameters::updateBinaryStream"
     @param _rxContext
         the context of the exception
-    @param _pNextException
-        the next exception to chain into the thrown exception, if any
 */
 OOO_DLLPUBLIC_DBTOOLS void throwFeatureNotImplementedRuntimeException(
         const OUString& _rFeatureName,
@@ -332,8 +322,7 @@ OOO_DLLPUBLIC_DBTOOLS void throwSQLException(
         const OUString& _rMessage,
         StandardSQLState _eSQLState,
         const css::uno::Reference< css::uno::XInterface >& _rxContext,
-        const sal_Int32 _nErrorCode = 0,
-        const css::uno::Any* _pNextException = nullptr
+        const sal_Int32 _nErrorCode = 0
     )
     throw (css::sdbc::SQLException);
 

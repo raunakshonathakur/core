@@ -35,10 +35,6 @@
 
 #include <algorithm>
 
-#if OSL_DEBUG_LEVEL > 1
-#include <stdio.h>
-#endif
-
 using namespace com::sun::star::uno;
 using namespace com::sun::star::lang;
 

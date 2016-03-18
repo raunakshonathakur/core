@@ -79,14 +79,14 @@ namespace dbtools
     class ISQLStatementHelper;
     typedef ::utl::SharedUNOComponent< css::sdbc::XConnection > SharedConnection;
 
-    enum EComposeRule
+    enum class EComposeRule
     {
-        eInTableDefinitions,
-        eInIndexDefinitions,
-        eInDataManipulation,
-        eInProcedureCalls,
-        eInPrivilegeDefinitions,
-        eComplete
+        InTableDefinitions,
+        InIndexDefinitions,
+        InDataManipulation,
+        InProcedureCalls,
+        InPrivilegeDefinitions,
+        Complete
     };
 
     // date conversion
@@ -306,8 +306,7 @@ namespace dbtools
         const css::sdbc::SQLException& _rChainedException,
         const css::uno::Reference< css::uno::XInterface >& _rxContext,
         const OUString& _rAdditionalError,
-        const StandardSQLState _eSQLState = SQL_ERROR_UNSPECIFIED,
-        const sal_Int32 _nErrorCode = 0);
+        const StandardSQLState _eSQLState = StandardSQLState::ERROR_UNSPECIFIED);
 
     /** search the parent hierarchy for a data source.
     */

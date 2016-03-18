@@ -52,17 +52,11 @@ struct MyFuncInfo
     std::string nameAndParams;
     std::string sourceLocation;
 
-    bool operator < (const MyFuncInfo &other) const
-    {
-        if (returnType < other.returnType)
-            return true;
-        else if (returnType == other.returnType)
-            return nameAndParams < other.nameAndParams;
-        else
-            return false;
-    }
 };
-
+bool operator < (const MyFuncInfo &lhs, const MyFuncInfo &rhs)
+{
+    return lhs.sourceLocation < rhs.sourceLocation;
+}
 
 // try to limit the voluminous output a little
 
@@ -125,7 +119,7 @@ MyFuncInfo UnusedMethods::niceName(const FunctionDecl* functionDecl)
     else if (functionDecl->getClassScopeSpecializationPattern())
         functionDecl = functionDecl->getClassScopeSpecializationPattern();
 // workaround clang-3.5 issue
-#if __clang_major__ > 3 || ( __clang_major__ == 3 && __clang_minor__ >= 6 )
+#if CLANG_VERSION >= 30600
     else if (functionDecl->getTemplateInstantiationPattern())
         functionDecl = functionDecl->getTemplateInstantiationPattern();
 #endif
