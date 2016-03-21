@@ -64,6 +64,7 @@
 #include <comphelper/processfactory.hxx>
 #include <comphelper/random.hxx>
 #include <unotools/configmgr.hxx>
+#include <o3tl/make_unique.hxx>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/embed/FileSystemStorageFactory.hpp>
 #include <com/sun/star/frame/XFramesSupplier.hpp>
@@ -1554,8 +1555,8 @@ void ContextMenuSaveInData::Reset()
 class PopupPainter : public SvLBoxString
 {
 public:
-    PopupPainter( SvTreeListEntry* pEntry, const OUString& rStr )
-        : SvLBoxString( pEntry, 0, rStr )
+    PopupPainter( const OUString& rStr )
+        : SvLBoxString( rStr )
     { }
 
     virtual ~PopupPainter() { }
@@ -2335,9 +2336,7 @@ SvTreeListEntry* SvxConfigPage::InsertEntryIntoUI(
              pNewEntryData->GetStyle() & css::ui::ItemStyle::DROP_DOWN )
         {
             // add new popup painter, it gets destructed by the entry
-            pNewEntry->ReplaceItem(
-                std::unique_ptr<PopupPainter>(new PopupPainter(pNewEntry, aName)),
-                pNewEntry->ItemCount() - 1 );
+            pNewEntry->ReplaceItem( o3tl::make_unique<PopupPainter>(aName), pNewEntry->ItemCount() - 1 );
         }
     }
 
@@ -3456,7 +3455,7 @@ IMPL_LINK_TYPED( SvxToolbarConfigPage, EntrySelectHdl, MenuButton *, pButton, vo
 
                 m_pContentsListBox->SetCheckButtonState( pNewLBEntry,
                     pEntry->IsVisible() ?
-                        SV_BUTTON_CHECKED : SV_BUTTON_UNCHECKED );
+                        SvButtonState::Checked : SvButtonState::Unchecked );
 
                 m_pContentsListBox->Select( pNewLBEntry );
                 m_pContentsListBox->MakeVisible( pNewLBEntry );
@@ -3478,7 +3477,7 @@ IMPL_LINK_TYPED( SvxToolbarConfigPage, EntrySelectHdl, MenuButton *, pButton, vo
 
             m_pContentsListBox->SetCheckButtonInvisible( pNewLBEntry );
             m_pContentsListBox->SetCheckButtonState(
-                pNewLBEntry, SV_BUTTON_TRISTATE );
+                pNewLBEntry, SvButtonState::Tristate );
 
             bNeedsApply = true;
             break;
@@ -3561,7 +3560,7 @@ IMPL_LINK_TYPED( SvxToolbarConfigPage, EntrySelectHdl, MenuButton *, pButton, vo
 
                         m_pContentsListBox->SetCheckButtonState( pNewLBEntry,
                             pEntry->IsVisible() ?
-                                SV_BUTTON_CHECKED : SV_BUTTON_UNCHECKED );
+                                SvButtonState::Checked : SvButtonState::Unchecked );
 
                         m_pContentsListBox->Select( pNewLBEntry );
                         m_pContentsListBox->MakeVisible( pNewLBEntry );
@@ -3617,7 +3616,7 @@ IMPL_LINK_TYPED( SvxToolbarConfigPage, EntrySelectHdl, MenuButton *, pButton, vo
 
                 m_pContentsListBox->SetCheckButtonState( pNewLBEntry,
                     pEntry->IsVisible() ?
-                        SV_BUTTON_CHECKED : SV_BUTTON_UNCHECKED );
+                        SvButtonState::Checked : SvButtonState::Unchecked );
 
                 m_pContentsListBox->Select( pNewLBEntry );
                 m_pContentsListBox->MakeVisible( pNewLBEntry );
@@ -4603,12 +4602,12 @@ IMPL_LINK_NOARG_TYPED( SvxToolbarConfigPage, SelectToolbar, ListBox&, void )
         if (pEntry->IsBinding())
         {
             m_pContentsListBox->SetCheckButtonState( pNewLBEntry,
-                pEntry->IsVisible() ? SV_BUTTON_CHECKED : SV_BUTTON_UNCHECKED );
+                pEntry->IsVisible() ? SvButtonState::Checked : SvButtonState::Unchecked );
         }
         else
         {
             m_pContentsListBox->SetCheckButtonState(
-                pNewLBEntry, SV_BUTTON_TRISTATE );
+                pNewLBEntry, SvButtonState::Tristate );
         }
     }
 
@@ -4699,10 +4698,10 @@ IMPL_LINK_NOARG_TYPED( SvxToolbarConfigPage, AddFunctionHdl, SvxScriptSelectorDi
 }
 
 void SvxToolbarConfigPage::AddFunction(
-    SvTreeListEntry* pTarget, bool bFront, bool bAllowDuplicates )
+    SvTreeListEntry* pTarget, bool bFront )
 {
     SvTreeListEntry* pNewLBEntry =
-        SvxConfigPage::AddFunction( pTarget, bFront, bAllowDuplicates );
+        SvxConfigPage::AddFunction( pTarget, bFront, true/*bAllowDuplicates*/ );
 
     SvxConfigEntry* pEntry = static_cast<SvxConfigEntry*>(pNewLBEntry->GetUserData());
 
@@ -4710,12 +4709,12 @@ void SvxToolbarConfigPage::AddFunction(
     {
         pEntry->SetVisible( true );
         m_pContentsListBox->SetCheckButtonState(
-            pNewLBEntry, SV_BUTTON_CHECKED );
+            pNewLBEntry, SvButtonState::Checked );
     }
     else
     {
         m_pContentsListBox->SetCheckButtonState(
-            pNewLBEntry, SV_BUTTON_TRISTATE );
+            pNewLBEntry, SvButtonState::Tristate );
     }
 
     // get currently selected toolbar and apply change
@@ -4838,7 +4837,7 @@ void SvxToolbarEntriesListBox::ChangeVisibility( SvTreeListEntry* pEntry )
                pToolbarSaveInData->ApplyToolbar( pToolbar );
 
             SetCheckButtonState( pEntry, pEntryData->IsVisible() ?
-                SV_BUTTON_CHECKED : SV_BUTTON_UNCHECKED );
+                SvButtonState::Checked : SvButtonState::Unchecked );
         }
     }
 }

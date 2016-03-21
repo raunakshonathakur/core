@@ -2892,14 +2892,34 @@ bool ScCompiler::IsDoubleReference( const OUString& rName )
 
 bool ScCompiler::IsSingleReference( const OUString& rName )
 {
+    mnCurrentSheetEndPos = 0;
+    mnCurrentSheetTab = -1;
     ScAddress aAddr( aPos );
     const ScAddress::Details aDetails( pConv->meConv, aPos );
     ScAddress::ExternalInfo aExtInfo;
-    ScRefFlags nFlags = aAddr.Parse( rName, pDoc, aDetails, &aExtInfo, &maExternalLinks );
+    ScRefFlags nFlags = aAddr.Parse( rName, pDoc, aDetails, &aExtInfo, &maExternalLinks, &mnCurrentSheetEndPos);
     // Something must be valid in order to recognize Sheet1.blah or blah.a1
     // as a (wrong) reference.
     if( nFlags & ( ScRefFlags::COL_VALID|ScRefFlags::ROW_VALID|ScRefFlags::TAB_VALID ) )
     {
+        // Valid given tab and invalid col or row may indicate a sheet-local
+        // named expression, bail out early and don't create a reference token.
+        if (!(nFlags & ScRefFlags::VALID) && mnCurrentSheetEndPos > 0 &&
+                (nFlags & ScRefFlags::TAB_VALID) && (nFlags & ScRefFlags::TAB_3D))
+        {
+            if (aExtInfo.mbExternal)
+            {
+                // External names are handled separately.
+                mnCurrentSheetEndPos = 0;
+                mnCurrentSheetTab = -1;
+            }
+            else
+            {
+                mnCurrentSheetTab = aAddr.Tab();
+            }
+            return false;
+        }
+
         ScSingleRefData aRef;
         aRef.InitAddress( aAddr );
         aRef.SetColRel( (nFlags & ScRefFlags::COL_ABS) == ScRefFlags::ZERO );
@@ -3093,8 +3113,8 @@ bool ScCompiler::IsNamedRange( const OUString& rUpperName )
     // IsNamedRange is called only from NextNewToken, with an upper-case string
 
     // try local names first
-    bool bGlobal = false;
-    ScRangeName* pRangeName = pDoc->GetRangeName(aPos.Tab());
+    sal_Int16 nSheet = aPos.Tab();
+    ScRangeName* pRangeName = pDoc->GetRangeName(nSheet);
     const ScRangeData* pData = nullptr;
     if (pRangeName)
         pData = pRangeName->findByUpperName(rUpperName);
@@ -3104,16 +3124,32 @@ bool ScCompiler::IsNamedRange( const OUString& rUpperName )
         if (pRangeName)
             pData = pRangeName->findByUpperName(rUpperName);
         if (pData)
-            bGlobal = true;
+            nSheet = -1;
     }
 
     if (pData)
     {
-        maRawToken.SetName(bGlobal, pData->GetIndex());
+        maRawToken.SetName( nSheet, pData->GetIndex());
         return true;
     }
-    else
-        return false;
+
+    // Sheet-local name with sheet specified.
+    if (mnCurrentSheetEndPos > 0 && mnCurrentSheetTab >= 0)
+    {
+        OUString aName( rUpperName.copy( mnCurrentSheetEndPos));
+        pRangeName = pDoc->GetRangeName( mnCurrentSheetTab);
+        if (pRangeName)
+        {
+            pData = pRangeName->findByUpperName(aName);
+            if (pData)
+            {
+                maRawToken.SetName( mnCurrentSheetTab, pData->GetIndex());
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 bool ScCompiler::IsExternalNamedRange( const OUString& rSymbol, bool& rbInvalidExternalNameRange )
@@ -3161,7 +3197,7 @@ bool ScCompiler::IsDBRange( const OUString& rName )
     if (!p)
         return false;
 
-    maRawToken.SetName(true, p->GetIndex()); // DB range is always global.
+    maRawToken.SetName( -1, p->GetIndex()); // DB range is always global.
     maRawToken.eOp = ocDBArea;
     return true;
 }
@@ -4387,19 +4423,7 @@ ScTokenArray* ScCompiler::CompileString( const OUString& rFormula, const OUStrin
 
 ScRangeData* ScCompiler::GetRangeData( const FormulaToken& rToken ) const
 {
-    ScRangeData* pRangeData = nullptr;
-    bool bGlobal = rToken.IsGlobal();
-    if (bGlobal)
-        // global named range.
-        pRangeData = pDoc->GetRangeName()->findByIndex( rToken.GetIndex());
-    else
-    {
-        // sheet local named range.
-        const ScRangeName* pRN = pDoc->GetRangeName( aPos.Tab());
-        if (pRN)
-            pRangeData = pRN->findByIndex( rToken.GetIndex());
-    }
-    return pRangeData;
+    return pDoc->FindRangeNameByIndexAndSheet( rToken.GetIndex(), rToken.GetSheet());
 }
 
 bool ScCompiler::HandleRange()
@@ -4438,6 +4462,14 @@ bool ScCompiler::HandleRange()
             PushTokenArray( pNew, true );
             if( pRangeData->HasReferences() )
             {
+                // Relative sheet references in sheet-local named expressions
+                // shall still point to the same sheet as if used on the
+                // original sheet, not shifted to the current position where
+                // they are used.
+                SCTAB nSheetTab = mpToken->GetSheet();
+                if (nSheetTab >= 0 && nSheetTab != aPos.Tab())
+                    AdjustSheetLocalNameRelReferences( nSheetTab - aPos.Tab());
+
                 SetRelNameReference();
                 MoveRelWrap(pRangeData->GetMaxCol(), pRangeData->GetMaxRow());
             }
@@ -4500,6 +4532,23 @@ bool ScCompiler::HandleExternalReference(const FormulaToken& _aToken)
             return false;
     }
     return true;
+}
+
+void ScCompiler::AdjustSheetLocalNameRelReferences( SCTAB nDelta )
+{
+    pArr->Reset();
+    for (formula::FormulaToken* t = pArr->GetNextReference(); t; t = pArr->GetNextReference())
+    {
+        ScSingleRefData& rRef1 = *t->GetSingleRef();
+        if (rRef1.IsTabRel())
+            rRef1.IncTab( nDelta);
+        if ( t->GetType() == svDoubleRef )
+        {
+            ScSingleRefData& rRef2 = t->GetDoubleRef()->Ref2;
+            if (rRef2.IsTabRel())
+                rRef2.IncTab( nDelta);
+        }
+    }
 }
 
 // reference of named range with relative references
@@ -4759,7 +4808,20 @@ void ScCompiler::CreateStringFromIndex( OUStringBuffer& rBuffer, const FormulaTo
         {
             const ScRangeData* pData = GetRangeData( *_pTokenP);
             if (pData)
+            {
+                SCTAB nTab = _pTokenP->GetSheet();
+                if (nTab >= 0 && nTab != aPos.Tab())
+                {
+                    // Sheet-local on other sheet.
+                    OUString aName;
+                    if (pDoc->GetName( nTab, aName))
+                        aBuffer.append( aName);
+                    else
+                        aBuffer.append( ScGlobal::GetRscString( STR_NO_NAME_REF));
+                    aBuffer.append( pConv->getSpecialSymbol( ScCompiler::Convention::SHEET_SEPARATOR));
+                }
                 aBuffer.append(pData->GetName());
+            }
         }
         break;
         case ocDBArea:
@@ -4847,9 +4909,9 @@ sal_Unicode ScCompiler::GetNativeAddressSymbol( Convention::SpecialSymbolType eT
     return pConv->getSpecialSymbol(eType);
 }
 
-FormulaTokenRef ScCompiler::ExtendRangeReference( FormulaToken & rTok1, FormulaToken & rTok2, bool bReuseDoubleRef )
+FormulaTokenRef ScCompiler::ExtendRangeReference( FormulaToken & rTok1, FormulaToken & rTok2 )
 {
-    return extendRangeReference( rTok1, rTok2, aPos,bReuseDoubleRef );
+    return extendRangeReference( rTok1, rTok2, aPos, true/*bReuseDoubleRef*/ );
 }
 
 void ScCompiler::fillAddInToken(::std::vector< css::sheet::FormulaOpCodeMapEntry >& _rVec,bool _bIsEnglish) const

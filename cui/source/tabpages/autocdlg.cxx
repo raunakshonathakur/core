@@ -45,6 +45,7 @@
 #include <com/sun/star/smarttags/XSmartTagRecognizer.hpp>
 #include <com/sun/star/smarttags/XSmartTagAction.hpp>
 #include <rtl/strbuf.hxx>
+#include <o3tl/make_unique.hxx>
 
 #include "autocdlg.hxx"
 #include "helpid.hrc"
@@ -329,8 +330,7 @@ class OfaImpBrwString : public SvLBoxString
 {
 public:
 
-    OfaImpBrwString( SvTreeListEntry* pEntry, sal_uInt16 nFlags,
-        const OUString& rStr ) : SvLBoxString(pEntry,nFlags,rStr){}
+    OfaImpBrwString( const OUString& rStr ) : SvLBoxString(rStr){}
 
     virtual void Paint(const Point& rPos, SvTreeListBox& rDev, vcl::RenderContext& rRenderContext,
                        const SvViewDataEntry* pView, const SvTreeListEntry& rEntry) override;
@@ -472,19 +472,18 @@ SvTreeListEntry* OfaSwAutoFmtOptionsPage::CreateEntry(OUString& rTxt, sal_uInt16
         m_pCheckLB->SetCheckButtonData( pCheckButtonData );
     }
 
-    pEntry->AddItem(std::unique_ptr<SvLBoxContextBmp>(new SvLBoxContextBmp(
-                    pEntry, 0, Image(), Image(), false)));
+    pEntry->AddItem(o3tl::make_unique<SvLBoxContextBmp>(Image(), Image(), false));
 
     if (nCol == CBCOL_SECOND)
-        pEntry->AddItem(std::unique_ptr<SvLBoxString>(new SvLBoxString(pEntry, 0, "")));
+        pEntry->AddItem(o3tl::make_unique<SvLBoxString>(""));
     else
-        pEntry->AddItem(std::unique_ptr<SvLBoxButton>(new SvLBoxButton(pEntry, SvLBoxButtonKind_enabledCheckbox, 0, pCheckButtonData)));
+        pEntry->AddItem(o3tl::make_unique<SvLBoxButton>(SvLBoxButtonKind::EnabledCheckbox, pCheckButtonData));
 
     if (nCol == CBCOL_FIRST)
-        pEntry->AddItem(std::unique_ptr<SvLBoxString>(new SvLBoxString(pEntry, 0, "")));
+        pEntry->AddItem(o3tl::make_unique<SvLBoxString>(""));
     else
-        pEntry->AddItem(std::unique_ptr<SvLBoxButton>(new SvLBoxButton(pEntry, SvLBoxButtonKind_enabledCheckbox, 0, pCheckButtonData)));
-    pEntry->AddItem(std::unique_ptr<OfaImpBrwString>(new OfaImpBrwString( pEntry, 0, rTxt)));
+        pEntry->AddItem(o3tl::make_unique<SvLBoxButton>(SvLBoxButtonKind::EnabledCheckbox, pCheckButtonData));
+    pEntry->AddItem(o3tl::make_unique<OfaImpBrwString>(rTxt));
 
     return pEntry;
 }
@@ -786,13 +785,12 @@ void OfaACorrCheckListBox::CheckEntryPos(sal_uLong nPos, sal_uInt16 nCol, bool b
         SetCheckButtonState(
             GetEntry(nPos),
             nCol,
-            bChecked ? SvButtonState( SV_BUTTON_CHECKED ) :
-                                       SvButtonState( SV_BUTTON_UNCHECKED ) );
+            bChecked ? SvButtonState::Checked : SvButtonState::Unchecked );
 }
 
 bool OfaACorrCheckListBox::IsChecked(sal_uLong nPos, sal_uInt16 nCol)
 {
-    return GetCheckButtonState( GetEntry(nPos), nCol ) == SV_BUTTON_CHECKED;
+    return GetCheckButtonState( GetEntry(nPos), nCol ) == SvButtonState::Checked;
 }
 
 void OfaACorrCheckListBox::SetCheckButtonState( SvTreeListEntry* pEntry, sal_uInt16 nCol, SvButtonState eState)
@@ -803,15 +801,15 @@ void OfaACorrCheckListBox::SetCheckButtonState( SvTreeListEntry* pEntry, sal_uIn
     {
         switch( eState )
         {
-            case SV_BUTTON_CHECKED:
+            case SvButtonState::Checked:
                 rItem.SetStateChecked();
                 break;
 
-            case SV_BUTTON_UNCHECKED:
+            case SvButtonState::Unchecked:
                 rItem.SetStateUnchecked();
                 break;
 
-            case SV_BUTTON_TRISTATE:
+            case SvButtonState::Tristate:
                 rItem.SetStateTristate();
                 break;
         }
@@ -821,7 +819,7 @@ void OfaACorrCheckListBox::SetCheckButtonState( SvTreeListEntry* pEntry, sal_uIn
 
 SvButtonState OfaACorrCheckListBox::GetCheckButtonState( SvTreeListEntry* pEntry, sal_uInt16 nCol )
 {
-    SvButtonState eState = SV_BUTTON_UNCHECKED;
+    SvButtonState eState = SvButtonState::Unchecked;
     SvLBoxButton& rItem = static_cast<SvLBoxButton&>(pEntry->GetItem(nCol + 1));
 
     if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
@@ -1802,21 +1800,19 @@ SvTreeListEntry* OfaQuoteTabPage::CreateEntry(OUString& rTxt, sal_uInt16 nCol)
         m_pSwCheckLB->SetCheckButtonData(pCheckButtonData);
     }
 
-    pEntry->AddItem(std::unique_ptr<SvLBoxContextBmp>(
-                new SvLBoxContextBmp(pEntry, 0, Image(), Image(), false)));
+    pEntry->AddItem(o3tl::make_unique<SvLBoxContextBmp>(Image(), Image(), false));
 
     if (nCol == CBCOL_SECOND)
-        pEntry->AddItem(std::unique_ptr<SvLBoxString>(new SvLBoxString(pEntry, 0, "")));
+        pEntry->AddItem(o3tl::make_unique<SvLBoxString>(""));
     else
-        pEntry->AddItem(std::unique_ptr<SvLBoxButton>(new SvLBoxButton(pEntry, SvLBoxButtonKind_enabledCheckbox, 0, pCheckButtonData)));
+        pEntry->AddItem(o3tl::make_unique<SvLBoxButton>(SvLBoxButtonKind::EnabledCheckbox, pCheckButtonData));
 
     if (nCol == CBCOL_FIRST)
-        pEntry->AddItem(std::unique_ptr<SvLBoxString>(new SvLBoxString(pEntry, 0, "")));
+        pEntry->AddItem(o3tl::make_unique<SvLBoxString>(""));
     else
-        pEntry->AddItem(std::unique_ptr<SvLBoxButton>(new SvLBoxButton(
-            pEntry, SvLBoxButtonKind_enabledCheckbox, 0, pCheckButtonData)));
+        pEntry->AddItem(o3tl::make_unique<SvLBoxButton>(SvLBoxButtonKind::EnabledCheckbox, pCheckButtonData));
 
-    pEntry->AddItem(std::unique_ptr<OfaImpBrwString>(new OfaImpBrwString(pEntry, 0, rTxt)));
+    pEntry->AddItem(o3tl::make_unique<OfaImpBrwString>(rTxt));
 
     return pEntry;
 }
@@ -2583,7 +2579,7 @@ void OfaSmartTagOptionsTabPage::FillListBox( const SmartTagMgr& rSmartTagMgr )
             if ( pEntry )
             {
                 const bool bCheck = rSmartTagMgr.IsSmartTagTypeEnabled( aSmartTagType );
-                m_pSmartTagTypesLB->SetCheckButtonState( pEntry, bCheck ? SV_BUTTON_CHECKED : SV_BUTTON_UNCHECKED );
+                m_pSmartTagTypesLB->SetCheckButtonState( pEntry, bCheck ? SvButtonState::Checked : SvButtonState::Unchecked );
                 pEntry->SetUserData(static_cast<void*>(new ImplSmartTagLBUserData( aSmartTagType, xRec, j ) ) );
             }
         }

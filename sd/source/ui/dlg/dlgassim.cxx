@@ -26,6 +26,7 @@
 
 #include <vcl/svapp.hxx>
 #include <vcl/builderfactory.hxx>
+#include <o3tl/make_unique.hxx>
 #include "svtools/svlbitm.hxx"
 #include "svtools/treelistentry.hxx"
 
@@ -65,13 +66,13 @@ IMPL_LINK_NOARG_TYPED(SdPageListControl, CheckButtonClickHdl, SvTreeListBox*, vo
 
     while( pEntry )
     {
-        if(pTreeModel->IsAtRootDepth(pEntry) && GetCheckButtonState( pEntry ) == SV_BUTTON_CHECKED )
+        if(pTreeModel->IsAtRootDepth(pEntry) && GetCheckButtonState( pEntry ) == SvButtonState::Checked )
             return;
         pEntry = pTreeModel->Next( pEntry );
     }
 
     pEntry = pTreeModel->First();
-    SetCheckButtonState( pEntry, SV_BUTTON_CHECKED );
+    SetCheckButtonState( pEntry, SvButtonState::Checked );
 }
 
 SdPageListControl::~SdPageListControl()
@@ -94,12 +95,9 @@ SvTreeListEntry* SdPageListControl::InsertPage( const OUString& rPageName )
 {
     SvTreeListEntry* pEntry = new SvTreeListEntry;
 
-    pEntry->AddItem(std::unique_ptr<SvLBoxButton>(new SvLBoxButton(
-                pEntry, SvLBoxButtonKind_enabledCheckbox, 0, m_pCheckButton)));
-    pEntry->AddItem(std::unique_ptr<SvLBoxContextBmp>(new SvLBoxContextBmp(
-                pEntry, 0, Image(), Image(), false)));    // otherwise boom!
-    pEntry->AddItem(std::unique_ptr<SvLBoxString>(new SvLBoxString(
-                pEntry, 0, rPageName)));
+    pEntry->AddItem(o3tl::make_unique<SvLBoxButton>(SvLBoxButtonKind::EnabledCheckbox, m_pCheckButton));
+    pEntry->AddItem(o3tl::make_unique<SvLBoxContextBmp>(Image(), Image(), false));    // otherwise boom!
+    pEntry->AddItem(o3tl::make_unique<SvLBoxString>(rPageName));
 
     GetModel()->Insert( pEntry );
 
@@ -109,12 +107,9 @@ SvTreeListEntry* SdPageListControl::InsertPage( const OUString& rPageName )
 void SdPageListControl::InsertTitle( SvTreeListEntry* pParent, const OUString& rTitle )
 {
     SvTreeListEntry* pEntry = new SvTreeListEntry;
-    pEntry->AddItem(std::unique_ptr<SvLBoxString>(new SvLBoxString(
-                    pEntry, 0, OUString())));
-    pEntry->AddItem(std::unique_ptr<SvLBoxContextBmp>(new SvLBoxContextBmp(
-                    pEntry, 0, Image(), Image(), false)));    // otherwise boom!
-    pEntry->AddItem(std::unique_ptr<SvLBoxString>(new SvLBoxString(
-                    pEntry, 0, rTitle)));
+    pEntry->AddItem(o3tl::make_unique<SvLBoxString>(OUString()));
+    pEntry->AddItem(o3tl::make_unique<SvLBoxContextBmp>(Image(), Image(), false));    // otherwise boom!
+    pEntry->AddItem(o3tl::make_unique<SvLBoxString>(rTitle));
     GetModel()->Insert( pEntry,pParent );
 }
 
@@ -130,7 +125,7 @@ void SdPageListControl::Fill( SdDrawDocument* pDoc )
         if( pPage->GetPageKind() == PK_STANDARD )
         {
             SvTreeListEntry* pEntry = InsertPage( pPage->GetName() );
-            SetCheckButtonState(pEntry, SvButtonState( SV_BUTTON_CHECKED ) );
+            SetCheckButtonState(pEntry, SvButtonState( SvButtonState::Checked ) );
 
             SdrTextObj* pTO = static_cast<SdrTextObj*>(pPage->GetPresObj(PRESOBJ_TEXT));
             if(!pTO)
@@ -204,7 +199,7 @@ sal_uInt16 SdPageListControl::GetSelectedPage()
 bool SdPageListControl::IsPageChecked( sal_uInt16 nPage )
 {
     SvTreeListEntry* pEntry = GetModel()->GetEntry(nPage);
-    return pEntry && (GetCheckButtonState( pEntry ) == SV_BUTTON_CHECKED);
+    return pEntry && (GetCheckButtonState( pEntry ) == SvButtonState::Checked);
 }
 
 void SdPageListControl::DataChanged( const DataChangedEvent& rDCEvt )

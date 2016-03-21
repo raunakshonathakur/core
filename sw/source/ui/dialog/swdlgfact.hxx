@@ -496,6 +496,9 @@ public:
     // For TabPage
     virtual CreateTabPage               GetTabPageCreatorFunc( sal_uInt16 nId ) override;
 
+    virtual void ExecuteMMResultSaveDialog() override;
+    virtual void ExecuteMMResultPrintDialog() override;
+    virtual void ExecuteMMResultEmailDialog() override;
 };
 
 #endif

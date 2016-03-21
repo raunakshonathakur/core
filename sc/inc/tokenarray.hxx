@@ -95,7 +95,7 @@ public:
     /** ScSingleRefOpToken with ocMatRef. */
     formula::FormulaToken* AddMatrixSingleReference( const ScSingleRefData& rRef );
     formula::FormulaToken* AddDoubleReference( const ScComplexRefData& rRef );
-    formula::FormulaToken* AddRangeName( sal_uInt16 n, bool bGlobal );
+    formula::FormulaToken* AddRangeName( sal_uInt16 n, sal_Int16 nSheet );
     formula::FormulaToken* AddDBRange( sal_uInt16 n );
     formula::FormulaToken* AddExternalName( sal_uInt16 nFileId, const OUString& rName );
     void AddExternalSingleReference( sal_uInt16 nFileId, const OUString& rTabName, const ScSingleRefData& rRef );
@@ -135,6 +135,11 @@ public:
      * @param bCheckCopyArea should references pointing into the copy area be adjusted independently from being absolute, should be true only for copy&paste between documents
      */
     void AdjustAbsoluteRefs( const ScDocument* pOldDoc, const ScAddress& rOldPos, const ScAddress& rNewPos, bool bRangeName = false, bool bCheckCopyArea = false );
+
+    /** When copying a sheet-local named expression, move sheet references that
+        point to the originating sheet to point to the new sheet instead.
+     */
+    void AdjustSheetLocalNameReferences( SCTAB nOldTab, SCTAB nNewTab );
 
     /**
      * Adjust all references in response to shifting of cells during cell

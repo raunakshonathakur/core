@@ -62,6 +62,7 @@ $(eval $(call gb_UIConfig_add_toolbarfiles,modules/swriter,\
 	sw/uiconfig/swriter/toolbar/graphicobjectbar \
 	sw/uiconfig/swriter/toolbar/insertbar \
 	sw/uiconfig/swriter/toolbar/linesbar \
+	sw/uiconfig/swriter/toolbar/mailmerge \
 	sw/uiconfig/swriter/toolbar/mediaobjectbar \
 	sw/uiconfig/swriter/toolbar/moreformcontrols \
 	sw/uiconfig/swriter/toolbar/navigationobjectbar \
@@ -131,7 +132,6 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/swriter,\
 	sw/uiconfig/swriter/ui/fldfuncpage \
 	sw/uiconfig/swriter/ui/fldrefpage \
 	sw/uiconfig/swriter/ui/fldvarpage \
-	sw/uiconfig/swriter/ui/floatingmmchild \
 	sw/uiconfig/swriter/ui/floatingnavigation \
 	sw/uiconfig/swriter/ui/floatingsync \
 	sw/uiconfig/swriter/ui/formatsectiondialog \
@@ -194,10 +194,10 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/swriter,\
 	sw/uiconfig/swriter/ui/mmcreatingdialog \
 	sw/uiconfig/swriter/ui/mmlayoutpage \
 	sw/uiconfig/swriter/ui/mmmailbody \
-	sw/uiconfig/swriter/ui/mmmergepage \
-	sw/uiconfig/swriter/ui/mmoutputpage \
 	sw/uiconfig/swriter/ui/mmoutputtypepage \
-	sw/uiconfig/swriter/ui/mmpreparepage \
+	sw/uiconfig/swriter/ui/mmresultemaildialog \
+	sw/uiconfig/swriter/ui/mmresultprintdialog \
+	sw/uiconfig/swriter/ui/mmresultsavedialog \
 	sw/uiconfig/swriter/ui/mmselectpage \
 	sw/uiconfig/swriter/ui/mmsendmails \
 	sw/uiconfig/swriter/ui/mmsalutationpage \

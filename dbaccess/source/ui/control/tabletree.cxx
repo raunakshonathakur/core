@@ -43,6 +43,7 @@
 #include <rtl/ustrbuf.hxx>
 #include <connectivity/dbmetadata.hxx>
 #include "svtools/treelistentry.hxx"
+#include <o3tl/make_unique.hxx>
 
 #include <algorithm>
 
@@ -338,7 +339,7 @@ bool OTableTreeListBox::isWildcardChecked(SvTreeListEntry* _pEntry)
 
 void OTableTreeListBox::checkWildcard(SvTreeListEntry* _pEntry)
 {
-    SetCheckButtonState(_pEntry, SV_BUTTON_CHECKED);
+    SetCheckButtonState(_pEntry, SvButtonState::Checked);
     checkedButton_noBroadcast(_pEntry);
 }
 
@@ -356,8 +357,8 @@ void OTableTreeListBox::checkedButton_noBroadcast(SvTreeListEntry* _pEntry)
     // So we track explicit (un)checking
 
     SvButtonState eState = GetCheckButtonState(_pEntry);
-    OSL_ENSURE(SV_BUTTON_TRISTATE != eState, "OTableTreeListBox::CheckButtonHdl: user action which lead to TRISTATE?");
-    implEmphasize(_pEntry, SV_BUTTON_CHECKED == eState);
+    OSL_ENSURE(SvButtonState::Tristate != eState, "OTableTreeListBox::CheckButtonHdl: user action which lead to TRISTATE?");
+    implEmphasize(_pEntry, SvButtonState::Checked == eState);
 }
 
 void OTableTreeListBox::implEmphasize(SvTreeListEntry* _pEntry, bool _bChecked, bool _bUpdateDescendants, bool _bUpdateAncestors)
@@ -408,8 +409,7 @@ void OTableTreeListBox::InitEntry(SvTreeListEntry* _pEntry, const OUString& _rSt
     size_t nTextPos = _pEntry->GetPos(pTextItem);
     OSL_ENSURE(SvTreeListEntry::ITEM_NOT_FOUND != nTextPos, "OTableTreeListBox::InitEntry: no text item pos!");
 
-    _pEntry->ReplaceItem(std::unique_ptr<OBoldListboxString>(
-                new OBoldListboxString(_pEntry, 0, _rString)), nTextPos);
+    _pEntry->ReplaceItem(o3tl::make_unique<OBoldListboxString>(_rString), nTextPos);
 }
 
 SvTreeListEntry* OTableTreeListBox::implAddEntry(

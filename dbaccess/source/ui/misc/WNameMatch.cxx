@@ -160,7 +160,7 @@ bool OWizNameMatching::LeavePage()
             ;
         const sal_Int32 nPos = ::std::distance(rSrcColumns.begin(),aSrcIter);
 
-        if(m_pCTRL_LEFT->GetCheckButtonState(pLeftEntry) == SV_BUTTON_CHECKED)
+        if(m_pCTRL_LEFT->GetCheckButtonState(pLeftEntry) == SvButtonState::Checked)
         {
             OFieldDescription* pDestField = static_cast<OFieldDescription*>(pRightEntry->GetUserData());
             OSL_ENSURE(pDestField,"OWizNameMatching: OColumn can not be null!");
@@ -324,7 +324,7 @@ IMPL_LINK_TYPED( OWizNameMatching, AllNoneClickHdl, Button *, pButton, void )
     SvTreeListEntry* pEntry = m_pCTRL_LEFT->First();
     while(pEntry)
     {
-        m_pCTRL_LEFT->SetCheckButtonState( pEntry, bAll ? SV_BUTTON_CHECKED : SV_BUTTON_UNCHECKED);
+        m_pCTRL_LEFT->SetCheckButtonState( pEntry, bAll ? SvButtonState::Checked : SvButtonState::Unchecked);
         pEntry = m_pCTRL_LEFT->Next(pEntry);
     }
 }
@@ -334,8 +334,8 @@ class OColumnString : public SvLBoxString
 {
     bool m_bReadOnly;
 public:
-    OColumnString( SvTreeListEntry* pEntry, sal_uInt16 nFlags, const OUString& rStr, bool _RO)
-        :SvLBoxString(pEntry,nFlags,rStr)
+    OColumnString( const OUString& rStr, bool _RO )
+        :SvLBoxString(rStr)
         ,m_bReadOnly(_RO)
     {
     }
@@ -373,7 +373,7 @@ VCL_BUILDER_FACTORY(OColumnTreeBox)
 void OColumnTreeBox::InitEntry(SvTreeListEntry* pEntry, const OUString& rStr, const Image& rImg1, const Image& rImg2, SvLBoxButtonKind eButtonKind)
 {
     DBTreeListBox::InitEntry(pEntry, rStr, rImg1, rImg2, eButtonKind);
-    pEntry->ReplaceItem(o3tl::make_unique<OColumnString>(pEntry, 0, rStr,false), pEntry->ItemCount() - 1);
+    pEntry->ReplaceItem(o3tl::make_unique<OColumnString>(rStr,false), pEntry->ItemCount() - 1);
 }
 
 bool OColumnTreeBox::Select( SvTreeListEntry* pEntry, bool bSelect )
@@ -397,7 +397,7 @@ void OColumnTreeBox::FillListBox( const ODatabaseExport::TColumnVector& _rList)
     for(;aIter != aEnd;++aIter)
     {
         SvTreeListEntry* pEntry = InsertEntry((*aIter)->first, nullptr, false, TREELIST_APPEND, (*aIter)->second);
-        SvButtonState eState = !(m_bReadOnly && (*aIter)->second->IsAutoIncrement()) ? SV_BUTTON_CHECKED : SV_BUTTON_UNCHECKED;
+        SvButtonState eState = !(m_bReadOnly && (*aIter)->second->IsAutoIncrement()) ? SvButtonState::Checked : SvButtonState::Unchecked;
         SetCheckButtonState( pEntry, eState );
     }
 }

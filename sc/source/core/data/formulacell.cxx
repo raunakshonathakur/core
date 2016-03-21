@@ -422,16 +422,22 @@ bool lcl_isReference(const FormulaToken& rToken)
 
 void adjustRangeName(formula::FormulaToken* pToken, ScDocument& rNewDoc, const ScDocument* pOldDoc, const ScAddress& aNewPos, const ScAddress& aOldPos)
 {
-    bool bOldGlobal = pToken->IsGlobal();
-    SCTAB aOldTab = aOldPos.Tab();
+    bool bSameDoc = (rNewDoc.GetPool() == const_cast<ScDocument*>(pOldDoc)->GetPool());
+    SCTAB nOldSheet = pToken->GetSheet();
+    if (bSameDoc && (nOldSheet < 0 || nOldSheet != aOldPos.Tab()))
+        // Same doc and global name or sheet-local name on other sheet stays
+        // the same.
+        return;
+
     OUString aRangeName;
     int nOldIndex = pToken->GetIndex();
     ScRangeData* pOldRangeData = nullptr;
 
     //search the name of the RangeName
-    if (!bOldGlobal)
+    if (nOldSheet >= 0)
     {
-        pOldRangeData = pOldDoc->GetRangeName(aOldTab)->findByIndex(nOldIndex);
+        const ScRangeName* pRangeName = pOldDoc->GetRangeName(nOldSheet);
+        pOldRangeData = pRangeName ? pRangeName->findByIndex(nOldIndex) : nullptr;
         if (!pOldRangeData)
             return;     //might be an error in the formula array
         aRangeName = pOldRangeData->GetUpperName();
@@ -444,12 +450,15 @@ void adjustRangeName(formula::FormulaToken* pToken, ScDocument& rNewDoc, const S
         aRangeName = pOldRangeData->GetUpperName();
     }
 
+    SAL_WARN_IF( !bSameDoc && nOldSheet >= 0 && nOldSheet != aOldPos.Tab(),
+            "sc.core", "adjustRangeName - sheet-local name was on other sheet in other document");
+    /* TODO: can we do something about that? e.g. loop over sheets? */
+
     //find corresponding range name in new document
     //first search for local range name then global range names
-    SCTAB aNewTab = aNewPos.Tab();
-    ScRangeName* pRangeName = rNewDoc.GetRangeName(aNewTab);
+    SCTAB nNewSheet = aNewPos.Tab();
+    ScRangeName* pRangeName = rNewDoc.GetRangeName(nNewSheet);
     ScRangeData* pRangeData = nullptr;
-    bool bNewGlobal = false;
     //search local range names
     if (pRangeName)
     {
@@ -458,7 +467,7 @@ void adjustRangeName(formula::FormulaToken* pToken, ScDocument& rNewDoc, const S
     //search global range names
     if (!pRangeData)
     {
-        bNewGlobal = true;
+        nNewSheet = -1;
         pRangeName = rNewDoc.GetRangeName();
         if (pRangeName)
             pRangeData = pRangeName->findByUpperName(aRangeName);
@@ -466,21 +475,34 @@ void adjustRangeName(formula::FormulaToken* pToken, ScDocument& rNewDoc, const S
     //if no range name was found copy it
     if (!pRangeData)
     {
-        bNewGlobal = bOldGlobal;
-        pRangeData = new ScRangeData(*pOldRangeData, &rNewDoc);
+        ScAddress aRangePos( pOldRangeData->GetPos());
+        if (nOldSheet < 0)
+        {
+            nNewSheet = -1;
+        }
+        else
+        {
+            nNewSheet = aNewPos.Tab();
+            aRangePos.SetTab( nNewSheet);
+        }
+        pRangeData = new ScRangeData(*pOldRangeData, &rNewDoc, &aRangePos);
         pRangeData->SetIndex(0);    // needed for insert to assign a new index
         ScTokenArray* pRangeNameToken = pRangeData->GetCode();
-        if (rNewDoc.GetPool() != const_cast<ScDocument*>(pOldDoc)->GetPool())
+        if (bSameDoc && nNewSheet >= 0)
+        {
+            pRangeNameToken->AdjustSheetLocalNameReferences( nOldSheet, nNewSheet);
+        }
+        if (!bSameDoc)
         {
             pRangeNameToken->ReadjustAbsolute3DReferences(pOldDoc, &rNewDoc, pRangeData->GetPos(), true);
             pRangeNameToken->AdjustAbsoluteRefs(pOldDoc, aOldPos, aNewPos, false, true);
         }
 
         bool bInserted;
-        if (bNewGlobal)
+        if (nNewSheet < 0)
             bInserted = rNewDoc.GetRangeName()->insert(pRangeData);
         else
-            bInserted = rNewDoc.GetRangeName(aNewTab)->insert(pRangeData);
+            bInserted = rNewDoc.GetRangeName(nNewSheet)->insert(pRangeData);
         if (!bInserted)
         {
             //if this happened we have a real problem
@@ -492,7 +514,7 @@ void adjustRangeName(formula::FormulaToken* pToken, ScDocument& rNewDoc, const S
     }
     sal_Int32 nIndex = pRangeData->GetIndex();
     pToken->SetIndex(nIndex);
-    pToken->SetGlobal(bNewGlobal);
+    pToken->SetSheet(nNewSheet);
 }
 
 void adjustDBRange(formula::FormulaToken* pToken, ScDocument& rNewDoc, const ScDocument* pOldDoc)
@@ -3603,7 +3625,7 @@ void ScFormulaCell::UpdateTranspose( const ScRange& rSource, const ScAddress& rD
     {
         if( t->GetOpCode() == ocName )
         {
-            ScRangeData* pName = pDocument->GetRangeName()->findByIndex( t->GetIndex() );
+            const ScRangeData* pName = pDocument->FindRangeNameByIndexAndSheet( t->GetIndex(), t->GetSheet());
             if (pName)
             {
                 if (pName->IsModified())
@@ -3657,7 +3679,7 @@ void ScFormulaCell::UpdateGrow( const ScRange& rArea, SCCOL nGrowX, SCROW nGrowY
     {
         if( t->GetOpCode() == ocName )
         {
-            ScRangeData* pName = pDocument->GetRangeName()->findByIndex( t->GetIndex() );
+            const ScRangeData* pName = pDocument->FindRangeNameByIndexAndSheet( t->GetIndex(), t->GetSheet());
             if (pName)
             {
                 if (pName->IsModified())
@@ -3688,25 +3710,26 @@ void ScFormulaCell::UpdateGrow( const ScRange& rArea, SCCOL nGrowX, SCROW nGrowY
         StartListeningTo( pDocument ); // Listener as previous
 }
 
-static void lcl_FindRangeNamesInUse(std::set<sal_uInt16>& rIndexes, ScTokenArray* pCode, ScRangeName* pNames)
+static void lcl_FindRangeNamesInUse(sc::UpdatedRangeNames& rIndexes, ScTokenArray* pCode, const ScDocument* pDoc)
 {
     for (FormulaToken* p = pCode->First(); p; p = pCode->Next())
     {
         if (p->GetOpCode() == ocName)
         {
             sal_uInt16 nTokenIndex = p->GetIndex();
-            rIndexes.insert( nTokenIndex );
+            SCTAB nTab = p->GetSheet();
+            rIndexes.setUpdatedName( nTab, nTokenIndex);
 
-            ScRangeData* pSubName = pNames->findByIndex(p->GetIndex());
+            ScRangeData* pSubName = pDoc->FindRangeNameByIndexAndSheet( nTokenIndex, nTab);
             if (pSubName)
-                lcl_FindRangeNamesInUse(rIndexes, pSubName->GetCode(), pNames);
+                lcl_FindRangeNamesInUse(rIndexes, pSubName->GetCode(), pDoc);
         }
     }
 }
 
-void ScFormulaCell::FindRangeNamesInUse(std::set<sal_uInt16>& rIndexes) const
+void ScFormulaCell::FindRangeNamesInUse(sc::UpdatedRangeNames& rIndexes) const
 {
-    lcl_FindRangeNamesInUse( rIndexes, pCode, pDocument->GetRangeName() );
+    lcl_FindRangeNamesInUse( rIndexes, pCode, pDocument );
 }
 
 void ScFormulaCell::SetChanged(bool b)

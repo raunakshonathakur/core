@@ -62,7 +62,7 @@ using namespace com::sun::star;
 
 ScFormulaDlg::ScFormulaDlg( SfxBindings* pB, SfxChildWindow* pCW,
                                     vcl::Window* pParent, ScViewData* pViewData,formula::IFunctionManager* _pFunctionMgr )
-    : formula::FormulaDlg( pB, pCW, pParent, true,true,true, _pFunctionMgr,this)
+    : formula::FormulaDlg( pB, pCW, pParent, _pFunctionMgr,this)
     , m_aHelper(this,pB)
 {
     m_aHelper.SetWindow(this);
@@ -89,11 +89,13 @@ ScFormulaDlg::ScFormulaDlg( SfxBindings* pB, SfxChildWindow* pCW,
     }
 
     m_pDoc = pViewData->GetDocument();
-    m_xParser.set(ScServiceProvider::MakeInstance(SC_SERVICE_FORMULAPARS, static_cast<ScDocShell*>(m_pDoc->GetDocumentShell())),uno::UNO_QUERY);
+    m_xParser.set(ScServiceProvider::MakeInstance(ScServiceProvider::Type::FORMULAPARS,
+                                                  static_cast<ScDocShell*>(m_pDoc->GetDocumentShell())),uno::UNO_QUERY);
     uno::Reference< beans::XPropertySet> xSet(m_xParser,uno::UNO_QUERY);
     xSet->setPropertyValue(SC_UNO_COMPILEFAP, uno::makeAny(sal_True));
 
-    m_xOpCodeMapper.set(ScServiceProvider::MakeInstance(SC_SERVICE_OPCODEMAPPER, static_cast<ScDocShell*>(m_pDoc->GetDocumentShell())),uno::UNO_QUERY);
+    m_xOpCodeMapper.set(ScServiceProvider::MakeInstance(ScServiceProvider::Type::OPCODEMAPPER,
+                                                        static_cast<ScDocShell*>(m_pDoc->GetDocumentShell())),uno::UNO_QUERY);
 
     ScInputHandler* pInputHdl = SC_MOD()->GetInputHdl(pScViewShell);
 

@@ -249,10 +249,21 @@
 #define FN_MAILMERGE_WIZARD     (FN_INSERT + 64)    /* mail merge wizard */
 #define FN_TOOL_ANCHOR_FRAME    (FN_INSERT + 66)    /* anchor Draw-Object to frame*/
 #define FN_QRY_MERGE            (FN_INSERT + 67)    /* insert record (serial letter) */
-#define FN_MAILMERGE_CHILDWINDOW (FN_INSERT + 68)   /* back-to-mail-merge-wizard child window*/
 #define FN_INSERT_SMA           (FN_INSERT + 69)    /* insert StarMath  */
 
+#define FN_MAILMERGE_FIRST_ENTRY (FN_INSERT + 70)   /* mail merge toolbar - go to the first entry */
+#define FN_MAILMERGE_PREV_ENTRY (FN_INSERT + 71)    /* mail merge toolbar - go to the previous entry */
+#define FN_MAILMERGE_NEXT_ENTRY (FN_INSERT + 72)    /* mail merge toolbar - go to the next entry */
+#define FN_MAILMERGE_LAST_ENTRY (FN_INSERT + 73)    /* mail merge toolbar - go to the next entry */
+#define FN_MAILMERGE_CURRENT_ENTRY (FN_INSERT + 74) /* mail merge toolbar - show or change the current entry */
+#define FN_MAILMERGE_EXCLUDE_ENTRY (FN_INSERT + 75) /* mail merge toolbar - checkbox to exclude the current entry */
+
 #define FN_DRAWTEXT_ATTR_DLG    (FN_INSERT + 76)    /* position DrawText */
+
+#define FN_MAILMERGE_CREATE_DOCUMENTS (FN_INSERT + 77) /* mail merge toolbar - create the merged document */
+#define FN_MAILMERGE_SAVE_DOCUMENTS (FN_INSERT + 78) /* mail merge toolbar - save merged documents */
+#define FN_MAILMERGE_PRINT_DOCUMENTS (FN_INSERT + 79) /* mail merge toolbar - print merged documents */
+#define FN_MAILMERGE_EMAIL_DOCUMENTS (FN_INSERT + 80) /* mail merge toolbar - email merged documents */
 
 #define FN_TOOL_ANCHOR_CHAR     (FN_INSERT + 84)    /* anchor Draw object to character */
 

@@ -300,8 +300,6 @@ public:
 };
 
 #define RET_LOAD_DOC            100
-#define RET_EDIT_DOC            101
-#define RET_EDIT_RESULT_DOC     102
 #define RET_TARGET_CREATED      103
 #define RET_REMOVE_TARGET       104
 
@@ -457,6 +455,10 @@ public:
 
     // for tabpage
     virtual CreateTabPage               GetTabPageCreatorFunc( sal_uInt16 nId ) = 0;
+
+    virtual void ExecuteMMResultSaveDialog() = 0;
+    virtual void ExecuteMMResultPrintDialog() = 0;
+    virtual void ExecuteMMResultEmailDialog() = 0;
 
 protected:
     ~SwAbstractDialogFactory() {}

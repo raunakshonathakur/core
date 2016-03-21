@@ -24,6 +24,20 @@
 #include <dbui.hrc>
 #include <swtypes.hxx>
 
+#include <rtl/ref.hxx>
+#include <com/sun/star/mail/XSmtpService.hpp>
+#include <vcl/svapp.hxx>
+#include <vcl/idle.hxx>
+
+#include <helpid.h>
+#include <cmdid.h>
+#include <swunohelper.hxx>
+#include <mmresultdialogs.hxx>
+#include <maildispatcher.hxx>
+#include <imaildsplistener.hxx>
+
+using namespace ::com::sun::star;
+
 SwMailMergeOutputTypePage::SwMailMergeOutputTypePage(SwMailMergeWizard* pParent)
     : svt::OWizardPage(pParent, "MMOutputTypePage",
         "modules/swriter/ui/mmoutputtypepage.ui")
@@ -72,21 +86,6 @@ IMPL_LINK_NOARG_TYPED(SwMailMergeOutputTypePage, TypeHdl_Impl, Button*, void)
     m_pWizard->updateRoadmapItemLabel( MM_ADDRESSBLOCKPAGE );
     m_pWizard->UpdateRoadmap();
 }
-
-
-#include <rtl/ref.hxx>
-#include <com/sun/star/mail/XSmtpService.hpp>
-#include <vcl/svapp.hxx>
-#include <vcl/idle.hxx>
-
-#include <helpid.h>
-#include <cmdid.h>
-#include <swunohelper.hxx>
-#include <mmoutputpage.hxx>
-#include <maildispatcher.hxx>
-#include <imaildsplistener.hxx>
-
-using namespace ::com::sun::star;
 
 struct SwSendMailDialog_Impl
 {
@@ -174,7 +173,8 @@ void SwMailDispatcherListener_Impl::stopped(
 void SwMailDispatcherListener_Impl::idle(::rtl::Reference<MailDispatcher> /*xMailDispatcher*/)
 {
     SolarMutexGuard aGuard;
-    m_pSendMailDialog->AllMailsSent();
+    if (!m_pSendMailDialog->isDisposed())
+        m_pSendMailDialog->AllMailsSent();
 }
 
 void SwMailDispatcherListener_Impl::mailDelivered(

@@ -42,7 +42,7 @@ void SvLBoxButtonData::InitData( bool _bRadioBtn, const Control* pCtrl )
     aBmps.resize((int)SvBmp::STATICIMAGE+1);
 
     bDataOk = false;
-    eState = SV_BUTTON_UNCHECKED;
+    eState = SvButtonState::Unchecked;
     pImpl->bDefaultImages = true;
     pImpl->bShowRadioButton = _bRadioBtn;
 
@@ -113,13 +113,13 @@ SvButtonState SvLBoxButtonData::ConvertToButtonState( SvItemStateFlags nItemFlag
     switch( nItemFlags )
     {
         case SvItemStateFlags::UNCHECKED:
-            return SV_BUTTON_UNCHECKED;
+            return SvButtonState::Unchecked;
         case SvItemStateFlags::CHECKED:
-            return SV_BUTTON_CHECKED;
+            return SvButtonState::Checked;
         case SvItemStateFlags::TRISTATE:
-            return SV_BUTTON_TRISTATE;
+            return SvButtonState::Tristate;
         default:
-            return SV_BUTTON_UNCHECKED;
+            return SvButtonState::Unchecked;
     }
 }
 
@@ -167,8 +167,7 @@ bool SvLBoxButtonData::IsRadio() {
 // ***************************************************************
 
 
-SvLBoxString::SvLBoxString(SvTreeListEntry* pEntry, sal_uInt16 nFlags, const OUString& rStr)
-    : SvLBoxItem(pEntry, nFlags)
+SvLBoxString::SvLBoxString(const OUString& rStr)
 {
     SetText(rStr);
 }
@@ -286,10 +285,9 @@ void SvLBoxBmp::Clone( SvLBoxItem* pSource )
 // ***************************************************************
 
 
-SvLBoxButton::SvLBoxButton( SvTreeListEntry* pEntry, SvLBoxButtonKind eTheKind,
-                            sal_uInt16 nFlags, SvLBoxButtonData* pBData )
-    : SvLBoxItem( pEntry, nFlags )
-    , isVis(true)
+SvLBoxButton::SvLBoxButton( SvLBoxButtonKind eTheKind,
+                            SvLBoxButtonData* pBData )
+    : isVis(true)
     , pData(pBData)
     , eKind(eTheKind)
     , nItemFlags(SvItemStateFlags::NONE)
@@ -301,7 +299,7 @@ SvLBoxButton::SvLBoxButton()
     : SvLBoxItem()
     , isVis(false)
     , pData(nullptr)
-    , eKind(SvLBoxButtonKind_enabledCheckbox)
+    , eKind(SvLBoxButtonKind::EnabledCheckbox)
     , nItemFlags(SvItemStateFlags::NONE)
 {
     SetStateUnchecked();
@@ -334,8 +332,8 @@ void SvLBoxButton::Paint(
     const Point& rPos, SvTreeListBox& rDev, vcl::RenderContext& rRenderContext,
     const SvViewDataEntry* /*pView*/, const SvTreeListEntry& /*rEntry*/)
 {
-    SvBmp nIndex = eKind == SvLBoxButtonKind_staticImage ? SvBmp::STATICIMAGE : SvLBoxButtonData::GetIndex(nItemFlags);
-    DrawImageFlags nStyle = eKind != SvLBoxButtonKind_disabledCheckbox && rDev.IsEnabled() ? DrawImageFlags::NONE : DrawImageFlags::Disable;
+    SvBmp nIndex = eKind == SvLBoxButtonKind::StaticImage ? SvBmp::STATICIMAGE : SvLBoxButtonData::GetIndex(nItemFlags);
+    DrawImageFlags nStyle = eKind != SvLBoxButtonKind::DisabledCheckbox && rDev.IsEnabled() ? DrawImageFlags::NONE : DrawImageFlags::Disable;
 
     //Native drawing
     bool bNativeOK = false;
@@ -418,14 +416,14 @@ void SvLBoxButton::InitViewData(SvTreeListBox* pView,SvTreeListEntry* pEntry, Sv
     Size aSize( pData->Width(), pData->Height() );
 
     ControlType eCtrlType = (pData->IsRadio())? CTRL_RADIOBUTTON : CTRL_CHECKBOX;
-    if ( eKind != SvLBoxButtonKind_staticImage && pView )
+    if ( eKind != SvLBoxButtonKind::StaticImage && pView )
         ImplAdjustBoxSize(aSize, eCtrlType, *pView);
     pViewData->maSize = aSize;
 }
 
 bool SvLBoxButton::CheckModification() const
 {
-    return eKind == SvLBoxButtonKind_enabledCheckbox;
+    return eKind == SvLBoxButtonKind::EnabledCheckbox;
 }
 
 void SvLBoxButton::SetStateInvisible()
@@ -447,11 +445,9 @@ struct SvLBoxContextBmp_Impl
 
 // ***************************************************************
 
-SvLBoxContextBmp::SvLBoxContextBmp(
-    SvTreeListEntry* pEntry, sal_uInt16 nItemFlags, Image aBmp1, Image aBmp2,
+SvLBoxContextBmp::SvLBoxContextBmp(Image aBmp1, Image aBmp2,
     bool bExpanded)
-    :SvLBoxItem( pEntry, nItemFlags )
-    ,m_pImpl( new SvLBoxContextBmp_Impl )
+    :m_pImpl( new SvLBoxContextBmp_Impl )
 {
 
     m_pImpl->m_bExpanded = bExpanded;
