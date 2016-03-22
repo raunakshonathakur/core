@@ -6,11 +6,6 @@
 * License, v. 2.0. If a copy of the MPL was not distributed with this
 * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
-// This is a test comment.
-// I am a student
-//Libre Office is so cool and I have the coolest partner ever. "Beza"
-/* I thought this was C++ but apparetly I need to use C comment syntax :( */
-// I am sick of this crap
 
 #include <comphelper/namedvaluecollection.hxx>
 #include <comphelper/processfactory.hxx>
