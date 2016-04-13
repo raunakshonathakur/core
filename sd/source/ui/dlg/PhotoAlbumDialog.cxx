@@ -681,7 +681,7 @@ awt::Size SdPhotoAlbumDialog::createFILLSize(const awt::Size& aPicSize, const aw
     double aspect = picWidth/picHeight;
     double sliWidth = aMaxSize.Width;
     double sliHeight = aMaxSize.Height;
-    std::ofstream file;
+    //std::ofstream file;
     int diffW = 0;
     int diffH = 0;
 
